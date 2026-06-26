@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달려라 대토신 🏃 — 친목 러닝 크루</title>
+<meta name="description" content="대토신 사람들의 친목 러닝 크루, 달려라 대토신!">
+<meta property="og:title" content="달려라 대토신 🏃">
+<meta property="og:description" content="대토신 사람들의 친목 러닝 크루! 같이 달리고 더 즐겁게 모여요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1d2228; --soft:#5b636c; --line:#e7eaee; --bg:#f4f6f9;
+  --brand:#ff5a3c; --brand-deep:#e8401f; --accent:#1e8b6f; --gold:#f4b740; --card:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:0 18px}
+.han{font-family:'Black Han Sans',sans-serif;font-weight:400;letter-spacing:-.5px}
+
+/* 설정 배너 */
+.cfg-banner{background:#fff4e6;border-bottom:1px solid #f4d6a8;color:#7a4a0a;font-size:13.5px;text-align:center;padding:10px 18px;font-weight:600}
+.cfg-banner b{color:#b8550a}
+
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:900;font-size:18px}
+.logo .run{font-size:22px}
+.logo b{color:var(--brand)}
+nav ul{display:flex;gap:20px;list-style:none}
+nav a{text-decoration:none;color:var(--soft);font-weight:700;font-size:14px;transition:color .2s}
+nav a:hover{color:var(--brand)}
+.menu-btn{display:none;background:none;border:none;font-size:24px;cursor:pointer}
+
+.hero{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#ff7a4d 0%,#ff5a3c 45%,#e8401f 100%)}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.18),transparent 45%)}
+.hero-in{position:relative;z-index:1;text-align:center;padding:78px 18px 92px}
+.badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);border-radius:30px;padding:6px 16px;font-size:13px;font-weight:700;margin-bottom:20px}
+.hero h1{font-size:clamp(44px,9vw,86px);line-height:1.02;text-shadow:0 6px 24px rgba(0,0,0,.18)}
+.hero h1 .em{color:var(--gold)}
+.hero p{font-size:clamp(15px,2.4vw,20px);margin-top:18px;opacity:.96;font-weight:500}
+.cta{margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none;font-weight:800;border-radius:12px;padding:14px 26px;font-size:15px;transition:transform .15s,box-shadow .15s;cursor:pointer;border:none}
+.btn:active{transform:translateY(1px)}
+.btn-w{background:#fff;color:var(--brand-deep);box-shadow:0 8px 22px rgba(0,0,0,.16)}
+.btn-o{background:rgba(0,0,0,.16);color:#fff;border:1px solid rgba(255,255,255,.5)}
+.wave{display:block;margin-top:-1px}
+
+section{padding:60px 0}
+.sec-head{text-align:center;margin-bottom:34px}
+.sec-head .en{font-size:12px;font-weight:800;letter-spacing:3px;color:var(--brand);text-transform:uppercase}
+.sec-head h2{font-size:clamp(26px,5vw,38px);margin-top:6px}
+.sec-head p{color:var(--soft);margin-top:8px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 14px;text-align:center}
+.stat .num{font-family:'Black Han Sans';font-size:38px;color:var(--brand);line-height:1}
+.stat .lab{font-size:13px;color:var(--soft);font-weight:600;margin-top:8px}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(0,0,0,.08)}
+.card .ico{font-size:34px}
+.card h3{margin:12px 0 6px;font-size:19px}
+.card p{color:var(--soft);font-size:14.5px}
+
+/* 내 이름 바 */
+.mebar{display:flex;align-items:center;gap:10px;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:22px;flex-wrap:wrap}
+.mebar label{font-weight:700;font-size:14px}
+.mebar input{border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-family:inherit;font-size:14px;width:180px}
+.mebar .hint{font-size:12.5px;color:var(--soft)}
+
+.sched{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.sch-row{display:flex;align-items:center;gap:16px;padding:18px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sch-row:last-child{border-bottom:none}
+.sch-date{flex:none;width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sch-date .m{font-size:11px;font-weight:700}
+.sch-date .d{font-family:'Black Han Sans';font-size:24px;line-height:1}
+.sch-info{flex:1;min-width:180px}
+.sch-info h4{font-size:16px}
+.sch-info span{font-size:13px;color:var(--soft)}
+.sch-att{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:150px}
+.att-btn{background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s}
+.att-btn.on{background:#bfe3d8;color:#0c5a44}
+.att-btn:disabled{opacity:.5;cursor:not-allowed}
+.att-names{font-size:12px;color:var(--soft);text-align:right;max-width:220px}
+.att-cnt{font-weight:800;color:var(--accent)}
+
+.members{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.member{text-align:center}
+.avatar{width:78px;height:78px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:34px;background:#fff;border:2px solid var(--line)}
+.member b{display:block;font-size:15px}
+.member span{font-size:12.5px;color:var(--soft)}
+
+/* 갤러리 */
+.gal-up{background:#fff;border:1px dashed var(--brand);border-radius:16px;padding:20px;text-align:center;margin-bottom:22px}
+.gal-up input[type=text]{border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14px;width:min(260px,80%);margin:6px}
+.gal-up .filebtn{display:inline-block;background:var(--brand);color:#fff;border-radius:10px;padding:11px 20px;font-weight:800;cursor:pointer;font-size:14px;margin:6px}
+.gal-up .filebtn input{display:none}
+.gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.gal-item{position:relative;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line);aspect-ratio:1/1}
+.gal-item img{width:100%;height:100%;object-fit:cover;display:block}
+.gal-cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.66));color:#fff;font-size:12px;padding:18px 10px 8px}
+.gal-cap b{font-weight:800}
+.gal-del{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:13px;line-height:1}
+.gal-empty,.gb-empty{color:var(--soft);font-size:14px;text-align:center;padding:24px;grid-column:1/-1}
+
+.guest{display:grid;grid-template-columns:1fr 1.2fr;gap:24px;align-items:start}
+.gb-form{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px}
+.gb-form label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+.gb-form input,.gb-form textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-family:inherit;font-size:14px}
+.gb-form textarea{resize:vertical;min-height:84px}
+.gb-form button{margin-top:16px;width:100%;background:var(--brand);color:#fff;border:none;border-radius:10px;padding:13px;font-weight:800;font-size:15px;cursor:pointer}
+.gb-form button:hover{background:var(--brand-deep)}
+.gb-list{display:flex;flex-direction:column;gap:12px}
+.gb-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 18px;position:relative}
+.gb-item .who{font-weight:800;font-size:14px}
+.gb-item .who span{font-weight:500;color:var(--soft);font-size:12px;margin-left:8px}
+.gb-item .msg{font-size:14px;margin-top:5px;color:#333;white-space:pre-wrap;word-break:break-word}
+.gb-del{position:absolute;top:12px;right:14px;background:none;border:none;color:#c9ced4;cursor:pointer;font-size:15px}
+.gb-del:hover{color:var(--brand)}
+
+footer{color:#cfd4d9;text-align:center;padding:40px 18px;background:#222831}
+footer .fl{font-family:'Black Han Sans';font-size:22px;color:#fff}
+footer .fl b{color:var(--brand)}
+footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#222831;color:#fff;padding:12px 22px;border-radius:30px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:99;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:760px){
+  nav ul{display:none;position:absolute;top:60px;left:0;right:0;background:#fff;flex-direction:column;padding:14px 18px;border-bottom:1px solid var(--line);gap:14px}
+  .menu-btn{display:block}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .cards{grid-template-columns:1fr}
+  .members{grid-template-columns:repeat(2,1fr)}
+  .gal-grid{grid-template-columns:repeat(2,1fr)}
+  .guest{grid-template-columns:1fr}
+  .sch-att{align-items:flex-start;min-width:0;width:100%}
+  .att-names{text-align:left;max-width:none}
+}
+</style>
+</head>
+<body>
+
+<div class="cfg-banner" id="cfgBanner" style="display:none">
+  ⚙️ <b>Firebase 설정이 필요합니다.</b> 방명록·갤러리·참석체크가 모두 공유되려면 <code>index.html</code> 하단의 <b>firebaseConfig</b>를 채워주세요. (FIREBASE_SETUP.md 참고) — 지금은 임시로 이 기기에만 저장됩니다.
+</div>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="run">🏃‍♂️</span> 달려라 <b>대토신</b></div>
+    <nav><ul>
+      <li><a href="#about">소개</a></li>
+      <li><a href="#schedule">모임·참석</a></li>
+      <li><a href="#gallery">갤러리</a></li>
+      <li><a href="#members">멤버</a></li>
+      <li><a href="#guest">방명록</a></li>
+    </ul></nav>
+    <button class="menu-btn" onclick="var u=document.querySelector('nav ul');u.style.display=(getComputedStyle(u).display==='none'?'flex':'none')">☰</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-in wrap">
+    <span class="badge">🏅 대토신 사람들의 친목 러닝 크루</span>
+    <h1 class="han">달려라<br><span class="em">대토신!</span></h1>
+    <p>혼자 뛰면 운동, 같이 뛰면 추억.<br>매주 함께 달리고, 끝나면 더 즐겁게 모이는 우리들의 공간.</p>
+    <div class="cta">
+      <a class="btn btn-w" href="#schedule">📅 모임 참석하기</a>
+      <a class="btn btn-o" href="#gallery">📸 사진 올리기</a>
+    </div>
+  </div>
+  <svg class="wave" viewBox="0 0 1440 60" preserveAspectRatio="none" style="width:100%;height:46px"><path fill="#f4f6f9" d="M0,40 C360,70 1080,0 1440,30 L1440,60 L0,60 Z"></path></svg>
+</div>
+
+<section style="padding-top:30px">
+  <div class="wrap stats">
+    <div class="stat"><div class="num" data-n="28">0</div><div class="lab">크루 멤버</div></div>
+    <div class="stat"><div class="num" id="stGuest">0</div><div class="lab">방명록</div></div>
+    <div class="stat"><div class="num" id="stGal">0</div><div class="lab">갤러리 사진</div></div>
+    <div class="stat"><div class="num" id="stAtt">0</div><div class="lab">참석 신청</div></div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="wrap">
+    <div class="sec-head"><div class="en">About Us</div><h2 class="han">우리는 이렇게 달려요</h2><p>잘 뛰는 사람보다, 끝까지 함께하는 사람이 멋진 거예요.</p></div>
+    <div class="cards">
+      <div class="card"><div class="ico">🐢</div><h3>완주가 목표</h3><p>속도 경쟁 없음! 각자 페이스로, 마지막 한 명까지 함께 들어옵니다.</p></div>
+      <div class="card"><div class="ico">☕</div><h3>러닝 + 친목</h3><p>달리고 나면 카페·맥주 한 잔. 사실 이게 진짜 메인 이벤트일지도?</p></div>
+      <div class="card"><div class="ico">🌧️</div><h3>비 와도 OK</h3><p>비 오는 날엔 실내 모임으로 전환. 어떻게든 모입니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="schedule" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head"><div class="en">Schedule</div><h2 class="han">다가오는 모임 · 참석체크</h2><p>이름을 입력하고 <b>참석</b>을 누르면 모두에게 공유돼요!</p></div>
+    <div class="mebar">
+      <label>내 이름</label>
+      <input id="myName" maxlength="20" placeholder="예: 김캡틴">
+      <span class="hint">한 번 입력하면 이 기기에 기억돼요</span>
+    </div>
+    <div class="sched" id="schedList"></div>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="wrap">
+    <div class="sec-head"><div class="en">Gallery</div><h2 class="han">러닝 갤러리</h2><p>달린 인증샷·뒤풀이 사진을 올려보세요! (자동으로 작게 줄여서 저장돼요)</p></div>
+    <div class="gal-up">
+      <input type="text" id="galCap" maxlength="40" placeholder="사진 설명 (예: 한강 야간런 🌙)">
+      <label class="filebtn">📸 사진 선택 & 업로드<input type="file" id="galFile" accept="image/*"></label>
+      <div id="galStatus" style="font-size:13px;color:var(--soft);margin-top:6px"></div>
+    </div>
+    <div class="gal-grid" id="galGrid"></div>
+  </div>
+</section>
+
+<section id="members" style="background:#fff;border-top:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head"><div class="en">Members</div><h2 class="han">함께 뛰는 사람들</h2><p>각자의 사연을 안고, 오늘도 운동화 끈을 묶습니다.</p></div>
+    <div class="members">
+      <div class="member"><div class="avatar">🏃‍♂️</div><b>김캡틴</b><span>크루장 · 페이스메이커</span></div>
+      <div class="member"><div class="avatar">🏃‍♀️</div><b>이번개</b><span>번개 모임 담당</span></div>
+      <div class="member"><div class="avatar">🦵</div><b>박꾸준</b><span>개근상 보유</span></div>
+      <div class="member"><div class="avatar">🍺</div><b>최뒤풀</b><span>뒤풀이 마스터</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="guest" style="background:#fff;border-top:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head"><div class="en">Guestbook</div><h2 class="han">방명록</h2><p>한마디 남겨주세요! (모두에게 공유됩니다 😊)</p></div>
+    <div class="guest">
+      <form class="gb-form" id="gbForm">
+        <label>닉네임</label>
+        <input id="g-name" maxlength="20" placeholder="예: 달림이" required>
+        <label>한마디</label>
+        <textarea id="g-msg" maxlength="200" placeholder="오늘도 화이팅! 다음 모임에 갈게요 🏃" required></textarea>
+        <button type="submit">남기기 ✍️</button>
+      </form>
+      <div class="gb-list" id="gb-list"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fl">달려라 <b>대토신</b> 🏃</div>
+  <p>친목 러닝 크루 · 연습용 웹앱 · Made with ❤️ &amp; Firebase</p>
+  <p style="margin-top:4px">© <span id="yy"></span> 달려라 대토신</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, where, onSnapshot, serverTimestamp, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ════════════════════════════════════════════════════════════════
+   🔧 여기에 Firebase 설정을 붙여넣으세요 (FIREBASE_SETUP.md 참고)
+   Firebase 콘솔 → 프로젝트 설정 → 웹앱 → firebaseConfig 복사
+   ════════════════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+/* ════════════════════════════════════════════════════════════════ */
+
+const HAS_FB = !!firebaseConfig.projectId;
+let db = null;
+if (HAS_FB) {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+} else {
+  document.getElementById('cfgBanner').style.display = 'block';
+}
+
+/* ── 공통 유틸 ── */
+const $ = s => document.querySelector(s);
+document.getElementById('yy').textContent = new Date().getFullYear();
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function fmtDate(ts){ try{ const d=ts?.toDate? ts.toDate(): new Date(ts); return d.toLocaleDateString('ko-KR'); }catch(e){ return ''; } }
+
+/* localStorage 폴백 (Firebase 미설정 시 이 기기에만 저장) */
+const LS = {
+  get:(k)=>{ try{return JSON.parse(localStorage.getItem('dtsn_'+k)||'[]')}catch(e){return[]} },
+  set:(k,v)=>localStorage.setItem('dtsn_'+k,JSON.stringify(v)),
+};
+
+/* 내 이름 기억 */
+const myNameEl = $('#myName');
+myNameEl.value = localStorage.getItem('dtsn_myname') || '';
+myNameEl.addEventListener('input', ()=>localStorage.setItem('dtsn_myname', myNameEl.value.trim()));
+function myName(){ return myNameEl.value.trim(); }
+
+/* 숫자 카운트업 (멤버) */
+(function(){
+  const el=document.querySelector('.stat .num[data-n]'); if(!el)return;
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(!e.isIntersecting)return;
+    const t=+el.dataset.n; let c=0,s=Math.max(1,Math.round(t/50));
+    const iv=setInterval(()=>{c+=s;if(c>=t){c=t;clearInterval(iv);}el.textContent=c.toLocaleString();},20); io.unobserve(el);
+  }),{threshold:.5}); io.observe(el);
+})();
+
+/* ══════════ 1) 모임 참석 ══════════ */
+const EVENTS = [
+  {id:'ev-0705', m:'7월', d:'05', title:'한강 야간 러닝 🌙', desc:'여의도공원 → 반포대교 · 저녁 7시 · 5km'},
+  {id:'ev-0719', m:'7월', d:'19', title:'아침 산책런 ☀️', desc:'올림픽공원 한 바퀴 · 오전 8시 · 3km · 초보 환영'},
+  {id:'ev-0802', m:'8월', d:'02', title:'대토신 미니 마라톤 🏅', desc:'탄천 코스 · 오전 9시 · 10km · 완주 메달 증정'},
+];
+let attData = {}; // eventId -> [{id,name}]
+function renderSchedule(){
+  const box=$('#schedList');
+  box.innerHTML = EVENTS.map(ev=>{
+    const list = attData[ev.id]||[];
+    const mine = list.find(a=>a.name===myName());
+    const names = list.map(a=>esc(a.name)).join(', ') || '아직 없음';
+    return `<div class="sch-row">
+      <div class="sch-date"><span class="m">${ev.m}</span><span class="d">${ev.d}</span></div>
+      <div class="sch-info"><h4>${ev.title}</h4><span>${ev.desc}</span></div>
+      <div class="sch-att">
+        <button class="att-btn ${mine?'on':''}" data-ev="${ev.id}">${mine?'✅ 참석중 (취소)':'🙋 참석'}</button>
+        <div class="att-names"><span class="att-cnt">${list.length}명</span> · ${names}</div>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.att-btn').forEach(b=>b.addEventListener('click',()=>toggleAtt(b.dataset.ev)));
+  $('#stAtt').textContent = Object.values(attData).reduce((a,l)=>a+l.length,0);
+}
+async function toggleAtt(evId){
+  const name=myName();
+  if(!name){ toast('먼저 "내 이름"을 입력해 주세요 🙏'); myNameEl.focus(); return; }
+  const list=attData[evId]||[];
+  const mine=list.find(a=>a.name===name);
+  if(HAS_FB){
+    if(mine){ await deleteDoc(doc(db,'attendance',mine.id)); }
+    else{ await addDoc(collection(db,'attendance'),{eventId:evId,name,createdAt:serverTimestamp()}); }
+  }else{
+    let all=LS.get('attendance');
+    if(mine){ all=all.filter(a=>!(a.eventId===evId&&a.name===name)); }
+    else{ all.push({id:'l'+Date.now(),eventId:evId,name}); }
+    LS.set('attendance',all); loadLocalAtt();
+  }
+  toast(mine?'참석을 취소했어요':'참석 신청 완료! 🎉');
+}
+function groupAtt(rows){ attData={}; EVENTS.forEach(e=>attData[e.id]=[]); rows.forEach(r=>{ (attData[r.eventId]=attData[r.eventId]||[]).push(r); }); renderSchedule(); }
+function loadLocalAtt(){ groupAtt(LS.get('attendance')); }
+
+/* ══════════ 2) 갤러리 ══════════ */
+function resizeImage(file, max=900, quality=0.72){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{ URL.revokeObjectURL(url);
+      let {width:w,height:h}=img; if(w>h&&w>max){h=h*max/w;w=max;} else if(h>max){w=w*max/h;h=max;}
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      res(c.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=rej; img.src=url;
+  });
+}
+$('#galFile').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const name=myName()||'익명';
+  $('#galStatus').textContent='이미지 처리 중…';
+  try{
+    const data=await resizeImage(file);
+    if(data.length>900000){ $('#galStatus').textContent='사진이 너무 큽니다. 다른 사진을 시도해 주세요.'; return; }
+    const cap=$('#galCap').value.trim();
+    if(HAS_FB){ await addDoc(collection(db,'gallery'),{name,caption:cap,image:data,createdAt:serverTimestamp()}); }
+    else{ const all=LS.get('gallery'); all.unshift({id:'l'+Date.now(),name,caption:cap,image:data,createdAt:Date.now()}); LS.set('gallery',all.slice(0,30)); renderGallery(LS.get('gallery')); }
+    $('#galCap').value=''; $('#galStatus').textContent=''; e.target.value='';
+    toast('사진 업로드 완료! 📸');
+  }catch(err){ $('#galStatus').textContent='업로드 실패: '+err.message; }
+});
+function renderGallery(rows){
+  const box=$('#galGrid');
+  $('#stGal').textContent=rows.length;
+  if(!rows.length){ box.innerHTML='<div class="gal-empty">아직 사진이 없어요. 첫 인증샷을 올려보세요! 📸</div>'; return; }
+  box.innerHTML=rows.map(g=>`<div class="gal-item">
+      <img src="${g.image}" alt="${esc(g.caption||'')}" loading="lazy">
+      ${g.caption?`<div class="gal-cap"><b>${esc(g.name)}</b> · ${esc(g.caption)}</div>`:`<div class="gal-cap"><b>${esc(g.name)}</b></div>`}
+      <button class="gal-del" data-id="${g.id}" title="삭제">✕</button>
+    </div>`).join('');
+  box.querySelectorAll('.gal-del').forEach(b=>b.addEventListener('click',()=>delGallery(b.dataset.id)));
+}
+async function delGallery(id){
+  if(!confirm('이 사진을 삭제할까요?')) return;
+  if(HAS_FB){ await deleteDoc(doc(db,'gallery',id)); }
+  else{ LS.set('gallery', LS.get('gallery').filter(g=>g.id!==id)); renderGallery(LS.get('gallery')); }
+  toast('삭제했어요');
+}
+
+/* ══════════ 3) 방명록 ══════════ */
+$('#gbForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name=$('#g-name').value.trim(), msg=$('#g-msg').value.trim();
+  if(!name||!msg) return;
+  if(HAS_FB){ await addDoc(collection(db,'guestbook'),{name,msg,createdAt:serverTimestamp()}); }
+  else{ const all=LS.get('guestbook'); all.unshift({id:'l'+Date.now(),name,msg,createdAt:Date.now()}); LS.set('guestbook',all.slice(0,50)); renderGuest(LS.get('guestbook')); }
+  $('#g-name').value=''; $('#g-msg').value='';
+  toast('방명록을 남겼어요! 😊');
+});
+function renderGuest(rows){
+  const box=$('#gb-list');
+  $('#stGuest').textContent=rows.length;
+  if(!rows.length){ box.innerHTML='<div class="gb-empty">아직 방명록이 없어요. 첫 글을 남겨보세요! 🎉</div>'; return; }
+  box.innerHTML=rows.map(g=>`<div class="gb-item">
+      <div class="who">${esc(g.name)}<span>${fmtDate(g.createdAt)}</span></div>
+      <div class="msg">${esc(g.msg)}</div>
+      <button class="gb-del" data-id="${g.id}" title="삭제">✕</button>
+    </div>`).join('');
+  box.querySelectorAll('.gb-del').forEach(b=>b.addEventListener('click',()=>delGuest(b.dataset.id)));
+}
+async function delGuest(id){
+  if(!confirm('이 방명록을 삭제할까요?')) return;
+  if(HAS_FB){ await deleteDoc(doc(db,'guestbook',id)); }
+  else{ LS.set('guestbook', LS.get('guestbook').filter(g=>g.id!==id)); renderGuest(LS.get('guestbook')); }
+}
+
+/* ══════════ 실시간 구독 / 초기 로드 ══════════ */
+if(HAS_FB){
+  onSnapshot(query(collection(db,'guestbook'),orderBy('createdAt','desc')), s=>renderGuest(s.docs.map(d=>({id:d.id,...d.data()}))));
+  onSnapshot(query(collection(db,'gallery'),orderBy('createdAt','desc')), s=>renderGallery(s.docs.map(d=>({id:d.id,...d.data()}))));
+  onSnapshot(collection(db,'attendance'), s=>groupAtt(s.docs.map(d=>({id:d.id,...d.data()}))));
+}else{
+  renderGuest(LS.get('guestbook')); renderGallery(LS.get('gallery')); loadLocalAtt();
+}
+myNameEl.addEventListener('input', renderSchedule);
+renderSchedule();
+</script>
+</body>
+</html>
