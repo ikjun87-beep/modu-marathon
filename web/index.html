@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>달려라 대토신 🏃 — 친목 러닝 크루</title>
-<meta name="description" content="대토신 사람들의 친목 러닝 크루, 달려라 대토신!">
-<meta property="og:title" content="달려라 대토신 🏃">
-<meta property="og:description" content="대토신 사람들의 친목 러닝 크루! 같이 달리고 더 즐겁게 모여요.">
+<title>모두의 마라톤 🏃 — 러닝·마라톤 크루 + 기록</title>
+<meta name="description" content="러닝·마라톤을 함께하는 사람들의 크루 + 기록 앱, 모두의 마라톤!">
+<meta property="og:title" content="모두의 마라톤 🏃">
+<meta property="og:description" content="러닝·마라톤을 함께하는 크루 + 기록! 같이 달리고 기록도 남겨요.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -152,7 +152,7 @@ footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
 
 <header>
   <div class="wrap nav">
-    <div class="logo"><span class="run">🏃‍♂️</span> 달려라 <b>대토신</b></div>
+    <div class="logo"><span class="run">🏃‍♂️</span> 모두의 <b>마라톤</b></div>
     <nav><ul>
       <li><a href="#about">소개</a></li>
       <li><a href="#schedule">모임·참석</a></li>
@@ -166,9 +166,9 @@ footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
 
 <div class="hero">
   <div class="hero-in wrap">
-    <span class="badge">🏅 대토신 사람들의 친목 러닝 크루</span>
-    <h1 class="han">달려라<br><span class="em">대토신!</span></h1>
-    <p>혼자 뛰면 운동, 같이 뛰면 추억.<br>매주 함께 달리고, 끝나면 더 즐겁게 모이는 우리들의 공간.</p>
+    <span class="badge">🏅 함께 달리는 러닝·마라톤 크루</span>
+    <h1 class="han">모두의<br><span class="em">마라톤!</span></h1>
+    <p>혼자 뛰면 운동, 같이 뛰면 추억.<br>함께 달리고 기록을 남기며, 마라톤까지 함께 완주하는 공간.</p>
     <div class="cta">
       <a class="btn btn-w" href="#schedule">📅 모임 참석하기</a>
       <a class="btn btn-o" href="#gallery">📸 사진 올리기</a>
@@ -250,9 +250,9 @@ footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
 </section>
 
 <footer>
-  <div class="fl">달려라 <b>대토신</b> 🏃</div>
-  <p>친목 러닝 크루 · 연습용 웹앱 · Made with ❤️ &amp; Firebase</p>
-  <p style="margin-top:4px">© <span id="yy"></span> 달려라 대토신</p>
+  <div class="fl">모두의 <b>마라톤</b> 🏃</div>
+  <p>러닝·마라톤 크루 + 기록 · Made with ❤️ &amp; Firebase</p>
+  <p style="margin-top:4px">© <span id="yy"></span> 모두의 마라톤</p>
 </footer>
 
 <div class="toast" id="toast"></div>
@@ -317,7 +317,7 @@ function myName(){ return myNameEl.value.trim(); }
 const EVENTS = [
   {id:'ev-0705', m:'7월', d:'05', title:'한강 야간 러닝 🌙', desc:'여의도공원 → 반포대교 · 저녁 7시 · 5km'},
   {id:'ev-0719', m:'7월', d:'19', title:'아침 산책런 ☀️', desc:'올림픽공원 한 바퀴 · 오전 8시 · 3km · 초보 환영'},
-  {id:'ev-0802', m:'8월', d:'02', title:'대토신 미니 마라톤 🏅', desc:'탄천 코스 · 오전 9시 · 10km · 완주 메달 증정'},
+  {id:'ev-0802', m:'8월', d:'02', title:'모두의 미니 마라톤 🏅', desc:'탄천 코스 · 오전 9시 · 10km · 완주 메달 증정'},
 ];
 let attData = {}; // eventId -> [{id,name}]
 function renderSchedule(){
