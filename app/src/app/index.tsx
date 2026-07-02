@@ -1,98 +1,173 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+/** 홈 · 크루 — 방명록 피드 (웹과 동일한 guestbook 컬렉션 공유). */
+import { useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { NameField } from "@/components/name-field";
+import { Brand } from "@/lib/brand";
+import { add, fmtDate, remove, subscribe, type Row } from "@/lib/crew";
+import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
+export default function CrewScreen() {
+  const [name, setName] = useState("");
+  const [msg, setMsg] = useState("");
+  const [guests, setGuests] = useState<Row[]>([]);
+
+  useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
+
+  async function submit() {
+    if (!name.trim()) {
+      Alert.alert("이름을 먼저 입력해 주세요 🙏");
+      return;
+    }
+    if (!msg.trim()) return;
+    await add(COLLECTIONS.guestbook, { name: name.trim(), msg: msg.trim() });
+    setMsg("");
   }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
+
+  function onDelete(id: string) {
+    Alert.alert("삭제할까요?", "", [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => void remove(COLLECTIONS.guestbook, id),
+      },
+    ]);
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+
+  const header = useMemo(
+    () => (
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>MODU MARATHON</Text>
+        <Text style={styles.title}>
+          모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
+        </Text>
+        <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억 🏃</Text>
+
+        {!HAS_FIREBASE && (
+          <View style={styles.banner}>
+            <Text style={styles.bannerText}>
+              ⚙️ Firebase 미설정 — 지금은 이 기기에만 저장됩니다. (.env 입력 시 크루끼리 공유)
+            </Text>
+          </View>
+        )}
+
+        <NameField onName={setName} />
+
+        <View style={styles.formCard}>
+          <Text style={styles.formLabel}>방명록 한마디</Text>
+          <TextInput
+            style={styles.msgInput}
+            value={msg}
+            onChangeText={setMsg}
+            placeholder="오늘도 화이팅! 다음 모임에 갈게요"
+            placeholderTextColor={Brand.soft}
+            maxLength={200}
+            multiline
+          />
+          <Pressable style={styles.btn} onPress={submit}>
+            <Text style={styles.btnText}>남기기 ✍️</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.listHint}>방명록 {guests.length}개</Text>
+      </View>
+    ),
+    [msg, name, guests.length]
   );
-}
 
-export default function HomeScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <FlatList
+        data={guests}
+        keyExtractor={(g) => g.id}
+        ListHeaderComponent={header}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요! 🎉</Text>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <View style={styles.itemHead}>
+              <Text style={styles.who}>{item.name}</Text>
+              <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
+            </View>
+            <Text style={styles.msg}>{item.msg}</Text>
+            <Pressable style={styles.del} onPress={() => onDelete(item.id)}>
+              <Text style={styles.delText}>✕</Text>
+            </Pressable>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+  screen: { flex: 1, backgroundColor: Brand.bg },
+  content: { padding: 18, gap: 12, paddingBottom: 120 },
+  header: { gap: 12, marginBottom: 4 },
+  eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
+  title: { fontSize: 34, fontWeight: "900", color: Brand.ink },
+  sub: { fontSize: 14, color: Brand.soft },
+  banner: {
+    backgroundColor: "#fff4e6",
+    borderWidth: 1,
+    borderColor: "#f4d6a8",
+    borderRadius: 12,
+    padding: 12,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  bannerText: { color: "#7a4a0a", fontSize: 12.5, fontWeight: "600" },
+  formCard: {
+    backgroundColor: Brand.card,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  formLabel: { fontSize: 13, fontWeight: "700", color: Brand.ink },
+  msgInput: {
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: Brand.ink,
+    minHeight: 64,
+    textAlignVertical: "top",
   },
-  title: {
-    textAlign: 'center',
+  btn: {
+    backgroundColor: Brand.brand,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
   },
-  code: {
-    textTransform: 'uppercase',
+  btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  listHint: { fontSize: 12.5, color: Brand.soft, fontWeight: "600", marginTop: 4 },
+  empty: { color: Brand.soft, fontSize: 14, textAlign: "center", paddingVertical: 24 },
+  item: {
+    backgroundColor: Brand.card,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 14,
+    padding: 15,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  itemHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  who: { fontWeight: "800", fontSize: 14, color: Brand.ink },
+  date: { fontSize: 12, color: Brand.soft },
+  msg: { fontSize: 14, color: "#333", marginTop: 5, paddingRight: 20 },
+  del: { position: "absolute", top: 10, right: 12, padding: 4 },
+  delText: { color: "#c9ced4", fontSize: 15 },
 });

@@ -35,4 +35,5 @@ export const COLLECTIONS = {
   guestbook: "guestbook", // { name, msg, createdAt }
   gallery: "gallery", // { name, caption, image, createdAt }
   attendance: "attendance", // { eventId, name, createdAt }
+  runs: "runs", // { name, distanceKm, durationMin, createdAt } — 러닝 기록(신규, 앱 M2)
 } as const;
