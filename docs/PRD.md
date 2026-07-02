@@ -28,7 +28,7 @@
 |---|---|---|
 | **M0** | 프로젝트 셋업(폴더·repo·기획·Firebase 프로젝트) | 진행중 |
 | **M1** | 웹 리브랜딩 (달려라 대토신 → 모두의 마라톤) | ✅ |
-| **M2** | Expo 앱 스캐폴드 + Firebase 연결 + 로그인 + 러닝 기록(수동) + 크루 피드 | ☐ |
+| **M2** | Expo 앱 스캐폴드 + Firebase 연결 + 로그인 + 러닝 기록(수동) + 크루 피드 | 🏃 진행중 |
 | **M3** | 스마트워치 연동(HealthKit / Health Connect로 기록 가져오기) | ☐ |
 | **M4** | 배포 — 웹(호스팅) · 앱(TestFlight / Play 내부테스트) | ☐ |
 
@@ -48,5 +48,5 @@ modu-marathon/
 
 ## 7. 다음 액션
 1. Firebase 프로젝트 생성/확인(기존 것 재활용 가능) → `docs/FIREBASE_SETUP.md`
-2. M1 웹 리브랜딩 텍스트·브랜딩 교체
-3. M2 `npx create-expo-app app` 스캐폴드 + Firebase 연결
+2. ~~M1 웹 리브랜딩~~ ✅ + 웹 디자인 업그레이드(디자인 시스템·브랜드 자산·SEO·접근성) ✅
+3. **M2 진행중** — `app/` Expo 스캐폴드(TS+Expo Router)·리브랜딩·Firebase 배선 완료 → 남은 것: `cd app && npm install`, `.env` 채우기, 로그인·러닝기록·크루피드 화면 구현
