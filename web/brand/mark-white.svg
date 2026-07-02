@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="모두의 마라톤">
+  <!-- 다크 배경(푸터 등)용 화이트 마크 -->
+  <g stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.55">
+    <line x1="8" y1="19" x2="17" y2="19"/>
+    <line x1="6" y1="27" x2="19" y2="27"/>
+    <line x1="9" y1="35" x2="16" y2="35"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="43" cy="13" r="5" fill="#ffffff" stroke="none"/>
+    <path d="M40 19 L27 31"/>
+    <path d="M39 21 L48 22"/>
+    <path d="M39 21 L31 15"/>
+    <path d="M27 31 L35 37 L39 48"/>
+    <path d="M27 31 L23 42 L16 46"/>
+  </g>
+</svg>
