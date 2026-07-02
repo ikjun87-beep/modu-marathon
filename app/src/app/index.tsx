@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { NameField } from "@/components/name-field";
+import { ScheduleSection } from "@/components/schedule-section";
 import { Brand } from "@/lib/brand";
 import { add, fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
@@ -62,6 +63,8 @@ export default function CrewScreen() {
         )}
 
         <NameField onName={setName} />
+
+        <ScheduleSection myName={name} />
 
         <View style={styles.formCard}>
           <Text style={styles.formLabel}>방명록 한마디</Text>
