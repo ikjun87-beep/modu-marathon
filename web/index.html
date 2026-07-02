@@ -3,21 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>모두의 마라톤 🏃 — 러닝·마라톤 크루 + 기록</title>
-<meta name="description" content="러닝·마라톤을 함께하는 사람들의 크루 + 기록 앱, 모두의 마라톤!">
-<meta property="og:title" content="모두의 마라톤 🏃">
-<meta property="og:description" content="러닝·마라톤을 함께하는 크루 + 기록! 같이 달리고 기록도 남겨요.">
+<title>모두의 마라톤 — 러닝·마라톤 크루 + 기록</title>
+<meta name="description" content="혼자 뛰면 운동, 같이 뛰면 추억. 러닝·마라톤을 함께하는 크루 + 기록 앱, 모두의 마라톤.">
+<meta name="author" content="모두의 마라톤">
+<meta name="theme-color" content="#ff5a3c">
+
+<!-- 파비콘 -->
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="brand/favicon.svg">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="모두의 마라톤">
+<meta property="og:title" content="모두의 마라톤 — 러닝·마라톤 크루 + 기록">
+<meta property="og:description" content="혼자 뛰면 운동, 같이 뛰면 추억. 같이 달리고 기록을 남겨요.">
+<meta property="og:image" content="brand/og.svg">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="모두의 마라톤 — 러닝·마라톤 크루 + 기록">
+<meta name="twitter:description" content="혼자 뛰면 운동, 같이 뛰면 추억. 같이 달리고 기록을 남겨요.">
+<meta name="twitter:image" content="brand/og.svg">
+
+<!-- 폰트: Pretendard(본문·UI) + Black Han Sans(디스플레이) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root{
   --ink:#1d2228; --soft:#5b636c; --line:#e7eaee; --bg:#f4f6f9;
-  --brand:#ff5a3c; --brand-deep:#e8401f; --accent:#1e8b6f; --gold:#f4b740; --card:#fff;
+  --brand:#ff5a3c; --brand-deep:#e8401f; --brand-soft:#fff0ec; --accent:#1e8b6f; --gold:#f4b740; --card:#fff;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+body{font-family:'Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1000px;margin:0 auto;padding:0 18px}
 .han{font-family:'Black Han Sans',sans-serif;font-weight:400;letter-spacing:-.5px}
 
@@ -142,7 +162,34 @@ footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
   .sch-att{align-items:flex-start;min-width:0;width:100%}
   .att-names{text-align:left;max-width:none}
 }
+
+/* ── 로고 이미지 ── */
+.logo img{width:30px;height:30px;display:block;flex:none}
+footer .fl img{width:26px;height:26px;vertical-align:-5px;margin-right:6px}
+
+/* ── 접근성: 키보드 포커스 링 ── */
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,.filebtn:focus-within{
+  outline:3px solid var(--brand);outline-offset:2px;border-radius:8px
+}
+
+/* ── 모션 최소화 선호 존중 (필수) ── */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .card:hover{transform:none}
+}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SportsClub",
+  "name": "모두의 마라톤",
+  "description": "혼자 뛰면 운동, 같이 뛰면 추억. 러닝·마라톤을 함께하는 크루 + 기록 앱.",
+  "sport": "Running",
+  "logo": "brand/logo-horizontal.svg",
+  "image": "brand/og.svg",
+  "slogan": "혼자 뛰면 운동, 같이 뛰면 추억"
+}
+</script>
 </head>
 <body>
 
@@ -152,15 +199,15 @@ footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
 
 <header>
   <div class="wrap nav">
-    <div class="logo"><span class="run">🏃‍♂️</span> 모두의 <b>마라톤</b></div>
-    <nav><ul>
+    <div class="logo"><img src="brand/mark.svg" alt="모두의 마라톤 로고" width="30" height="30"> 모두의 <b>마라톤</b></div>
+    <nav aria-label="주요 메뉴"><ul id="navmenu">
       <li><a href="#about">소개</a></li>
       <li><a href="#schedule">모임·참석</a></li>
       <li><a href="#gallery">갤러리</a></li>
       <li><a href="#members">멤버</a></li>
       <li><a href="#guest">방명록</a></li>
     </ul></nav>
-    <button class="menu-btn" onclick="var u=document.querySelector('nav ul');u.style.display=(getComputedStyle(u).display==='none'?'flex':'none')">☰</button>
+    <button class="menu-btn" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="navmenu" onclick="var u=document.getElementById('navmenu'),o=getComputedStyle(u).display==='none';u.style.display=o?'flex':'none';this.setAttribute('aria-expanded',o)"><span aria-hidden="true">☰</span></button>
   </div>
 </header>
 
@@ -250,7 +297,7 @@ footer p{font-size:13px;margin-top:8px;color:#9aa1a8}
 </section>
 
 <footer>
-  <div class="fl">모두의 <b>마라톤</b> 🏃</div>
+  <div class="fl"><img src="brand/mark-white.svg" alt="" width="26" height="26">모두의 <b>마라톤</b></div>
   <p>러닝·마라톤 크루 + 기록 · Made with ❤️ &amp; Firebase</p>
   <p style="margin-top:4px">© <span id="yy"></span> 모두의 마라톤</p>
 </footer>
@@ -307,6 +354,7 @@ function myName(){ return myNameEl.value.trim(); }
 /* 숫자 카운트업 (멤버) */
 (function(){
   const el=document.querySelector('.stat .num[data-n]'); if(!el)return;
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent=(+el.dataset.n).toLocaleString(); return; }
   const io=new IntersectionObserver(es=>es.forEach(e=>{ if(!e.isIntersecting)return;
     const t=+el.dataset.n; let c=0,s=Math.max(1,Math.round(t/50));
     const iv=setInterval(()=>{c+=s;if(c>=t){c=t;clearInterval(iv);}el.textContent=c.toLocaleString();},20); io.unobserve(el);
