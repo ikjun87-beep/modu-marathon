@@ -8,9 +8,12 @@
     "scheme": "modumarathon",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.modumarathon.app",
+      "supportsTablet": true
     },
     "android": {
+      "package": "com.modumarathon.app",
       "adaptiveIcon": {
         "backgroundColor": "#fff0ec",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
