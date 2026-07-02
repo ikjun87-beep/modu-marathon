@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { GallerySection } from "@/components/gallery-section";
 import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { Brand } from "@/lib/brand";
@@ -65,6 +66,8 @@ export default function CrewScreen() {
         <NameField onName={setName} />
 
         <ScheduleSection myName={name} />
+
+        <GallerySection myName={name} />
 
         <View style={styles.formCard}>
           <Text style={styles.formLabel}>방명록 한마디</Text>

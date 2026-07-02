@@ -26,7 +26,7 @@ if (!HAS_FIREBASE && __DEV__) {
 }
 
 // Fast Refresh에서 중복 초기화 방지
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 

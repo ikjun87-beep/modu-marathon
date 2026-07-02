@@ -18,10 +18,12 @@
 - [x] 크루 피드(방명록, `src/app/index.tsx`) — 웹과 guestbook 공유
 - [x] 러닝 기록(거리·시간·페이스, `src/app/explore.tsx`) — runs 컬렉션
 - [x] 데이터 레이어(`src/lib/crew.ts`): Firebase 있으면 실시간, 없으면 로컬 폴백
+- [x] 모임 참석 체크(`schedule-section`) + 갤러리(`gallery-section`, 사진 리사이즈→base64) — 웹 attendance/gallery 공유
+- [x] Auth 배선 foundation(`src/lib/auth.ts`) — 이름 기반 신원 유지, Firebase 연결 시 게스트/이메일 로그인 확장 예정
 - [x] 검증: `npx expo export --platform web` 번들 성공(정적 렌더 통과)
-- [ ] **로그인(Firebase Auth)** — 현재는 이름 기반 신원(session). 다음 슬라이스
-- [ ] 갤러리(사진 업로드)·모임 참석 체크 화면 (웹 gallery/attendance 대응)
-- [ ] 실기기/에뮬레이터 확인(`npm run ios`/`android`), `.env`에 Firebase 값 입력
+- [ ] **실제 Firebase 연결**: `.env`에 값 입력(사용자 제공 필요) → 웹·앱 실시간 공유 확인
+- [ ] 로그인 화면/게이팅 완성(RN 영속성 `getReactNativePersistence`) — 실기기 테스트와 함께
+- [ ] 실기기/에뮬레이터 확인(`npm run ios`/`android`)
 
 ## 시작하기
 ```bash
