@@ -22,7 +22,8 @@
 - [x] Auth 배선 foundation(`src/lib/auth.ts`) — 이름 기반 신원 유지, Firebase 연결 시 게스트/이메일 로그인 확장 예정
 - [x] 검증: `npx expo export --platform web` 번들 성공(정적 렌더 통과)
 - [ ] **실제 Firebase 연결**: `.env`에 값 입력(사용자 제공 필요) → 웹·앱 실시간 공유 확인
-- [ ] 로그인 화면/게이팅 완성(RN 영속성 `getReactNativePersistence`) — 실기기 테스트와 함께
+- [x] 첫 실행 온보딩 게이트(`onboarding-gate.tsx`) — 이름 없으면 환영 화면 → 저장 후 진입(`_layout.tsx`에서 `AppTabs` 래핑)
+- [ ] Firebase Auth 로그인/영속성 완성(`getReactNativePersistence`, 게스트·이메일) — 실기기 테스트와 함께
 - [ ] 실기기/에뮬레이터 확인(`npm run ios`/`android`)
 
 ## 시작하기
