@@ -12,8 +12,9 @@ web/                  홈페이지(정적 HTML 단일 파일)
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
   src/app/            화면(Expo Router 파일 라우팅): index=크루, explore=러닝
-  src/lib/            firebase.ts·crew.ts(데이터)·session.ts·auth.ts·brand.ts
-  src/components/      name-field·schedule-section·gallery-section 등
+  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·healthconnect.ts(갤럭시워치)·session·auth·brand
+  src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·name-field·schedule-section·gallery-section 등
+  scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
   eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production)
 docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP
 firestore.rules       Firestore 보안 규칙
@@ -23,8 +24,8 @@ firestore.rules       Firestore 보안 규칙
 ## 기술 스택
 - 백엔드: **Firebase**(Auth·Firestore·Storage) — 웹·앱·워치 공용 단일 소스
 - 웹: 정적 HTML/CSS/JS (빌드 없음), Firebase JS SDK(CDN)
-- 앱: **Expo SDK 57 · React Native · TypeScript · Expo Router**, firebase npm, AsyncStorage
-- 워치(2단계): HealthKit(iOS) / Health Connect(Android)로 기록 읽기
+- 앱: **Expo SDK 57 · React Native · TypeScript · Expo Router**, firebase npm, AsyncStorage, react-native-svg, expo-location(실시간 GPS), react-native-health-connect(갤럭시워치)
+- 워치: Health Connect(Android/갤럭시) — **minSdk 26 필수**(`expo-build-properties`로 지정, dev/preview build 전용). HealthKit(iOS)은 후행
 
 ## 주요 명령어
 ```bash
