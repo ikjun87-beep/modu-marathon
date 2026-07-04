@@ -146,7 +146,18 @@
 - **다크 모드**: 앱은 라이트+다크 동시(Strava·NRC·adidas 기본). 홈페이지는 프리미엄 라이트로 의도적 단일 커밋.
 - **색·사진**: 단일 Brand Orange 유지(Garmin 무지개 지양), 실제 크루원의 따뜻한 러닝 실사진(엘리트 아님).
 
+### 아이콘 시스템 (교보·영풍식 정제 + 캐치테이블식 통일 — 이모지 추방)
+- **원칙: UI 아이콘에 이모지 금지.** AI스러움의 최대 원인. 대신 **단일 라인 SVG 스프라이트**로 통일.
+- 스펙: **24 그리드 · `stroke-width` 1.75 · `currentColor` · round cap/join**. `web/index.html` `<svg><defs><symbol id="i-*">` 20종, 본문에서 `<svg class="ic"><use href="#i-*"/></svg>`로 참조. 크기는 부모 `font-size`로 제어(`.ic{width:1em;height:1em}`).
+- 세트: `i-arrow·calendar·camera·activity·watch·run·flag·gauge·shield·coffee·users·bell·chat·instagram·award·pin·check·heart·menu·close·user·edit·signal`.
+- **브랜드 정합**: `i-run`은 `brand/mark.svg` 러너 실루엣을 24그리드로 재현 → 앱 탭(크루)·웹 목업·멤버 아바타가 동일 러너로 묶임. 러닝 탭은 `i-activity`(맥박) — 앱 2탭(크루/러닝)과 일치.
+- 이모지는 **동적 마이크로카피(토스트)에만** 잔존 허용(사람 냄새). 이벤트 카드·기능·멤버 등 **정적 UI는 전부 스프라이트**.
+
+### 디스플레이 폰트 위계 (교보식 절제)
+- **Black Han Sans는 로고·수치·히어로 h1·`.s-title`에만** 한정. 섹션 헤드(`.sec-head h2`)는 **Pretendard 800 + `letter-spacing:-1.1px`**로 차분하게(디스플레이 과부하 방지).
+- 신뢰 밴드(`.trust`)는 **라이트(`--warm`)+헤어라인 구분선+잉크 숫자**, 오렌지는 단위(`small`)에만. 아바타는 뉴트럴 1색+대표만 오렌지. → "웜 스타트업"이 아니라 "에디토리얼 프리미엄".
+
 ### 자산 TODO
-- 히어로/갤러리 **실제 크루 러닝 사진** 확보 → 폰 목업 옆·UGC 그리드에 투입(현재는 목업·그라데이션 플레이스홀더).
-- **OG PNG(1200×630)**, 앱 스토어 배지, 카톡 오픈채팅·인스타 실제 링크.
+- 히어로/갤러리 **실제 크루 러닝 사진** 확보 → 폰 목업 옆·UGC 그리드에 투입(현재는 목업·토널 플레이스홀더).
+- **OG PNG(1200×630)**, 앱 스토어 배지, 카톡 오픈채팅·인스타 실제 링크(현재 `data-todo`로 안내 토스트 처리).
 </invoke>
