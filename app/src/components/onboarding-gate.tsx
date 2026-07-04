@@ -16,13 +16,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Icon, type IconName } from "@/components/icon";
 import { Brand } from "@/lib/brand";
 import { getMyName, setMyName } from "@/lib/session";
 
-const PERKS = [
-  { icon: "🗓️", label: "모임 참석 체크" },
-  { icon: "📸", label: "함께 뛴 순간 갤러리" },
-  { icon: "🏃", label: "거리·페이스 기록" },
+const PERKS: { icon: IconName; label: string }[] = [
+  { icon: "calendar", label: "모임 참석 체크" },
+  { icon: "camera", label: "함께 뛴 순간 갤러리" },
+  { icon: "activity", label: "거리·페이스 기록" },
 ];
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
@@ -66,12 +67,14 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           <Text style={styles.title}>
             모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
           </Text>
-          <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억 🏃</Text>
+          <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
 
           <View style={styles.perks}>
             {PERKS.map((p) => (
               <View key={p.label} style={styles.perk}>
-                <Text style={styles.perkIcon}>{p.icon}</Text>
+                <View style={styles.perkBadge}>
+                  <Icon name={p.icon} size={20} color={Brand.brandDeep} />
+                </View>
                 <Text style={styles.perkLabel}>{p.label}</Text>
               </View>
             ))}
@@ -125,7 +128,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
   },
-  perkIcon: { fontSize: 20 },
+  perkBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Brand.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   perkLabel: { fontSize: 15, fontWeight: "700", color: Brand.ink },
   form: { paddingHorizontal: 28, paddingBottom: 12, gap: 10 },
   label: { fontSize: 15, fontWeight: "800", color: Brand.ink },

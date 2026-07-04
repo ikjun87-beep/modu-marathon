@@ -35,5 +35,10 @@ export const COLLECTIONS = {
   guestbook: "guestbook", // { name, msg, createdAt }
   gallery: "gallery", // { name, caption, image, createdAt }
   attendance: "attendance", // { eventId, name, createdAt }
-  runs: "runs", // { name, distanceKm, durationMin, createdAt } — 러닝 기록(신규, 앱 M2)
+  // 러닝 기록 — 통합 Run 스키마(수동·GPS·워치 공용, 앱 M3)
+  // { source: 'manual'|'gps'|'healthconnect'|'garmin', sourceId?, name,
+  //   distanceKm, durationSec, durationMin(호환), paceSecPerKm?, startedAt?,
+  //   avgHr?, cadence?, createdAt }
+  // 워치/외부 소스는 문서 id를 `${source}_${sourceId}`로 두어 멱등 upsert(중복 방지).
+  runs: "runs",
 } as const;

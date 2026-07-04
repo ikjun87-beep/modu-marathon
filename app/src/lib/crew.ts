@@ -10,6 +10,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { db, HAS_FIREBASE } from "./firebase";
 
@@ -26,6 +27,14 @@ function fbAdd(col: string, item: Record<string, any>) {
 }
 function fbRemove(col: string, id: string) {
   return deleteDoc(doc(db, col, id));
+}
+/** 결정적 문서 id로 upsert(멱등) — 워치/외부 소스 중복 방지. createdAtMs 있으면 그 시각으로 고정. */
+function fbPut(col: string, id: string, item: Record<string, any>, createdAtMs?: number) {
+  return setDoc(
+    doc(db, col, id),
+    { ...item, createdAt: createdAtMs ? new Date(createdAtMs) : serverTimestamp() },
+    { merge: true }
+  );
 }
 
 // ── 로컬 폴백 (AsyncStorage + 간단 pub/sub) ──
@@ -58,6 +67,15 @@ async function localRemove(col: string, id: string) {
   await AsyncStorage.setItem(lkey(col), JSON.stringify(list));
   emit(col);
 }
+async function localPut(col: string, id: string, item: Record<string, any>, createdAtMs?: number) {
+  const list = await localGet(col);
+  const rec: Row = { id, createdAt: createdAtMs ?? Date.now(), ...item };
+  const i = list.findIndex((x) => x.id === id);
+  if (i >= 0) list[i] = { ...list[i], ...rec };
+  else list.unshift(rec);
+  await AsyncStorage.setItem(lkey(col), JSON.stringify(list.slice(0, 200)));
+  emit(col);
+}
 
 // ── 통합 API ──
 export function subscribe(col: string, cb: (rows: Row[]) => void): () => void {
@@ -68,6 +86,15 @@ export function add(col: string, item: Record<string, any>): Promise<unknown> {
 }
 export function remove(col: string, id: string): Promise<unknown> {
   return HAS_FIREBASE ? fbRemove(col, id) : localRemove(col, id);
+}
+/** 결정적 id로 upsert(멱등). 워치/외부 소스 동기화의 중복 방지에 사용. */
+export function put(
+  col: string,
+  id: string,
+  item: Record<string, any>,
+  createdAtMs?: number
+): Promise<unknown> {
+  return HAS_FIREBASE ? fbPut(col, id, item, createdAtMs) : localPut(col, id, item, createdAtMs);
 }
 
 /** createdAt(Firestore Timestamp | number)을 ko 날짜 문자열로 */

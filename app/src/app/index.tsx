@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { GallerySection } from "@/components/gallery-section";
+import { Icon } from "@/components/icon";
 import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { Brand } from "@/lib/brand";
@@ -49,16 +50,19 @@ export default function CrewScreen() {
   const header = useMemo(
     () => (
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>MODU MARATHON</Text>
+        <View style={styles.eyebrowRow}>
+          <Icon name="users" size={15} color={Brand.brand} />
+          <Text style={styles.eyebrow}>MODU MARATHON</Text>
+        </View>
         <Text style={styles.title}>
           모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
         </Text>
-        <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억 🏃</Text>
+        <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
 
         {!HAS_FIREBASE && (
           <View style={styles.banner}>
             <Text style={styles.bannerText}>
-              ⚙️ Firebase 미설정 — 지금은 이 기기에만 저장됩니다. (.env 입력 시 크루끼리 공유)
+              Firebase 미설정 — 지금은 이 기기에만 저장됩니다. (.env 입력 시 크루끼리 공유)
             </Text>
           </View>
         )}
@@ -81,7 +85,8 @@ export default function CrewScreen() {
             multiline
           />
           <Pressable style={styles.btn} onPress={submit}>
-            <Text style={styles.btnText}>남기기 ✍️</Text>
+            <Icon name="chat" size={17} color="#fff" />
+            <Text style={styles.btnText}>남기기</Text>
           </Pressable>
         </View>
 
@@ -100,7 +105,7 @@ export default function CrewScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요! 🎉</Text>
+          <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요!</Text>
         }
         renderItem={({ item }) => (
           <View style={styles.item}>
@@ -109,8 +114,8 @@ export default function CrewScreen() {
               <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
             </View>
             <Text style={styles.msg}>{item.msg}</Text>
-            <Pressable style={styles.del} onPress={() => onDelete(item.id)}>
-              <Text style={styles.delText}>✕</Text>
+            <Pressable style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
+              <Icon name="close" size={16} color={Brand.faint} />
             </Pressable>
           </View>
         )}
@@ -123,8 +128,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 120 },
   header: { gap: 12, marginBottom: 4 },
+  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
-  title: { fontSize: 34, fontWeight: "900", color: Brand.ink },
+  title: { fontSize: 34, fontWeight: "900", color: Brand.ink, letterSpacing: -0.8 },
   sub: { fontSize: 14, color: Brand.soft },
   banner: {
     backgroundColor: "#fff4e6",
@@ -155,10 +161,14 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   btn: {
-    backgroundColor: Brand.brand,
-    borderRadius: 10,
-    paddingVertical: 12,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    backgroundColor: Brand.brand,
+    borderRadius: 11,
+    paddingVertical: 13,
+    minHeight: 48,
   },
   btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   listHint: { fontSize: 12.5, color: Brand.soft, fontWeight: "600", marginTop: 4 },
@@ -174,6 +184,5 @@ const styles = StyleSheet.create({
   who: { fontWeight: "800", fontSize: 14, color: Brand.ink },
   date: { fontSize: 12, color: Brand.soft },
   msg: { fontSize: 14, color: "#333", marginTop: 5, paddingRight: 20 },
-  del: { position: "absolute", top: 10, right: 12, padding: 4 },
-  delText: { color: "#c9ced4", fontSize: 15 },
+  del: { position: "absolute", top: 10, right: 12, padding: 6 },
 });

@@ -5,6 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "@/components/icon";
 import { Brand } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -76,12 +77,13 @@ export function GallerySection({ myName }: { myName: string }) {
           onPress={pick}
           disabled={busy}
         >
-          <Text style={styles.upText}>{busy ? "업로드 중…" : "📸 사진 올리기"}</Text>
+          {!busy && <Icon name="camera" size={15} color="#fff" />}
+          <Text style={styles.upText}>{busy ? "업로드 중…" : "사진 올리기"}</Text>
         </Pressable>
       </View>
 
       {rows.length === 0 ? (
-        <Text style={styles.empty}>아직 사진이 없어요. 첫 인증샷을 올려보세요! 📸</Text>
+        <Text style={styles.empty}>아직 사진이 없어요. 첫 인증샷을 올려보세요!</Text>
       ) : (
         <View style={styles.grid}>
           {rows.map((g) => (
@@ -111,6 +113,9 @@ const styles = StyleSheet.create({
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   h: { fontSize: 15, fontWeight: "800", color: Brand.ink },
   up: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     backgroundColor: Brand.brand,
     borderRadius: 10,
     paddingVertical: 8,
