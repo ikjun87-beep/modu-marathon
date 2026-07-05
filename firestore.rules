@@ -1,20 +1,52 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 친목용: 누구나 읽고/쓰기. 글자수·이미지 크기 제한으로 도배 방지.
+    // 친목용: 누구나 읽기. 생성은 타입·크기 검증으로 도배/오염 방지.
+    // ⚠ 인증(Firebase Auth) 도입 전까지 delete는 소유 검증이 불가능하다.
+    //    delete 버튼(방명록·갤러리·참석취소·러닝)을 살리려면 전면 허용이 유일한 방법이므로,
+    //    비정상 클라이언트(REST 스크립트 등)의 대량삭제·도배는 App Check(Play Integrity/reCAPTCHA)로 차단하는 것을 전제로 한다.
+    //    (P5 자문 게이트: 곽재원·천도윤 공통 권고 — Auth 도입 시 소유 기반 delete로 교체)
     match /guestbook/{id} {
       allow read: if true;
-      allow create: if request.resource.data.name.size() <= 20
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.name.size() <= 20
+                    && request.resource.data.msg is string
                     && request.resource.data.msg.size() <= 200;
+      allow update: if false;
       allow delete: if true;
     }
     match /gallery/{id} {
       allow read: if true;
-      allow create: if request.resource.data.image.size() < 1000000;
+      allow create: if request.resource.data.image is string
+                    && request.resource.data.image.size() < 1000000;
+      allow update: if false;
       allow delete: if true;
     }
     match /attendance/{id} {
-      allow read, create, delete: if true;
+      allow read: if true;
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.name.size() <= 40;
+      allow update: if false;
+      allow delete: if true;   // 참석 취소 토글(remove)
+    }
+    // 러닝 기록(웹·앱·워치 공용). 결정적 id로 멱등 upsert(create+update=merge).
+    // distanceKm 범위 검증으로 today 합산·리더보드 통계 오염 방지(천도윤 #4).
+    match /runs/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.name is string
+                    && request.resource.data.name.size() <= 40
+                    && request.resource.data.distanceKm is number
+                    && request.resource.data.distanceKm >= 0
+                    && request.resource.data.distanceKm <= 500;
+      allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx)
+    }
+    // 앱 출시 알림 대기자(이메일). 열람 차단 — 관리자만 Firebase 콘솔에서 조회.
+    // (곽재원 Blocker #1·천도윤 #2 공통: 이메일 하베스팅 차단)
+    match /waitlist/{id} {
+      allow read: if false;
+      allow create: if request.resource.data.email is string
+                    && request.resource.data.email.size() <= 320;
+      allow update, delete: if false;
     }
   }
 }

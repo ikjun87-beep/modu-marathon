@@ -676,6 +676,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, where, onSnapshot, serverTimestamp, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaV3Provider }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 /* ════════════════════════════════════════════════════════════════
    🔧 여기에 Firebase 설정을 붙여넣으세요 (FIREBASE_SETUP.md 참고)
@@ -691,10 +693,21 @@ const firebaseConfig = {
 };
 /* ════════════════════════════════════════════════════════════════ */
 
+/* App Check(reCAPTCHA v3) — 비정상 클라이언트(REST 스크립트 등)의 대량삭제·이메일수거·봇도배 차단.
+   Firebase 콘솔 → App Check → 웹앱 등록 → reCAPTCHA v3 → site key 발급 후 아래에 붙여넣기.
+   비워두면 비활성(현행과 동일). 활성 후에는 콘솔에서 monitor→enforce 순으로 전환. (FIREBASE_SETUP.md) */
+const APPCHECK_SITE_KEY = "";
+
 const HAS_FB = !!firebaseConfig.projectId;
 let db = null;
 if (HAS_FB) {
   const app = initializeApp(firebaseConfig);
+  if (APPCHECK_SITE_KEY) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(APPCHECK_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  }
   db = getFirestore(app);
 } else {
   document.getElementById('cfgBanner').style.display = 'block';

@@ -111,6 +111,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     try {
       await saveRun({
         source: "gps",
+        sourceId: String(startedAt.current || Date.now()), // 멱등 upsert — 재탭·재시도 시 중복 저장 방지
         name: name.trim() || "익명",
         distanceKm: km,
         durationSec: elapsed,
