@@ -1,7 +1,7 @@
 # JN.md — 작업 진행노트
 
 > 매 세션 여기부터 읽고 이어서 작업. 고정 정보는 [`CLAUDE.md`](CLAUDE.md).
-> 최종 업데이트: 2026-07-06 (P4 관찰버그 #3·#7 코드수정 + P5 블로커3 건강 별도동의 게이트 구현 — 병목 대기 중 코드처리 가능분 완료)
+> 최종 업데이트: 2026-07-06 (★ Firebase 실연결 완료·실증 — 회장이 실프로젝트 `modu-marathon` 생성+config 웹·앱 주입, Firestore DB 생성+규칙 배포, 웹 방명록→Firestore 쓰기·읽기 확인. 성공기준 ② 웹측 달성. firebase.json/.firebaserc 추가.)
 
 ---
 
@@ -90,6 +90,16 @@
 - ⚠️ **잔여 P5 블로커**: (1) App Check 콘솔 site key 발급(회장) + 앱 native 모듈 도입 확인 → monitor→enforce, (2) 처리방침 placeholder(보호책임자 성명·연락처) 실값 채워 웹 게시 + 앱 온보딩에 링크, (3) 건강(심박) 민감정보 **별도 동의 게이트** UI + app.json 건강권한 목적고지 문구, (4) `ACCESS_BACKGROUND_LOCATION`은 러닝 앱 정당 권한이라 유지 — 단 **정식 플레이 출시(M5)** 때 심사 정당화 필요(이번 사이드로드 범위엔 무해).
 
 **완성 사이클 현황**: P1·P2 ✅ / P3 ✅(Firebase 키 대기) / **P4 🔵 코드검증 완료·실기기 검증 대기 / P5 🔵 규칙 1차 강화·잔여 블로커 4건 / P6 ⬜**. 남은 완성 경로 = 회장 물리입력 2건(Firebase 키·실기기) + P5 결정 4건 → main 머지 → 추인.
+
+### 📋 ★ Firebase 실연결 완료 (2026-07-06 · 회장 물리입력 1/2 해소)
+
+> 완성 사이클 최대 병목이던 "Firebase 실키"가 풀렸다. 회장이 콘솔에서 직접 실프로젝트 생성·config 주입·DB 생성·규칙 배포까지 수행, 웹→Firestore 실연결을 **눈으로 실증**.
+
+- **실프로젝트 `modu-marathon` 생성** + firebaseConfig 6값을 `web/index.html`·`app/.env` 양쪽에 동일 주입(`HAS_FIREBASE`/`HAS_FB` 게이트 자동 실연결 전환). 웹 apiKey는 공개키라 커밋 정책상 웹 HTML에 커밋(정적 무빌드 배포 전제 · 보안은 규칙+App Check).
+- **Firestore DB `(default)` 생성**(서울) + **firestore.rules 콘솔 배포**(오늘 3:25) — 규칙 화면이 저장소 `firestore.rules`와 정확히 일치 확인.
+- **웹→Firebase 실증**: 웹 방명록 "쫀쫀샷" 작성 → Firestore `guestbook` 컬렉션에 문서(createdAt·msg·name) 저장 + 웹 목록 렌더 확인. **성공기준 ② 웹측 달성.**
+- **배포 스캐폴딩 추가**: `firebase.json`(firestore.rules 지정)·`.firebaserc`(default=modu-marathon) → 이후 `npx firebase-tools deploy --only firestore:rules`로 CLI 배포 가능.
+- **잔여**: (1) 앱측 교차확인(앱에서 같은 방명록 보이면 ② 완전 달성), (2) 실기기 APK 검증(성공기준 ①③ — 남은 물리 병목), (3) main 머지→추인. App Check site key·enforce는 여전히 보류(앱 native 모듈 도입 결정 대기).
 
 ### 📋 P4 관찰버그·P5 건강동의 코드처리 (2026-07-06 · 병목 대기 중 처리)
 
