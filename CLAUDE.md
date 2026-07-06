@@ -12,7 +12,7 @@ web/                  홈페이지(정적 HTML 단일 파일)
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
   src/app/            화면(Expo Router 파일 라우팅): index=크루, explore=러닝
-  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·healthconnect.ts(갤럭시워치)·session·auth·brand
+  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·session·auth·brand
   src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·name-field·schedule-section·gallery-section 등
   scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
   eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production)
