@@ -118,6 +118,17 @@
 >
 > **1차(config) 성과 확정**: 회장 실기기서 "미설정 배너 사라짐 + 방명록 Firebase 표시" 확인 → **성공기준 ② 실기기 설치본에서도 100% 완결**.
 
+### 📋 UI 버그 2건 수정 + 워치 크래시 심층진단 + 3차 빌드 (2026-07-06)
+
+> 회장 2차 APK 실기기 피드백 3건: ①온보딩 이름칸을 키보드가 가림 ②방명록 항목 날짜/삭제X 겹침 ③[워치 불러오기] 여전히 크래시(권한 있음에도).
+- **UI #1 수정**(`onboarding-gate.tsx`): 안드로이드 `KeyboardAvoidingView` behavior가 `undefined`라 edge-to-edge(SDK57)에서 키보드가 입력칸을 가림 → `behavior="height"` + `ScrollView`로 감쌈.
+- **UI #2 수정**(`index.tsx`): 방명록 `itemHead`에 `paddingRight:26` — 우상단 절대배치 삭제(X)와 날짜 겹침 해소.
+- **워치 이중탭 방어**(`explore.tsx`): `syncWatch` 진입 즉시 `setSyncing(true)`, 동의창 취소/dismiss 시 해제, `runWatchSync` try/finally. 크래시가 중복호출 탓이면 완화.
+- **워치 크래시 심층진단(추측 아닌 확인)**: 로컬 `expo prebuild`로 매니페스트 검사 → **health 권한 3개·rationale 인텐트 정상 포함**(권한 문제 아님). RNHC healthdata `<queries>`는 라이브러리 매니페스트 선언→빌드 병합(가시성 OK). **핵심 제약: 스택이 RN 0.86 + Expo SDK57 최신인데 `react-native-health-connect`는 3.5.3이 이미 최신 = 버전업 여지 없음.** 최신 RN 신아키텍처(newArchEnabled=true)에서 RNHC TurboModule 네이티브 불안정이 유력 → **코드로 못 고침, 디바이스 crash 로그(adb logcat) 필요.**
+- **3차 재빌드 완료 ✅**: 빌드 ID `faa3a6ee-892b-430a-a894-002a5e63cf19`. **최신 APK: `https://expo.dev/artifacts/eas/TZmtYffmtiCSRiUpbN0m6hSg9bXjQkmXQMuldNq8364.apk`** (앞선 링크 모두 폐기). 재설치(기존앱 삭제) → UI 2건 수정 확인 + 워치 재확인. **워치 여전히 크래시면**: (A) 회장이 폰 USB디버깅 연결→`adb logcat`으로 정밀진단(워치 살릴 최선) or (B) 워치 버튼 "준비 중" 페일세이프로 막고 완성 먼저 머지, 로그 확보 후 재개. 회장 선택: **막히지 말고 진행 — 워치 보류, ③ 개인정보·확산 등 딴 것 먼저.**
+
+### ⏳ 워치 후속(회장 USB 연결 시): adb logcat으로 [워치 불러오기] 크래시 네이티브 스택 확보 → RNHC 3.5.3+RN0.86 신아키 이슈 정밀수정. USB는 나중에.
+
 ### 📋 P4 관찰버그·P5 건강동의 코드처리 (2026-07-06 · 병목 대기 중 처리)
 
 > 회장 물리입력 2건(Firebase 키·실기기)을 기다리는 동안, **실기기·키 없이도 끝낼 수 있는 P4/P5 잔여를 선처리**. `tsc` 0에러 + `expo export --platform web` 그린 재확인.
