@@ -15,6 +15,9 @@ import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/r
 type Props = { visible: boolean; name: string; onClose: (saved: boolean) => void };
 type Phase = "idle" | "running" | "paused" | "saving";
 
+// 사람 러닝 속도 상한(m/s). 9m/s≈32km/h — 스프린트도 포함, 이 이상은 GPS 튐으로 간주해 거리 미가산.
+const MAX_SPEED_MS = 9;
+
 export function LiveRunModal({ visible, name, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [distanceM, setDistanceM] = useState(0);
@@ -24,6 +27,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
   const sub = useRef<Location.LocationSubscription | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const last = useRef<LatLng | null>(null);
+  const lastAt = useRef<number>(0); // 직전 채택 좌표의 시각(ms) — 속도 게이트용
   const startedAt = useRef<number>(0);
   const phaseRef = useRef<Phase>("idle");
   phaseRef.current = phase;
@@ -47,6 +51,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     setElapsed(0);
     setErr(null);
     last.current = null;
+    lastAt.current = 0;
     startedAt.current = 0;
   }
 
@@ -74,12 +79,18 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
           if (phaseRef.current !== "running") return;
           const cur: LatLng = { lat: loc.coords.latitude, lng: loc.coords.longitude };
           const acc = loc.coords.accuracy ?? 999;
-          if (last.current && acc <= 30) {
+          const t = loc.timestamp || Date.now();
+          if (last.current && lastAt.current && acc <= 30) {
             const d = haversine(last.current, cur);
-            // 1.5m~60m 구간만 채택 — 정지 드리프트·GPS 튐 제거
-            if (d >= 1.5 && d <= 60) setDistanceM((m) => m + d);
+            const dt = (t - lastAt.current) / 1000; // 초
+            const speed = dt > 0 ? d / dt : Infinity; // m/s
+            // 1.5m~60m 구간 + 속도 상한(9m/s≈32km/h) 채택 — 정지 드리프트·GPS 튐 제거
+            if (d >= 1.5 && d <= 60 && speed <= MAX_SPEED_MS) setDistanceM((m) => m + d);
           }
-          if (acc <= 30) last.current = cur;
+          if (acc <= 30) {
+            last.current = cur;
+            lastAt.current = t;
+          }
         }
       );
     } catch {
@@ -92,6 +103,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
   function pause() {
     setPhase("paused");
     last.current = null; // 재개 시 튐 방지
+    lastAt.current = 0;
   }
   function resume() {
     setPhase("running");

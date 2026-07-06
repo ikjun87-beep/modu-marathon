@@ -12,6 +12,7 @@ import { NameField } from "@/components/name-field";
 import { Brand } from "@/lib/brand";
 import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
+import { hasHealthConsent, setHealthConsent } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
 import { fmtDuration, paceLabel, saveRun, todayKm } from "@/lib/run";
 
@@ -74,8 +75,32 @@ export default function RunScreen() {
       );
       return;
     }
+    // 심박은 민감정보(건강) — 별도 동의가 있을 때만 함께 수집. 최초 1회 명시 동의.
+    const consented = await hasHealthConsent();
+    if (consented) {
+      await runWatchSync(true);
+      return;
+    }
+    Alert.alert(
+      "건강정보 수집 동의",
+      "워치 러닝을 불러올 때 심박 등 건강정보(민감정보)를 함께 저장하려면 별도 동의가 필요해요. 동의하지 않아도 거리·시간·페이스는 불러올 수 있어요.",
+      [
+        { text: "취소", style: "cancel" },
+        { text: "심박 없이 불러오기", onPress: () => void runWatchSync(false) },
+        {
+          text: "동의하고 불러오기",
+          onPress: async () => {
+            await setHealthConsent(true);
+            await runWatchSync(true);
+          },
+        },
+      ]
+    );
+  }
+
+  async function runWatchSync(withHeartRate: boolean) {
     setSyncing(true);
-    const r = await syncTodayRuns(name.trim());
+    const r = await syncTodayRuns(name.trim(), { readHeartRate: withHeartRate });
     setSyncing(false);
     Alert.alert(
       r.ok ? "워치 동기화 완료" : "워치 동기화",

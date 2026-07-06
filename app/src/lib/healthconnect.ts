@@ -30,8 +30,15 @@ function overlaps(aS: number, aE: number, bS: number, bE: number): boolean {
   return aS < bE && bS < aE;
 }
 
-/** 오늘 러닝을 Health Connect에서 읽어 runs에 멱등 저장. name은 이 기기 사용자 이름. */
-export async function syncTodayRuns(name: string): Promise<SyncResult> {
+/**
+ * 오늘 러닝을 Health Connect에서 읽어 runs에 멱등 저장. name은 이 기기 사용자 이름.
+ * readHeartRate=false면 심박(민감정보)을 읽지도·저장하지도 않는다 — 별도 동의 미승인 시 최소수집.
+ */
+export async function syncTodayRuns(
+  name: string,
+  opts: { readHeartRate?: boolean } = {}
+): Promise<SyncResult> {
+  const readHeartRate = opts.readHeartRate ?? false;
   if (!HC_SUPPORTED) {
     return { ok: false, synced: 0, totalKm: 0, reason: "안드로이드에서만 지원돼요." };
   }
@@ -55,11 +62,13 @@ export async function syncTodayRuns(name: string): Promise<SyncResult> {
     const inited = await HC.initialize();
     if (!inited) return { ok: false, synced: 0, totalKm: 0, reason: "Health Connect 초기화 실패." };
 
-    await HC.requestPermission([
+    // 심박(민감정보)은 별도 동의(readHeartRate)가 있을 때만 권한 요청 — 최소수집 원칙
+    const perms: any[] = [
       { accessType: "read", recordType: "ExerciseSession" },
       { accessType: "read", recordType: "Distance" },
-      { accessType: "read", recordType: "HeartRate" },
-    ]);
+    ];
+    if (readHeartRate) perms.push({ accessType: "read", recordType: "HeartRate" });
+    await HC.requestPermission(perms);
 
     const timeRangeFilter = {
       operator: "between" as const,
@@ -69,10 +78,13 @@ export async function syncTodayRuns(name: string): Promise<SyncResult> {
 
     const sessionsRes: any = await HC.readRecords("ExerciseSession", { timeRangeFilter });
     const distRes: any = await HC.readRecords("Distance", { timeRangeFilter });
-    const hrRes: any = await HC.readRecords("HeartRate", { timeRangeFilter });
     const sessions: any[] = sessionsRes?.records ?? sessionsRes ?? [];
     const dists: any[] = distRes?.records ?? distRes ?? [];
-    const hrs: any[] = hrRes?.records ?? hrRes ?? [];
+    let hrs: any[] = [];
+    if (readHeartRate) {
+      const hrRes: any = await HC.readRecords("HeartRate", { timeRangeFilter });
+      hrs = hrRes?.records ?? hrRes ?? [];
+    }
 
     let synced = 0;
     let totalKm = 0;
@@ -83,13 +95,19 @@ export async function syncTodayRuns(name: string): Promise<SyncResult> {
       const sE = new Date(s.endTime).getTime();
       if (!(sE > sS)) continue;
 
-      // 세션 구간과 겹치는 Distance 합산(m)
-      let meters = 0;
+      // 세션 구간과 겹치는 Distance를 출처(dataOrigin)별로 합산 → 최댓값만 채택.
+      // 삼성헬스·구글핏·워치가 같은 러닝을 각자 기록하면 단순 합산 시 이중·삼중 계상됨(버그 #7).
+      // 단일 출처만 쓰면 멀티앱 중복이 제거되고, 한 출처의 세분 레코드는 정상 합산된다.
+      const byOrigin = new Map<string, number>();
       for (const d of dists) {
         const dS = new Date(d.startTime).getTime();
         const dE = new Date(d.endTime).getTime();
-        if (overlaps(sS, sE, dS, dE)) meters += Number(d?.distance?.inMeters) || 0;
+        if (!overlaps(sS, sE, dS, dE)) continue;
+        const origin =
+          d?.metadata?.dataOrigin?.packageName ?? d?.metadata?.dataOrigin ?? "unknown";
+        byOrigin.set(origin, (byOrigin.get(origin) ?? 0) + (Number(d?.distance?.inMeters) || 0));
       }
+      const meters = byOrigin.size ? Math.max(...byOrigin.values()) : 0;
       const km = meters / 1000;
       if (km < 0.01) continue;
 
