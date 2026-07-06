@@ -135,8 +135,16 @@
 - **처리방침 실값 완료**(`docs/PRIVACY.md`): 보호책임자 성명·연락처 placeholder → 실값. 초안 경고문구 → 실적용 문구로 교체.
 - **웹 처리방침 게시**(`web/privacy.html` 신규): 브랜드톤 자체완결 HTML(다크모드 대응), PRIVACY.md 전문 반영. **웹 푸터에 "개인정보 처리방침" 링크** 추가 → P5 블로커 #2 "웹 게시" 해소.
 - **카톡/인스타 준비중 처리**: 히어로 "카톡 오픈채팅 합류" 버튼에 `data-todo` 추가 → 클릭 시 "채널 링크는 곧 열려요" 토스트(죽은 링크 방지). 채널 섹션 링크는 기존 data-todo 유지.
-- **잔여**: (a) **앱 온보딩 처리방침 링크** — 웹 공개호스트 URL 확정 후 앱에 링크(다음 app 빌드에 포함). 현재 웹은 localhost만이라 공개 URL 대기. (b) 웹 공개 배포(호스팅) 자체가 아직(현재 localhost:8080). → 확산엔 웹 호스팅 1건 필요.
 - **App Check**: 여전히 보류(앱 native 모듈 도입 결정 대기, enforce 켜지 말 것).
+
+### 📋 ★★ 웹 공개 배포 완료 — Firebase Hosting (2026-07-06)
+
+> 회장이 진짜 터미널에서 `npx firebase-tools login`(브라우저 인증) 완료 → 크리덴셜 `/home/jun/.config`에 캐시 → 에이전트 Bash가 이어받아 `firebase deploy --only hosting` 실행.
+- **공개 주소 확보: `https://modu-marathon.web.app`** (홈 200 · `/privacy` 200 cleanUrls · 실 Firebase 연결 라이브). **확산 링크 완성** — 친구들에게 이 링크 공유 가능.
+- `firebase.json` hosting(public=web·cleanUrls·정적캐시) 사용. 이후 `npx firebase-tools deploy --only hosting`으로 재배포(로그인 캐시됨).
+- **처리방침 공개 URL: `https://modu-marathon.web.app/privacy`** → 이제 앱 온보딩에서 이 URL로 링크 가능(다음 app 빌드에 포함할 소항목).
+- ⚠️ **공개되며 App Check 권장도 ↑**: rules delete:true(대량삭제 위험)는 Auth 미도입이라 규칙만으론 못 막음 → 웹은 reCAPTCHA v3 site key만 넣으면 App Check 활성(코드 이미 배선, `APPCHECK_SITE_KEY` 비어있음). 친목 사이드로드엔 수용가능하나, 공개 확산 커지면 site key 발급→monitor→enforce 권장.
+- **성공기준 ③ 확산 축: 웹 공개✅ + 처리방침 공개✅ + 채널 준비중✅.** 남은 소항목: 앱 온보딩 처리방침 링크(다음 빌드).
 
 ### 📋 P4 관찰버그·P5 건강동의 코드처리 (2026-07-06 · 병목 대기 중 처리)
 
