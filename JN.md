@@ -114,7 +114,9 @@
 
 > **근본원인 확정**: `react-native-health-connect@3.5.3`의 config 플러그인(`app.plugin.js`)은 **권한 안내 인텐트(`androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE`)만** 추가하고, 정작 **`android.permission.health.READ_*` 권한 선언은 매니페스트에 안 넣어줌**. 그래서 `requestPermission` 호출 시 선언 안 된 권한 요청 → 네이티브 즉사(<1초). JS try/catch로 못 잡는 네이티브 크래시라 방어코드 무력.
 > **조치**: 공식 문서(matinzd/react-native-health-connect `permissions.md`) 지침대로 `app.json` `android.permissions`에 health 권한 3개 추가 — `READ_EXERCISE`(ExerciseSession)·`READ_DISTANCE`(Distance)·`READ_HEART_RATE`(HeartRate). 플러그인은 그대로 두면 rationale 인텐트 유지.
-> **2차 재빌드 진행**: (아래 빌드 ID 갱신) — 완료 시 새 APK로 [워치 불러오기] 재검증. 이번엔 권한 UI가 정상적으로 떠야 함.
+> **2차 재빌드 완료 ✅**: EAS FINISHED(빌드 ID `3f3b4517-6085-4bdc-ac39-95c8e0e72ec7`, preview). Firebase env + health 권한 포함. **최신 APK: `https://expo.dev/artifacts/eas/znNSa0a99aSAdFyjnz6vvHbWinC0iMl9_yzzCuPA2MU.apk`** (앞선 `Aam_5SHf…`·`Z0wO9a…` 폐기). 권한 매니페스트가 바뀌었으니 **반드시 기존 앱 삭제 후 재설치**. 검증 대기: [워치 불러오기] → 크래시 대신 Health Connect 권한 화면 → 아침 트레드밀 러닝 로드 확인.
+>
+> **1차(config) 성과 확정**: 회장 실기기서 "미설정 배너 사라짐 + 방명록 Firebase 표시" 확인 → **성공기준 ② 실기기 설치본에서도 100% 완결**.
 
 ### 📋 P4 관찰버그·P5 건강동의 코드처리 (2026-07-06 · 병목 대기 중 처리)
 
