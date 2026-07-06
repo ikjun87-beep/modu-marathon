@@ -7,17 +7,20 @@
 
 ## 폴더 구조
 ```
-web/                  홈페이지(정적 HTML 단일 파일)
+web/                  홈페이지(정적 HTML) — 공개배포 https://modu-marathon.web.app (Firebase Hosting)
   index.html          랜딩 + 크루 커뮤니티(참석·갤러리·방명록·합류) — Firebase 또는 localStorage 폴백
+  privacy.html        개인정보 처리방침 공개 페이지(/privacy) — 웹 푸터·(후행)앱 온보딩에서 링크
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
   src/app/            화면(Expo Router 파일 라우팅): index=크루, explore=러닝
   src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·session·auth·brand
   src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·name-field·schedule-section·gallery-section 등
+  plugins/            커스텀 Expo config 플러그인(withHealthConnectPermissionDelegate=워치 권한런처 등록)
   scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
-  eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production)
-docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP
+  eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production) — env에 Firebase 공개키 주입
+docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP·PRIVACY·QA_M3_DEVICE(실기기 대본)
 firestore.rules       Firestore 보안 규칙
+firebase.json·.firebaserc  Firebase 배포 설정(hosting=web/ · firestore rules · 프로젝트 modu-marathon)
 .claude/agents/       재사용 서브에이전트(homepage-expert·marathon-expert)
 ```
 
@@ -31,6 +34,8 @@ firestore.rules       Firestore 보안 규칙
 ```bash
 # 웹 (빌드 불필요, 정적 서빙)
 cd web && python3 -m http.server 8080 --bind 0.0.0.0   # http://localhost:8080
+npx firebase-tools deploy --only hosting               # 공개배포(로그인 캐시됨) → modu-marathon.web.app
+npx firebase-tools deploy --only firestore:rules       # 보안규칙 배포
 
 # 앱
 cd app && npm install
