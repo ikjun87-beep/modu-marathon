@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -60,49 +61,56 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.body}>
-          <Text style={styles.eyebrow}>MODU MARATHON</Text>
-          <Text style={styles.title}>
-            모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
-          </Text>
-          <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
+        {/* 키보드가 이름 입력칸을 가리지 않도록 스크롤 가능하게 감싼다(안드로이드 edge-to-edge 대응). */}
+        <ScrollView
+          contentContainerStyle={styles.scrollBody}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.body}>
+            <Text style={styles.eyebrow}>MODU MARATHON</Text>
+            <Text style={styles.title}>
+              모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
+            </Text>
+            <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
 
-          <View style={styles.perks}>
-            {PERKS.map((p) => (
-              <View key={p.label} style={styles.perk}>
-                <View style={styles.perkBadge}>
-                  <Icon name={p.icon} size={20} color={Brand.brandDeep} />
+            <View style={styles.perks}>
+              {PERKS.map((p) => (
+                <View key={p.label} style={styles.perk}>
+                  <View style={styles.perkBadge}>
+                    <Icon name={p.icon} size={20} color={Brand.brandDeep} />
+                  </View>
+                  <Text style={styles.perkLabel}>{p.label}</Text>
                 </View>
-                <Text style={styles.perkLabel}>{p.label}</Text>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>어떻게 불러드릴까요?</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="예: 김캡틴"
-            placeholderTextColor={Brand.soft}
-            maxLength={20}
-            autoFocus
-            returnKeyType="done"
-            onSubmitEditing={start}
-          />
-          <Pressable
-            style={[styles.btn, !name.trim() && styles.btnOff]}
-            onPress={start}
-            disabled={!name.trim()}
-          >
-            <Text style={styles.btnText}>시작하기</Text>
-          </Pressable>
-          <Text style={styles.note}>이름은 이 기기에만 저장돼요. 언제든 바꿀 수 있어요.</Text>
-        </View>
+          <View style={styles.form}>
+            <Text style={styles.label}>어떻게 불러드릴까요?</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="예: 김캡틴"
+              placeholderTextColor={Brand.soft}
+              maxLength={20}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={start}
+            />
+            <Pressable
+              style={[styles.btn, !name.trim() && styles.btnOff]}
+              onPress={start}
+              disabled={!name.trim()}
+            >
+              <Text style={styles.btnText}>시작하기</Text>
+            </Pressable>
+            <Text style={styles.note}>이름은 이 기기에만 저장돼요. 언제든 바꿀 수 있어요.</Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -112,7 +120,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Brand.bg },
   screen: { flex: 1, backgroundColor: Brand.bg },
-  body: { flex: 1, justifyContent: "center", paddingHorizontal: 28, gap: 10 },
+  scrollBody: { flexGrow: 1, justifyContent: "center", paddingVertical: 24 },
+  body: { justifyContent: "center", paddingHorizontal: 28, gap: 10 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
   title: { fontSize: 40, fontWeight: "900", color: Brand.ink },
   sub: { fontSize: 15, color: Brand.soft, marginBottom: 8 },

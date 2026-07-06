@@ -180,7 +180,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 15,
   },
-  itemHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  itemHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingRight: 26, // 우상단 삭제(X) 버튼과 날짜가 겹치지 않도록 여백 확보
+  },
   who: { fontWeight: "800", fontSize: 14, color: Brand.ink },
   date: { fontSize: 12, color: Brand.soft },
   msg: { fontSize: 14, color: "#333", marginTop: 5, paddingRight: 20 },

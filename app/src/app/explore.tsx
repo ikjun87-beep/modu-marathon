@@ -64,6 +64,7 @@ export default function RunScreen() {
   }
 
   async function syncWatch() {
+    if (syncing) return; // 이중 실행 방지 — 동의창이 떠 있는 동안 재탭 차단(네이티브 중복 호출 방지)
     if (!name.trim()) {
       Alert.alert("이름을 먼저 입력해 주세요");
       return;
@@ -75,6 +76,7 @@ export default function RunScreen() {
       );
       return;
     }
+    setSyncing(true); // 흐름 시작 즉시 잠금(동의창 표시 중에도 버튼 비활성)
     // 심박은 민감정보(건강) — 별도 동의가 있을 때만 함께 수집. 최초 1회 명시 동의.
     const consented = await hasHealthConsent();
     if (consented) {
@@ -85,7 +87,7 @@ export default function RunScreen() {
       "건강정보 수집 동의",
       "워치 러닝을 불러올 때 심박 등 건강정보(민감정보)를 함께 저장하려면 별도 동의가 필요해요. 동의하지 않아도 거리·시간·페이스는 불러올 수 있어요.",
       [
-        { text: "취소", style: "cancel" },
+        { text: "취소", style: "cancel", onPress: () => setSyncing(false) },
         { text: "심박 없이 불러오기", onPress: () => void runWatchSync(false) },
         {
           text: "동의하고 불러오기",
@@ -94,18 +96,22 @@ export default function RunScreen() {
             await runWatchSync(true);
           },
         },
-      ]
+      ],
+      { onDismiss: () => setSyncing(false) }
     );
   }
 
   async function runWatchSync(withHeartRate: boolean) {
     setSyncing(true);
-    const r = await syncTodayRuns(name.trim(), { readHeartRate: withHeartRate });
-    setSyncing(false);
-    Alert.alert(
-      r.ok ? "워치 동기화 완료" : "워치 동기화",
-      r.reason ?? `오늘 러닝 ${r.synced}개 · ${r.totalKm.toFixed(2)}km 불러왔어요`
-    );
+    try {
+      const r = await syncTodayRuns(name.trim(), { readHeartRate: withHeartRate });
+      Alert.alert(
+        r.ok ? "워치 동기화 완료" : "워치 동기화",
+        r.reason ?? `오늘 러닝 ${r.synced}개 · ${r.totalKm.toFixed(2)}km 불러왔어요`
+      );
+    } finally {
+      setSyncing(false);
+    }
   }
 
   function onDelete(id: string) {
