@@ -10,8 +10,9 @@
 ## ① APK 설치
 
 1. 폰에서 아래 링크를 엽니다 (문자·카톡으로 자신에게 보내도 됩니다).
-   `https://expo.dev/artifacts/eas/Z0wO9a3zi0FNnkkPIuLzde2PuIYo2wPFI0-Czsp_iSk.apk`
-   **⚠️ 2026-07-18 이후 만료 — 그 전에 설치할 것.**
+   `https://expo.dev/artifacts/eas/Aam_5SHf2U8i8aw-tUqYaImm4RI7nlUdSfXPG9nxtfw.apk`
+   **⚠️ EAS 아티팩트는 만료됨 — 받는 즉시 설치할 것. (Firebase config 포함 재빌드, 2026-07-06)**
+   **기존 모두의 마라톤 앱이 깔려 있으면 먼저 삭제 후 설치**(옛 빌드와 안 섞이게).
 2. 다운로드 후 "차단됨" 경고가 뜨면 **설정 > 알 수 없는 출처 허용**(또는 "무시하고 설치") → 설치.
 3. 앱 실행 → 이름 입력(온보딩) → 하단 탭에서 **"러닝"** 화면으로 이동.
 

@@ -100,7 +100,14 @@
 - **웹→Firebase 실증**: 웹 방명록 "쫀쫀샷" 작성 → Firestore `guestbook` 컬렉션에 문서(createdAt·msg·name) 저장 + 웹 목록 렌더 확인. **성공기준 ② 웹측 달성.**
 - **배포 스캐폴딩 추가**: `firebase.json`(firestore.rules 지정)·`.firebaserc`(default=modu-marathon) → 이후 `npx firebase-tools deploy --only firestore:rules`로 CLI 배포 가능.
 - **앱측 교차확인 ✅ (완결)**: 앱 웹 미리보기(`npm run web`)에서 홈(크루) 방명록에 웹이 쓴 "쫀쫀샷" 글이 그대로 표시됨 → 웹·앱 동일 Firebase 실시간 공유 실증. **성공기준 ② = 100% 완료.**
-- **남은 완성 경로 = 오직 1개**: 실기기 APK 검증(성공기준 ①③ — GPS 1km ±5% + 갤럭시워치) → `feat/m3`→`main` 머지 → 회장 추인. APK 링크 `https://expo.dev/artifacts/eas/Z0wO9a3zi0FNnkkPIuLzde2PuIYo2wPFI0-Czsp_iSk.apk`(만료 7/18), 대본 `docs/QA_M3_DEVICE.md`. App Check site key·enforce는 보류(앱 native 모듈 도입 결정 대기).
+- **남은 완성 경로 = 오직 1개**: 실기기 APK 검증(성공기준 ①③ — GPS 1km ±5% + 갤럭시워치) → `feat/m3`→`main` 머지 → 회장 추인. 대본 `docs/QA_M3_DEVICE.md`. App Check site key·enforce는 보류(앱 native 모듈 도입 결정 대기).
+
+### 📋 ★ APK 재빌드 (2026-07-06 · 7/5 APK 노후로 재빌드)
+
+> **문제**: 회장이 7/5 preview APK로 실기기 테스트 → ①"Firebase 미설정 — 이 기기에만 저장" 배너, ②[워치 불러오기] 시 앱 크래시.
+> **원인**: 그 APK는 7/5 빌드라 Firebase config·건강동의 게이트·크래시 방어(try/catch)·#3/#7 버그수정이 **전부 안 들어감**. 특히 `.env`는 gitignore라 EAS 클라우드 빌드에 안 올라가 config가 빈 채로 구워졌음.
+> **조치**: `app/eas.json`의 preview/dev/prod `env`에 `EXPO_PUBLIC_FIREBASE_*` 6값(웹과 동일 공개키) 주입 → 재빌드가 config를 구워넣음. 현재 코드는 `syncTodayRuns` 전체 try/catch로 워치 크래시 방어됨(옛 APK엔 없던 코드).
+> **완료 ✅**: EAS 재빌드 FINISHED(빌드 ID `6fbb5012-dd38-400b-994f-7e427484372b`, preview). 빌드 로그에 `Environment variables loaded: EXPO_PUBLIC_FIREBASE_*` 확인 → Firebase config 포함. **새 APK: `https://expo.dev/artifacts/eas/Aam_5SHf2U8i8aw-tUqYaImm4RI7nlUdSfXPG9nxtfw.apk`** (옛 링크 `Z0wO9a…` 폐기). 회장 재설치 시: **기존 앱 삭제 후** 재설치 → "미설정" 배너 사라짐+방명록 Firebase 표시 확인 → [워치 불러오기] 크래시 없이 동의 안내.
 
 ### 📋 P4 관찰버그·P5 건강동의 코드처리 (2026-07-06 · 병목 대기 중 처리)
 
