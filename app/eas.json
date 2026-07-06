@@ -7,14 +7,38 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyBzPig8GUkPnfLeEqBuJf8ozTT_rawdtHE",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "modu-marathon.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "modu-marathon",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "modu-marathon.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "771546834653",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:771546834653:web:518fba21ad5595b2965d34"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyBzPig8GUkPnfLeEqBuJf8ozTT_rawdtHE",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "modu-marathon.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "modu-marathon",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "modu-marathon.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "771546834653",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:771546834653:web:518fba21ad5595b2965d34"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyBzPig8GUkPnfLeEqBuJf8ozTT_rawdtHE",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "modu-marathon.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "modu-marathon",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "modu-marathon.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "771546834653",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:771546834653:web:518fba21ad5595b2965d34"
+      }
     }
   },
   "submit": {
