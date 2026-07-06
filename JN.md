@@ -107,7 +107,14 @@
 > **문제**: 회장이 7/5 preview APK로 실기기 테스트 → ①"Firebase 미설정 — 이 기기에만 저장" 배너, ②[워치 불러오기] 시 앱 크래시.
 > **원인**: 그 APK는 7/5 빌드라 Firebase config·건강동의 게이트·크래시 방어(try/catch)·#3/#7 버그수정이 **전부 안 들어감**. 특히 `.env`는 gitignore라 EAS 클라우드 빌드에 안 올라가 config가 빈 채로 구워졌음.
 > **조치**: `app/eas.json`의 preview/dev/prod `env`에 `EXPO_PUBLIC_FIREBASE_*` 6값(웹과 동일 공개키) 주입 → 재빌드가 config를 구워넣음. 현재 코드는 `syncTodayRuns` 전체 try/catch로 워치 크래시 방어됨(옛 APK엔 없던 코드).
-> **완료 ✅**: EAS 재빌드 FINISHED(빌드 ID `6fbb5012-dd38-400b-994f-7e427484372b`, preview). 빌드 로그에 `Environment variables loaded: EXPO_PUBLIC_FIREBASE_*` 확인 → Firebase config 포함. **새 APK: `https://expo.dev/artifacts/eas/Aam_5SHf2U8i8aw-tUqYaImm4RI7nlUdSfXPG9nxtfw.apk`** (옛 링크 `Z0wO9a…` 폐기). 회장 재설치 시: **기존 앱 삭제 후** 재설치 → "미설정" 배너 사라짐+방명록 Firebase 표시 확인 → [워치 불러오기] 크래시 없이 동의 안내.
+> **1차 재빌드(config)**: EAS FINISHED(`6fbb5012`). Firebase config 포함 → "미설정" 배너 해소. APK `Aam_5SHf…`.
+> **그러나 [워치 불러오기] 여전히 크래시**(회장 실기기): 건강동의는 뜨는데, 그 뒤 `불러오는 중…` <1초 만에 네이티브 강제종료(JS try/catch 못 잡음).
+
+### 📋 ★★ 워치 크래시 근본원인 규명 + 2차 재빌드 (2026-07-06)
+
+> **근본원인 확정**: `react-native-health-connect@3.5.3`의 config 플러그인(`app.plugin.js`)은 **권한 안내 인텐트(`androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE`)만** 추가하고, 정작 **`android.permission.health.READ_*` 권한 선언은 매니페스트에 안 넣어줌**. 그래서 `requestPermission` 호출 시 선언 안 된 권한 요청 → 네이티브 즉사(<1초). JS try/catch로 못 잡는 네이티브 크래시라 방어코드 무력.
+> **조치**: 공식 문서(matinzd/react-native-health-connect `permissions.md`) 지침대로 `app.json` `android.permissions`에 health 권한 3개 추가 — `READ_EXERCISE`(ExerciseSession)·`READ_DISTANCE`(Distance)·`READ_HEART_RATE`(HeartRate). 플러그인은 그대로 두면 rationale 인텐트 유지.
+> **2차 재빌드 진행**: (아래 빌드 ID 갱신) — 완료 시 새 APK로 [워치 불러오기] 재검증. 이번엔 권한 UI가 정상적으로 떠야 함.
 
 ### 📋 P4 관찰버그·P5 건강동의 코드처리 (2026-07-06 · 병목 대기 중 처리)
 
