@@ -138,7 +138,7 @@
 > ```
 > RNHC는 `MainActivity.onCreate`에서 **`HealthConnectPermissionDelegate.setPermissionDelegate(this)`** 로 ActivityResultLauncher를 등록해야 하는데(README "RN CLI template v2+"), **Expo는 MainActivity 자동생성**이라 이 등록이 빠져 `requestPermission()` 시 런처 미초기화 → 네이티브 크래시.
 > **수정**: 커스텀 config 플러그인 `app/plugins/withHealthConnectPermissionDelegate.js` — 생성된 MainActivity.kt에 import + `setPermissionDelegate(this)` 주입. `app.json` plugins에 `./plugins/withHealthConnectPermissionDelegate` 등록. **prebuild로 MainActivity.kt 주입 검증 완료.**
-> **4차 재빌드 진행**: 빌드 ID `865f1d4b-4468-4b3a-ac6c-e4fed1339e85`. 완료 시 새 APK로 [워치 불러오기] → 이번엔 크래시 대신 Health Connect 권한창이 정상으로 떠야 함(아침 트레드밀 데이터 로드 검증).
+> **4차 재빌드 완료 ✅**: 빌드 ID `865f1d4b-4468-4b3a-ac6c-e4fed1339e85`. **최신 APK: `https://expo.dev/artifacts/eas/36qaOAmthKgfMKqMuOPUFtWMgqh3e-GimBO0CN1jk9M.apk`** (앞선 링크 모두 폐기). 기존앱 삭제 후 재설치 → [워치 불러오기] 크래시 대신 Health Connect 권한창 정상 여부 + 아침 트레드밀 데이터 로드 검증 대기.
 > **재현 절차 메모(재사용)**: 무선디버깅 켜기 → `adb connect <ip>:<port>` → `adb logcat -b crash -c` → 앱서 재현 → `adb logcat -b crash -d`.
 
 ### ✅ 앱 UI 수정 3차 빌드(`TZmtYffm…`) 실기기 확인: 온보딩 키보드·방명록 겹침 정상. 워치만 4차서 해결 예정.
