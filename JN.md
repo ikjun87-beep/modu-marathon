@@ -127,7 +127,21 @@
 - **워치 크래시 심층진단(추측 아닌 확인)**: 로컬 `expo prebuild`로 매니페스트 검사 → **health 권한 3개·rationale 인텐트 정상 포함**(권한 문제 아님). RNHC healthdata `<queries>`는 라이브러리 매니페스트 선언→빌드 병합(가시성 OK). **핵심 제약: 스택이 RN 0.86 + Expo SDK57 최신인데 `react-native-health-connect`는 3.5.3이 이미 최신 = 버전업 여지 없음.** 최신 RN 신아키텍처(newArchEnabled=true)에서 RNHC TurboModule 네이티브 불안정이 유력 → **코드로 못 고침, 디바이스 crash 로그(adb logcat) 필요.**
 - **3차 재빌드 완료 ✅**: 빌드 ID `faa3a6ee-892b-430a-a894-002a5e63cf19`. **최신 APK: `https://expo.dev/artifacts/eas/TZmtYffmtiCSRiUpbN0m6hSg9bXjQkmXQMuldNq8364.apk`** (앞선 링크 모두 폐기). 재설치(기존앱 삭제) → UI 2건 수정 확인 + 워치 재확인. **워치 여전히 크래시면**: (A) 회장이 폰 USB디버깅 연결→`adb logcat`으로 정밀진단(워치 살릴 최선) or (B) 워치 버튼 "준비 중" 페일세이프로 막고 완성 먼저 머지, 로그 확보 후 재개. 회장 선택: **막히지 말고 진행 — 워치 보류, ③ 개인정보·확산 등 딴 것 먼저.**
 
-### ⏳ 워치 후속(회장 USB 연결 시): adb logcat으로 [워치 불러오기] 크래시 네이티브 스택 확보 → RNHC 3.5.3+RN0.86 신아키 이슈 정밀수정. USB는 나중에.
+### 📋 ★★★ 워치 크래시 근본원인 확정 + 수정 (2026-07-06 · adb logcat)
+
+> **무선 디버깅으로 실기기 크래시 로그 확보 성공** (회장이 개발자옵션→무선디버깅, 자동차단(Auto Blocker) 끄고 페어링 코드 제공 → 에이전트가 platform-tools 직접 다운로드해 `adb pair`/`connect`/`logcat -b crash`). adb는 `$CLAUDE_JOB_DIR/tmp/platform-tools/adb`.
+> **원인 = 라이브러리 셋업 누락(신아키·버전 문제 아니었음)**:
+> ```
+> FATAL EXCEPTION: kotlin.UninitializedPropertyAccessException:
+> lateinit property requestPermission has not been initialized
+>   at dev.matinzd.healthconnect.permissions.HealthConnectPermissionDelegate.launchPermissionsDialog
+> ```
+> RNHC는 `MainActivity.onCreate`에서 **`HealthConnectPermissionDelegate.setPermissionDelegate(this)`** 로 ActivityResultLauncher를 등록해야 하는데(README "RN CLI template v2+"), **Expo는 MainActivity 자동생성**이라 이 등록이 빠져 `requestPermission()` 시 런처 미초기화 → 네이티브 크래시.
+> **수정**: 커스텀 config 플러그인 `app/plugins/withHealthConnectPermissionDelegate.js` — 생성된 MainActivity.kt에 import + `setPermissionDelegate(this)` 주입. `app.json` plugins에 `./plugins/withHealthConnectPermissionDelegate` 등록. **prebuild로 MainActivity.kt 주입 검증 완료.**
+> **4차 재빌드 진행**: 빌드 ID `865f1d4b-4468-4b3a-ac6c-e4fed1339e85`. 완료 시 새 APK로 [워치 불러오기] → 이번엔 크래시 대신 Health Connect 권한창이 정상으로 떠야 함(아침 트레드밀 데이터 로드 검증).
+> **재현 절차 메모(재사용)**: 무선디버깅 켜기 → `adb connect <ip>:<port>` → `adb logcat -b crash -c` → 앱서 재현 → `adb logcat -b crash -d`.
+
+### ✅ 앱 UI 수정 3차 빌드(`TZmtYffm…`) 실기기 확인: 온보딩 키보드·방명록 겹침 정상. 워치만 4차서 해결 예정.
 
 ### 📋 ★ 성공기준 ③ 개인정보 게이트 + 확산 준비 (2026-07-06 · 워치 대기 중 병렬처리)
 
