@@ -70,6 +70,26 @@ export async function syncTodayRuns(
     if (readHeartRate) perms.push({ accessType: "read", recordType: "HeartRate" });
     await HC.requestPermission(perms);
 
+    // 실제 부여 여부 확인 — 미부여 시 raw SecurityException 대신 실행 가능한 안내.
+    // (매니페스트 선언만으론 부족, Health Connect에서 사용자가 '허용'해야 read 가능)
+    let granted: any[] = [];
+    try {
+      granted = (await HC.getGrantedPermissions()) ?? [];
+    } catch {
+      granted = [];
+    }
+    const hasRead = (rt: string) =>
+      granted.some((g) => g?.accessType === "read" && g?.recordType === rt);
+    if (!hasRead("ExerciseSession") || !hasRead("Distance")) {
+      return {
+        ok: false,
+        synced: 0,
+        totalKm: 0,
+        reason:
+          "Health Connect에서 '모두의 마라톤'에 운동·거리 읽기 권한을 허용해 주세요.\n(Health Connect 앱 → 앱 및 기기 권한 → 모두의 마라톤 → 운동·거리 켜기)",
+      };
+    }
+
     const timeRangeFilter = {
       operator: "between" as const,
       startTime: startOfTodayISO(),
@@ -81,7 +101,7 @@ export async function syncTodayRuns(
     const sessions: any[] = sessionsRes?.records ?? sessionsRes ?? [];
     const dists: any[] = distRes?.records ?? distRes ?? [];
     let hrs: any[] = [];
-    if (readHeartRate) {
+    if (readHeartRate && hasRead("HeartRate")) {
       const hrRes: any = await HC.readRecords("HeartRate", { timeRangeFilter });
       hrs = hrRes?.records ?? hrRes ?? [];
     }

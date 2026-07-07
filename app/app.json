@@ -58,6 +58,12 @@
       "react-native-health-connect",
       "./plugins/withHealthConnectPermissionDelegate",
       [
+        "react-native-maps",
+        {
+          "androidGoogleMapsApiKey": "REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

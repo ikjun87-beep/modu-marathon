@@ -9,6 +9,7 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
+import { RunMap } from "@/components/run-map";
 import { Brand } from "@/lib/brand";
 import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/run";
 
@@ -23,6 +24,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
   const [distanceM, setDistanceM] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [err, setErr] = useState<string | null>(null);
+  const [path, setPath] = useState<LatLng[]>([]); // 실시간 경로(온디바이스 표시용, 서버 미저장)
 
   const sub = useRef<Location.LocationSubscription | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -50,6 +52,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     setDistanceM(0);
     setElapsed(0);
     setErr(null);
+    setPath([]);
     last.current = null;
     lastAt.current = 0;
     startedAt.current = 0;
@@ -85,9 +88,13 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
             const dt = (t - lastAt.current) / 1000; // 초
             const speed = dt > 0 ? d / dt : Infinity; // m/s
             // 1.5m~60m 구간 + 속도 상한(9m/s≈32km/h) 채택 — 정지 드리프트·GPS 튐 제거
-            if (d >= 1.5 && d <= 60 && speed <= MAX_SPEED_MS) setDistanceM((m) => m + d);
+            if (d >= 1.5 && d <= 60 && speed <= MAX_SPEED_MS) {
+              setDistanceM((m) => m + d);
+              setPath((p) => [...p, cur]); // 채택된 이동만 경로에 추가 → 깨끗한 라인
+            }
           }
           if (acc <= 30) {
+            if (!last.current) setPath((p) => (p.length ? p : [cur])); // 첫 좋은 픽스 = 시작점
             last.current = cur;
             lastAt.current = t;
           }
@@ -166,9 +173,12 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
           <Text style={styles.who}>{name.trim() || "익명"} 님의 러닝</Text>
         </View>
 
-        <View style={styles.hero}>
-          <Text style={styles.bigNum}>{km.toFixed(2)}</Text>
-          <Text style={styles.bigUnit}>km</Text>
+        <View style={styles.mapArea}>
+          <RunMap path={path} />
+          <View style={styles.kmOverlay} pointerEvents="none">
+            <Text style={styles.bigNum}>{km.toFixed(2)}</Text>
+            <Text style={styles.bigUnit}>km</Text>
+          </View>
         </View>
 
         <View style={styles.stats}>
@@ -238,9 +248,25 @@ const styles = StyleSheet.create({
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
   who: { fontSize: 15, color: Brand.soft, fontWeight: "600" },
-  hero: { flex: 1, alignItems: "center", justifyContent: "center", flexDirection: "row" },
-  bigNum: { fontSize: 96, fontWeight: "900", color: Brand.ink, letterSpacing: -3, fontFamily: mono },
-  bigUnit: { fontSize: 28, fontWeight: "800", color: Brand.soft, marginBottom: 18, marginLeft: 6 },
+  mapArea: { flex: 1, marginVertical: 12, position: "relative" },
+  kmOverlay: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  bigNum: { fontSize: 54, fontWeight: "900", color: Brand.ink, letterSpacing: -2, fontFamily: mono },
+  bigUnit: { fontSize: 18, fontWeight: "800", color: Brand.soft, marginBottom: 8, marginLeft: 5 },
   stats: {
     flexDirection: "row",
     backgroundColor: Brand.card,
