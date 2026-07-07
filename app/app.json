@@ -57,6 +57,7 @@
       ],
       "react-native-health-connect",
       "./plugins/withHealthConnectPermissionDelegate",
+      "./plugins/withHealthConnectAndroid14",
       [
         "react-native-maps",
         {
