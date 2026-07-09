@@ -12,13 +12,14 @@ web/                  홈페이지(정적 HTML) — 공개배포 https://modu-ma
   privacy.html        개인정보 처리방침 공개 페이지(/privacy) — 웹 푸터·(후행)앱 온보딩에서 링크
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
-  src/app/            화면(Expo Router 파일 라우팅): index=크루, explore=러닝
-  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·session·auth·brand
+  src/app/            화면(Expo Router 파일 라우팅): index=크루 / explore/=러닝 탭(explore/_layout=Stack, index=목록, run/[id]=상세 push, ios_from_right 전환)
+  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·run-path.ts(GPS경로 온디바이스 저장,서버미저장)·map-style.ts(구글맵 커스텀 파스텔)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·session·auth·brand
   src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·run-map.native/web.tsx(구글맵 경로,플랫폼분리)·name-field·schedule-section·gallery-section 등
   plugins/            커스텀 Expo config 플러그인(withHealthConnectPermissionDelegate=워치 권한런처 등록)
   scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
   eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production) — env에 Firebase 공개키 주입
-docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP·PRIVACY·QA_M3_DEVICE(실기기 대본)·UX_APP_NAV(P7 다중페이지 제안)·WATCH_SAMSUNG_SDK(워치 삼성헬스 한계·SDK 검토)
+docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP·PRIVACY·QA_M3_DEVICE(실기기 대본)·UX_APP_NAV(P7 다중페이지 제안)·WATCH_SAMSUNG_SDK(워치 삼성헬스 한계·SDK 검토)·OPENAI_IMAGE_GEN(이미지 생성 이식 가이드)
+generate-image.mjs    OpenAI gpt-image-1 이미지 생성 CLI(배너·아이콘·마스코트). 실행 `node --env-file=.env generate-image.mjs "영어프롬프트" out.png [ref.png]`. 키=루트 `.env`의 `OPENAI_API_KEY`(gitignore). AI엔 글자 금지→글자는 코드 합성.
 firestore.rules       Firestore 보안 규칙
 firebase.json·.firebaserc  Firebase 배포 설정(hosting=web/ · firestore rules · 프로젝트 modu-marathon)
 .claude/agents/       재사용 서브에이전트(homepage-expert·marathon-expert)
