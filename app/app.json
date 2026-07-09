@@ -15,7 +15,7 @@
     "android": {
       "package": "com.modumarathon.app",
       "adaptiveIcon": {
-        "backgroundColor": "#fff0ec",
+        "backgroundColor": "#ff5a3c",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -43,7 +43,7 @@
         {
           "backgroundColor": "#ff5a3c",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ],
       [

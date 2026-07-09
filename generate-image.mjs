@@ -9,6 +9,7 @@ import { writeFile, readFile } from "node:fs/promises";
 const MODEL = "gpt-image-1";
 const SIZE = process.env.OPENAI_IMAGE_SIZE || "1024x1536"; // 세로 2:3
 const QUALITY = process.env.OPENAI_IMAGE_QUALITY || "medium"; // low|medium|high
+const BACKGROUND = process.env.OPENAI_IMAGE_BACKGROUND; // "transparent"면 투명 배경(아이콘 전경용). 미설정=불투명
 
 const [, , prompt, outPath = "out.png", refPath] = process.argv;
 const key = process.env.OPENAI_API_KEY;
@@ -20,7 +21,14 @@ async function textToImage() {
   return fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: MODEL, prompt, size: SIZE, quality: QUALITY, n: 1 }),
+    body: JSON.stringify({
+      model: MODEL,
+      prompt,
+      size: SIZE,
+      quality: QUALITY,
+      n: 1,
+      ...(BACKGROUND ? { background: BACKGROUND } : {}),
+    }),
   });
 }
 
