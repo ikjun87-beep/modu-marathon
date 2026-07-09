@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
 import { Brand } from "@/lib/brand";
+import { saveRunPath } from "@/lib/run-path";
 import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/run";
 
 type Props = { visible: boolean; name: string; onClose: (saved: boolean) => void };
@@ -127,15 +128,18 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
       return;
     }
     setPhase("saving");
+    const sid = String(startedAt.current || Date.now()); // 멱등 upsert 키 = runs 문서 id의 sourceId
     try {
       await saveRun({
         source: "gps",
-        sourceId: String(startedAt.current || Date.now()), // 멱등 upsert — 재탭·재시도 시 중복 저장 방지
+        sourceId: sid, // 재탭·재시도 시 중복 저장 방지
         name: name.trim() || "익명",
         distanceKm: km,
         durationSec: elapsed,
         startedAt: startedAt.current || Date.now(),
       });
+      // 완주 경로를 이 기기에만 저장(서버 미저장) → 상세 페이지 지도용. 문서 id(gps_<sid>)와 키를 맞춤.
+      await saveRunPath(`gps_${sid}`, path);
       reset();
       setPhase("idle");
       onClose(true);

@@ -8,13 +8,13 @@ import { Icon } from "@/components/icon";
 import { Brand } from "@/lib/brand";
 import type { LatLng } from "@/lib/run";
 
-type Props = { path: LatLng[] };
+type Props = { path: LatLng[]; follow?: boolean };
 
 export function RunMap(_props: Props) {
   return (
     <View style={styles.ph}>
       <Icon name="run" size={28} color={Brand.faint} />
-      <Text style={styles.t}>실시간 지도는 앱(안드로이드)에서 표시돼요</Text>
+      <Text style={styles.t}>지도는 앱(안드로이드)에서 표시돼요</Text>
     </View>
   );
 }

@@ -3,4 +3,4 @@ import type { ReactElement } from "react";
 
 import type { LatLng } from "@/lib/run";
 
-export declare function RunMap(props: { path: LatLng[] }): ReactElement;
+export declare function RunMap(props: { path: LatLng[]; follow?: boolean }): ReactElement;

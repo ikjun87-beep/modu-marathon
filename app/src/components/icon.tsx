@@ -30,7 +30,8 @@ export type IconName =
   | "pause"
   | "stop"
   | "user"
-  | "chevron-right";
+  | "chevron-right"
+  | "chevron-left";
 
 type Props = {
   name: IconName;
@@ -148,6 +149,7 @@ export function Icon({ name, size = 24, color = Brand.ink, strokeWidth = 1.75 }:
         </>
       )}
       {name === "chevron-right" && <Path {...s} d="M9 6l6 6-6 6" />}
+      {name === "chevron-left" && <Path {...s} d="M15 6l-6 6 6 6" />}
     </Svg>
   );
 }

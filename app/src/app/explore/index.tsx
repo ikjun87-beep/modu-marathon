@@ -2,6 +2,7 @@
  * 러닝 — 오늘 뛴 거리 + 실시간 GPS 트래킹 + 갤럭시워치(Health Connect) 불러오기 + 수동 기록.
  * 통합 Run 스키마(runs 컬렉션, 웹과 공유). 홈페이지(web/index.html)와 같은 아이콘·색·카드 형태.
  */
+import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,7 +11,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { LiveRunModal } from "@/components/live-run";
 import { NameField } from "@/components/name-field";
 import { Brand } from "@/lib/brand";
-import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
+import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 import { hasHealthConsent, setHealthConsent } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
@@ -112,13 +113,6 @@ export default function RunScreen() {
     } finally {
       setSyncing(false);
     }
-  }
-
-  function onDelete(id: string) {
-    Alert.alert("이 기록을 삭제할까요?", "", [
-      { text: "취소", style: "cancel" },
-      { text: "삭제", style: "destructive", onPress: () => void remove(COLLECTIONS.runs, id) },
-    ]);
   }
 
   const header = useMemo(
@@ -229,7 +223,9 @@ export default function RunScreen() {
           const km = Number(item.distanceKm) || 0;
           const sec = runSeconds(item);
           return (
-            <View style={styles.item}>
+            <Pressable
+              onPress={() => router.push(`/explore/run/${item.id}`)}
+              style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}>
               <View style={styles.itemHead}>
                 <View style={styles.srcBadge}>
                   <Icon name={sourceIcon(item.source)} size={15} color={Brand.brandDeep} />
@@ -240,9 +236,7 @@ export default function RunScreen() {
                     {sourceLabel(item.source)} · {fmtDate(item.startedAt ?? item.createdAt)}
                   </Text>
                 </View>
-                <Pressable style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
-                  <Icon name="trash" size={17} color={Brand.faint} />
-                </Pressable>
+                <Icon name="chevron-right" size={18} color={Brand.faint} />
               </View>
               <View style={styles.stats}>
                 <Text style={styles.stat}>
@@ -256,7 +250,7 @@ export default function RunScreen() {
                   <Text style={styles.hr}>♥ {Math.round(Number(item.avgHr))}</Text>
                 ) : null}
               </View>
-            </View>
+            </Pressable>
           );
         }}
       />
@@ -371,6 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
   },
+  itemPressed: { opacity: 0.65, backgroundColor: Brand.warm }, // 터치 피드백(부드러움)
   itemHead: { flexDirection: "row", alignItems: "center", gap: 11 },
   srcBadge: {
     width: 34,
@@ -382,7 +377,6 @@ const styles = StyleSheet.create({
   },
   who: { fontWeight: "800", fontSize: 14.5, color: Brand.ink },
   date: { fontSize: 12, color: Brand.soft, marginTop: 1 },
-  del: { padding: 4 },
   stats: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12 },
   stat: { fontSize: 13.5, color: Brand.soft },
   statNum: { fontSize: 18, fontWeight: "900", color: Brand.ink },
