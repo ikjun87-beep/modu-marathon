@@ -12,13 +12,13 @@
 
 ## Colors
 
-> **⚠️ 2026-07-12 리브랜딩 — Brand Orange → Pine Green.** 메인 강조색을 당근/Strava와 겹치는 오렌지에서 **Pine Green `#0f7d61`**으로 교체(러닝·아웃도어·건강 정체성 + 파인·골드 = 완주 메달 감성). 아래 토큰 표가 현재 단일 기준(값의 실소스는 `app/src/lib/brand.ts` + `web/index.html` CSS 변수). **본문 아래쪽 산문에 남은 "오렌지" 표현은 색상 역할(히어로·CTA·강조)을 뜻하며, 실제 색은 파인 그린으로 읽을 것.**
+> **⚠️ 2026-07-12 리브랜딩 — Brand Orange → Azure Blue.** 메인 강조색을 당근/Strava와 겹치는 오렌지에서 **Azure Blue `#2563c9`**로 확정(스포티·신뢰 정체성 + 블루·골드 = 프리미엄 메달 감성). 후보였던 파인 그린은 비교 시안 검토 후 블루 채택. 아래 토큰 표가 현재 단일 기준(값의 실소스는 `app/src/lib/brand.ts` + `web/index.html` CSS 변수). **본문 아래쪽 산문에 남은 "오렌지" 표현은 색상 역할(히어로·CTA·강조)을 뜻하며, 실제 색은 애저 블루로 읽을 것.**
 
 ### Brand & Accent
-- **Pine Green** (`--brand` `#0f7d61`): 브랜드. 모든 primary CTA·활성·포커스 링·강조 링크·경로 stroke. 아껴 쓴다.
-- **Pine Deep** (`--brand-deep` `#0a5f4a`): CTA hover/pressed, 헤드라인 강조, 진한 강조.
-- **Pine Soft** (`--brand-soft` `#e5f3ee`): 옅은 강조 배경·info 배경. 크롬에는 안 씀.
-- **Gold Accent** (`--accent` / `--gold` `#c0841a`): 페이스·완주·메달·랭킹 하이라이트(파인+골드 = 프리미엄 메달감).
+- **Azure Blue** (`--brand` `#2563c9`): 브랜드. 모든 primary CTA·활성·포커스 링·강조 링크·경로 stroke. 아껴 쓴다.
+- **Azure Deep** (`--brand-deep` `#1b4ea3`): CTA hover/pressed, 헤드라인 강조, 진한 강조.
+- **Azure Soft** (`--brand-soft` `#eaf1fd`): 옅은 강조 배경·info 배경. 크롬에는 안 씀.
+- **Gold Accent** (`--accent` / `--gold` `#c0841a`): 페이스·완주·메달·랭킹 하이라이트(블루+골드 = 프리미엄 메달감).
 
 ### Surface
 - **Canvas** (`--card` `#ffffff`): 카드·본문 바탕. hairline 테두리로 얹는다.

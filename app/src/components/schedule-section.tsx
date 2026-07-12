@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
-  btnOn: { backgroundColor: "#bfe3d8" },
+  btnOn: { backgroundColor: Brand.brandSoft },
   btnText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-  btnTextOn: { color: "#0c5a44" },
+  btnTextOn: { color: Brand.brandDeep },
 });

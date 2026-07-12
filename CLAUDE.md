@@ -12,7 +12,7 @@ web/                  홈페이지(정적 HTML) — 공개배포 https://modu-ma
   privacy.html        개인정보 처리방침 공개 페이지(/privacy) — 웹 푸터·(후행)앱 온보딩에서 링크
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
-  src/app/            화면(Expo Router 파일 라우팅): index=크루 / explore/=러닝 탭(explore/_layout=Stack, index=목록, run/[id]=상세 push, ios_from_right 전환)
+  src/app/            화면(Expo Router 파일 라우팅, 하단 5탭 NativeTabs): index=홈(Today 큐레이션·통합검색) / crew=크루 / explore/=러닝(explore/_layout=Stack, index=목록, run/[id]=상세 push+댓글, ios_from_right) / ranking=랭킹 / my=마이. 탭아이콘=Material `md=`
   src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·run-path.ts(GPS경로 온디바이스 저장,서버미저장)·map-style.ts(구글맵 커스텀 파스텔)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·session·auth·brand
   src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·run-map.native/web.tsx(구글맵 경로,플랫폼분리)·name-field·schedule-section·gallery-section 등
   plugins/            커스텀 Expo config 플러그인(withHealthConnectPermissionDelegate=워치 권한런처 등록)
@@ -50,8 +50,8 @@ cd app && npx eas-cli login && npx eas-cli build -p android --profile preview
 ```
 
 ## 지켜야 할 규칙
-- 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`.
-- 색·타이포는 `docs/DESIGN.md` 기준(Brand Orange `#ff5a3c`). 앱은 `src/lib/brand.ts`.
+- 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`.
+- 색·타이포는 `docs/DESIGN.md` 기준(**Brand = Azure Blue `#2563c9`**, accent 골드 `#c0841a` — 2026-07-12 오렌지→블루 리브랜딩). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스).
 - **큰 의존성 추가·배포·push는 실행 전 확인**. 커밋은 작은 단위, main 직접 커밋 시 브랜치 먼저.
 - 앱 코드 작성 전 Expo v57 문서 확인(`app/AGENTS.md`). 워치·네이티브 모듈은 Expo Go/웹 불가 → EAS dev build 필요.
 - 비밀값(.env·Firebase 키)은 커밋 금지. `web/index.html`의 `firebaseConfig`와 `app/.env`는 같은 프로젝트 값.
