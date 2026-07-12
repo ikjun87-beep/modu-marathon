@@ -4,17 +4,18 @@
  */
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand } from "@/lib/brand";
-import { subscribe, type Row } from "@/lib/crew";
+import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { nextEvent } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
 import { todayKm } from "@/lib/run";
+import { searchAll } from "@/lib/search";
 import { getMyName } from "@/lib/session";
 import { weekKm } from "@/lib/stats";
 
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [guests, setGuests] = useState<Row[] | null>(null);
   const [attend, setAttend] = useState<Row[]>([]);
+  const [q, setQ] = useState("");
 
   useEffect(() => {
     getMyName().then((n) => setName(n));
@@ -42,6 +44,12 @@ export default function HomeScreen() {
   const crewWeek = runs ? weekKm(runs) : 0;
   const newPosts = guests?.length ?? 0;
 
+  const searching = q.trim().length > 0;
+  const results = useMemo(
+    () => searchAll(q, runs ?? [], guests ?? []),
+    [q, runs, guests]
+  );
+
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -59,16 +67,116 @@ export default function HomeScreen() {
           )}
         </Text>
 
-        {loading ? (
-          <>
-            <Skeleton height={132} radius={20} />
-            <Skeleton height={78} radius={16} />
-            <Skeleton height={52} radius={14} />
-          </>
+        {/* 통합 검색 */}
+        <View style={styles.searchBar}>
+          <Icon name="search" size={18} color={Brand.soft} />
+          <TextInput
+            style={styles.searchInput}
+            value={q}
+            onChangeText={setQ}
+            placeholder="크루·러닝·모임 검색"
+            placeholderTextColor={Brand.faint}
+            returnKeyType="search"
+          />
+          {searching && (
+            <PressableScale onPress={() => setQ("")} hitSlop={8} dim={false}>
+              <Icon name="close" size={16} color={Brand.soft} />
+            </PressableScale>
+          )}
+        </View>
+
+        {searching ? (
+          results.total === 0 ? (
+            <View style={styles.searchEmpty}>
+              <Icon name="search" size={26} color={Brand.faint} />
+              <Text style={styles.searchEmptyText}>‘{q.trim()}’ 결과가 없어요</Text>
+            </View>
+          ) : (
+            <>
+              {results.runs.length > 0 && (
+                <>
+                  <Text style={styles.sectionH}>러닝 {results.runs.length}</Text>
+                  {results.runs.map((r) => (
+                    <PressableScale
+                      key={r.id}
+                      style={styles.resRow}
+                      onPress={() => router.push(`/explore/run/${r.id}`)}>
+                      <View style={styles.resIcon}>
+                        <Icon name="run" size={15} color={Brand.brandDeep} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.resTitle}>
+                          {(Number(r.distanceKm) || 0).toFixed(2)}km · {r.name}
+                        </Text>
+                        <Text style={styles.resSub}>{fmtDate(r.startedAt ?? r.createdAt)}</Text>
+                      </View>
+                      <Icon name="chevron-right" size={18} color={Brand.faint} />
+                    </PressableScale>
+                  ))}
+                </>
+              )}
+              {results.posts.length > 0 && (
+                <>
+                  <Text style={styles.sectionH}>크루 글 {results.posts.length}</Text>
+                  {results.posts.map((p) => (
+                    <PressableScale
+                      key={p.id}
+                      style={styles.resRow}
+                      onPress={() => router.push("/crew")}>
+                      <View style={styles.resIcon}>
+                        <Icon name="chat" size={15} color={Brand.accent} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.resTitle} numberOfLines={1}>
+                          {p.name}
+                        </Text>
+                        <Text style={styles.resSub} numberOfLines={1}>
+                          {p.msg}
+                        </Text>
+                      </View>
+                      <Icon name="chevron-right" size={18} color={Brand.faint} />
+                    </PressableScale>
+                  ))}
+                </>
+              )}
+              {results.events.length > 0 && (
+                <>
+                  <Text style={styles.sectionH}>모임 {results.events.length}</Text>
+                  {results.events.map((e) => (
+                    <PressableScale
+                      key={e.id}
+                      style={styles.resRow}
+                      onPress={() => router.push("/crew")}>
+                      <View style={styles.resIcon}>
+                        <Icon name="calendar" size={15} color={Brand.brandDeep} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.resTitle} numberOfLines={1}>
+                          {e.title}
+                        </Text>
+                        <Text style={styles.resSub}>
+                          {e.m} {e.d}
+                        </Text>
+                      </View>
+                      <Icon name="chevron-right" size={18} color={Brand.faint} />
+                    </PressableScale>
+                  ))}
+                </>
+              )}
+            </>
+          )
         ) : (
           <>
-            {/* 오늘 뛴 거리 — 히어로 */}
-            <View style={styles.hero}>
+            {loading ? (
+              <>
+                <Skeleton height={132} radius={20} />
+                <Skeleton height={78} radius={16} />
+                <Skeleton height={52} radius={14} />
+              </>
+            ) : (
+              <>
+                {/* 오늘 뛴 거리 — 히어로 */}
+                <View style={styles.hero}>
               <Text style={styles.heroLab}>오늘 뛴 거리</Text>
               <View style={styles.heroNumRow}>
                 <Text style={styles.heroNum}>{myToday.toFixed(2)}</Text>
@@ -136,19 +244,21 @@ export default function HomeScreen() {
           </>
         )}
 
-        <View style={styles.quickTiles}>
-          {(
-            [
-              { icon: "flag", label: "랭킹", to: "/ranking" },
-              { icon: "user", label: "마이", to: "/my" },
-            ] as const
-          ).map((q) => (
-            <PressableScale key={q.to} style={styles.qTile} onPress={() => router.push(q.to)}>
-              <Icon name={q.icon} size={18} color={Brand.brandDeep} />
-              <Text style={styles.qLabel}>{q.label}</Text>
-            </PressableScale>
-          ))}
-        </View>
+            <View style={styles.quickTiles}>
+              {(
+                [
+                  { icon: "flag", label: "랭킹", to: "/ranking" },
+                  { icon: "user", label: "마이", to: "/my" },
+                ] as const
+              ).map((t) => (
+                <PressableScale key={t.to} style={styles.qTile} onPress={() => router.push(t.to)}>
+                  <Icon name={t.icon} size={18} color={Brand.brandDeep} />
+                  <Text style={styles.qLabel}>{t.label}</Text>
+                </PressableScale>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -160,6 +270,41 @@ const styles = StyleSheet.create({
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
   title: { fontSize: 30, fontWeight: "900", color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
+
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    backgroundColor: Brand.card,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: Brand.ink, paddingVertical: 10 },
+  searchEmpty: { alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 40 },
+  searchEmptyText: { color: Brand.soft, fontSize: 14, fontWeight: "600" },
+  resRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    backgroundColor: Brand.card,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 14,
+    padding: 13,
+  },
+  resIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: Brand.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resTitle: { fontSize: 14, fontWeight: "800", color: Brand.ink },
+  resSub: { fontSize: 12, color: Brand.soft, marginTop: 1 },
 
   hero: { backgroundColor: Brand.dark, borderRadius: 22, padding: 24 },
   heroLab: { color: "#aab2bb", fontSize: 13, fontWeight: "600" },

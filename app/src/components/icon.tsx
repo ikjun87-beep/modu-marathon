@@ -30,6 +30,7 @@ export type IconName =
   | "pause"
   | "stop"
   | "user"
+  | "search"
   | "chevron-right"
   | "chevron-left";
 
@@ -146,6 +147,12 @@ export function Icon({ name, size = 24, color = Brand.ink, strokeWidth = 1.75 }:
         <>
           <Circle {...s} cx={12} cy={8} r={4} />
           <Path {...s} d="M4.5 20a7.5 7.5 0 0115 0" />
+        </>
+      )}
+      {name === "search" && (
+        <>
+          <Circle {...s} cx={10.5} cy={10.5} r={6.5} />
+          <Path {...s} d="M20 20l-4.9-4.9" />
         </>
       )}
       {name === "chevron-right" && <Path {...s} d="M9 6l6 6-6 6" />}
