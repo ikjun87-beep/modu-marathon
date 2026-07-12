@@ -61,7 +61,8 @@ export function fmtDuration(sec: number): string {
   return h > 0 ? `${h}:${p(m)}:${p(ss)}` : `${m}:${p(ss)}`;
 }
 
-function toMs(v: any): number {
+/** Firestore Timestamp | epoch ms | 날짜 문자열 → epoch ms (실패 시 0). */
+export function toMs(v: any): number {
   try {
     if (v?.toDate) return v.toDate().getTime();
     if (typeof v === "number") return v;

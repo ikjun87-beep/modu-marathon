@@ -1,193 +1,269 @@
-/** 홈 · 크루 — 방명록 피드 (웹과 동일한 guestbook 컬렉션 공유). */
+/**
+ * 홈 (Today) — 개인화 큐레이션. 오늘/이번주 거리·크루 합계·빠른 실행·다가오는 모임·새 글.
+ * 데이터는 runs·guestbook·attendance 구독(웹과 공유). 실제 러닝/글쓰기는 각 탭에서.
+ */
+import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { GallerySection } from "@/components/gallery-section";
-import { Icon } from "@/components/icon";
-import { NameField } from "@/components/name-field";
-import { ScheduleSection } from "@/components/schedule-section";
+import { Icon, type IconName } from "@/components/icon";
+import { PressableScale } from "@/components/ui/pressable-scale";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Brand } from "@/lib/brand";
-import { add, fmtDate, remove, subscribe, type Row } from "@/lib/crew";
-import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
+import { subscribe, type Row } from "@/lib/crew";
+import { nextEvent } from "@/lib/events";
+import { COLLECTIONS } from "@/lib/firebase";
+import { todayKm } from "@/lib/run";
+import { getMyName } from "@/lib/session";
+import { weekKm } from "@/lib/stats";
 
-export default function CrewScreen() {
+export default function HomeScreen() {
   const [name, setName] = useState("");
-  const [msg, setMsg] = useState("");
-  const [guests, setGuests] = useState<Row[]>([]);
+  const [runs, setRuns] = useState<Row[] | null>(null);
+  const [guests, setGuests] = useState<Row[] | null>(null);
+  const [attend, setAttend] = useState<Row[]>([]);
 
+  useEffect(() => {
+    getMyName().then((n) => setName(n));
+  }, []);
+  useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
+  useEffect(() => subscribe(COLLECTIONS.attendance, setAttend), []);
 
-  async function submit() {
-    if (!name.trim()) {
-      Alert.alert("이름을 먼저 입력해 주세요 🙏");
-      return;
-    }
-    if (!msg.trim()) return;
-    await add(COLLECTIONS.guestbook, { name: name.trim(), msg: msg.trim() });
-    setMsg("");
-  }
+  const ev = useMemo(() => nextEvent(), []);
+  const evCount = attend.filter((a) => a.eventId === ev.id).length;
+  const iAmIn = !!name && attend.some((a) => a.eventId === ev.id && a.name === name);
 
-  function onDelete(id: string) {
-    Alert.alert("삭제할까요?", "", [
-      { text: "취소", style: "cancel" },
-      {
-        text: "삭제",
-        style: "destructive",
-        onPress: () => void remove(COLLECTIONS.guestbook, id),
-      },
-    ]);
-  }
+  const loading = runs === null || guests === null;
 
-  const header = useMemo(
-    () => (
-      <View style={styles.header}>
-        <View style={styles.eyebrowRow}>
-          <Icon name="users" size={15} color={Brand.brand} />
-          <Text style={styles.eyebrow}>MODU MARATHON</Text>
-        </View>
-        <Text style={styles.title}>
-          모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
-        </Text>
-        <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
-
-        {!HAS_FIREBASE && (
-          <View style={styles.banner}>
-            <Text style={styles.bannerText}>
-              Firebase 미설정 — 지금은 이 기기에만 저장됩니다. (.env 입력 시 크루끼리 공유)
-            </Text>
-          </View>
-        )}
-
-        <NameField onName={setName} />
-
-        <ScheduleSection myName={name} />
-
-        <GallerySection myName={name} />
-
-        <View style={styles.formCard}>
-          <Text style={styles.formLabel}>방명록 한마디</Text>
-          <TextInput
-            style={styles.msgInput}
-            value={msg}
-            onChangeText={setMsg}
-            placeholder="오늘도 화이팅! 다음 모임에 갈게요"
-            placeholderTextColor={Brand.soft}
-            maxLength={200}
-            multiline
-          />
-          <Pressable style={styles.btn} onPress={submit}>
-            <Icon name="chat" size={17} color="#fff" />
-            <Text style={styles.btnText}>남기기</Text>
-          </Pressable>
-        </View>
-
-        <Text style={styles.listHint}>방명록 {guests.length}개</Text>
-      </View>
-    ),
-    [msg, name, guests.length]
-  );
+  const myToday = runs ? todayKm(runs, name || undefined) : 0;
+  const myWeek = runs ? weekKm(runs, name || undefined) : 0;
+  const crewWeek = runs ? weekKm(runs) : 0;
+  const newPosts = guests?.length ?? 0;
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
-      <FlatList
-        data={guests}
-        keyExtractor={(g) => g.id}
-        ListHeaderComponent={header}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요!</Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <View style={styles.itemHead}>
-              <Text style={styles.who}>{item.name}</Text>
-              <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.eyebrowRow}>
+          <Icon name="activity" size={15} color={Brand.brand} />
+          <Text style={styles.eyebrow}>TODAY</Text>
+        </View>
+        <Text style={styles.title}>
+          {name ? (
+            <>
+              안녕하세요, <Text style={{ color: Brand.brand }}>{name}</Text>님 👋
+            </>
+          ) : (
+            <>반가워요, 러너 👋</>
+          )}
+        </Text>
+
+        {loading ? (
+          <>
+            <Skeleton height={132} radius={20} />
+            <Skeleton height={78} radius={16} />
+            <Skeleton height={52} radius={14} />
+          </>
+        ) : (
+          <>
+            {/* 오늘 뛴 거리 — 히어로 */}
+            <View style={styles.hero}>
+              <Text style={styles.heroLab}>오늘 뛴 거리</Text>
+              <View style={styles.heroNumRow}>
+                <Text style={styles.heroNum}>{myToday.toFixed(2)}</Text>
+                <Text style={styles.heroUnit}>km</Text>
+              </View>
+              <Text style={styles.heroSub}>이번 주 {myWeek.toFixed(1)}km 달렸어요</Text>
             </View>
-            <Text style={styles.msg}>{item.msg}</Text>
-            <Pressable style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
-              <Icon name="close" size={16} color={Brand.faint} />
-            </Pressable>
-          </View>
+
+            {/* 이번 주 크루 합계 */}
+            <View style={styles.crewCard}>
+              <View style={styles.crewIcon}>
+                <Icon name="users" size={17} color={Brand.brandDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.crewLab}>이번 주 우리 크루</Text>
+                <Text style={styles.crewSub}>다 함께 달린 거리</Text>
+              </View>
+              <Text style={styles.crewNum}>
+                {crewWeek.toFixed(1)}
+                <Text style={styles.crewUnit}> km</Text>
+              </Text>
+            </View>
+
+            {/* 빠른 실행 */}
+            <View style={styles.ctaRow}>
+              <PressableScale
+                style={[styles.cta, styles.ctaPrimary]}
+                onPress={() => router.push("/explore")}>
+                <Icon name="play" size={20} color="#fff" />
+                <Text style={styles.ctaPrimaryText}>러닝 시작</Text>
+              </PressableScale>
+              <PressableScale
+                style={[styles.cta, styles.ctaSecondary]}
+                onPress={() => router.push("/explore")}>
+                <Icon name="watch" size={20} color={Brand.ink} />
+                <Text style={styles.ctaSecondaryText}>워치 불러오기</Text>
+              </PressableScale>
+            </View>
+
+            {/* 다가오는 모임 */}
+            <Text style={styles.sectionH}>다가오는 모임</Text>
+            <PressableScale style={styles.evCard} onPress={() => router.push("/crew")}>
+              <View style={styles.evDate}>
+                <Text style={styles.evM}>{ev.m}</Text>
+                <Text style={styles.evD}>{ev.d}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.evTitle}>{ev.title}</Text>
+                <Text style={styles.evMeta}>
+                  {evCount > 0 ? `${evCount}명 참석 예정` : "아직 참석자가 없어요"}
+                  {iAmIn ? " · 나 참석 ✓" : ""}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={18} color={Brand.faint} />
+            </PressableScale>
+
+            {/* 크루 새 글 */}
+            <PressableScale style={styles.linkRow} onPress={() => router.push("/crew")}>
+              <View style={styles.linkIcon}>
+                <Icon name="chat" size={16} color={Brand.accent} />
+              </View>
+              <Text style={styles.linkText}>크루 방명록 {newPosts}개</Text>
+              <Icon name="chevron-right" size={18} color={Brand.faint} />
+            </PressableScale>
+          </>
         )}
-      />
+
+        <View style={styles.quickTiles}>
+          {(
+            [
+              { icon: "flag", label: "랭킹", to: "/ranking" },
+              { icon: "user", label: "마이", to: "/my" },
+            ] as const
+          ).map((q) => (
+            <PressableScale key={q.to} style={styles.qTile} onPress={() => router.push(q.to)}>
+              <Icon name={q.icon} size={18} color={Brand.brandDeep} />
+              <Text style={styles.qLabel}>{q.label}</Text>
+            </PressableScale>
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
-  content: { padding: 18, gap: 12, paddingBottom: 120 },
-  header: { gap: 12, marginBottom: 4 },
+  content: { padding: 18, gap: 14, paddingBottom: 120 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
-  title: { fontSize: 34, fontWeight: "900", color: Brand.ink, letterSpacing: -0.8 },
-  sub: { fontSize: 14, color: Brand.soft },
-  banner: {
-    backgroundColor: "#fff4e6",
-    borderWidth: 1,
-    borderColor: "#f4d6a8",
-    borderRadius: 12,
-    padding: 12,
-  },
-  bannerText: { color: "#7a4a0a", fontSize: 12.5, fontWeight: "600" },
-  formCard: {
+  title: { fontSize: 30, fontWeight: "900", color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
+
+  hero: { backgroundColor: Brand.dark, borderRadius: 22, padding: 24 },
+  heroLab: { color: "#aab2bb", fontSize: 13, fontWeight: "600" },
+  heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
+  heroNum: { color: "#fff", fontSize: 54, fontWeight: "900", letterSpacing: -2, lineHeight: 56 },
+  heroUnit: { color: Brand.brand, fontSize: 22, fontWeight: "800", marginLeft: 7, marginBottom: 7 },
+  heroSub: { color: "#8b929b", fontSize: 12.5, fontWeight: "600", marginTop: 8 },
+
+  crewCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
     borderRadius: 16,
     padding: 16,
-    gap: 8,
   },
-  formLabel: { fontSize: 13, fontWeight: "700", color: Brand.ink },
-  msgInput: {
-    borderWidth: 1,
-    borderColor: Brand.line,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: Brand.ink,
-    minHeight: 64,
-    textAlignVertical: "top",
+  crewIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: Brand.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  btn: {
+  crewLab: { fontSize: 14.5, fontWeight: "800", color: Brand.ink },
+  crewSub: { fontSize: 12, color: Brand.soft, marginTop: 1 },
+  crewNum: { fontSize: 24, fontWeight: "900", color: Brand.ink, letterSpacing: -0.5 },
+  crewUnit: { fontSize: 14, fontWeight: "800", color: Brand.soft },
+
+  ctaRow: { flexDirection: "row", gap: 10 },
+  cta: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    backgroundColor: Brand.brand,
-    borderRadius: 11,
-    paddingVertical: 13,
-    minHeight: 48,
+    borderRadius: 14,
+    paddingVertical: 15,
+    minHeight: 52,
   },
-  btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
-  listHint: { fontSize: 12.5, color: Brand.soft, fontWeight: "600", marginTop: 4 },
-  empty: { color: Brand.soft, fontSize: 14, textAlign: "center", paddingVertical: 24 },
-  item: {
+  ctaPrimary: { backgroundColor: Brand.brand },
+  ctaPrimaryText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  ctaSecondary: { backgroundColor: Brand.card, borderWidth: 1, borderColor: Brand.line2 },
+  ctaSecondaryText: { color: Brand.ink, fontWeight: "800", fontSize: 15 },
+
+  sectionH: { fontSize: 15, fontWeight: "800", color: Brand.ink, marginTop: 2 },
+  evCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Brand.card,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 16,
+    padding: 14,
+  },
+  evDate: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: Brand.brand,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  evM: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  evD: { color: "#fff", fontSize: 19, fontWeight: "900", lineHeight: 21 },
+  evTitle: { fontSize: 14.5, fontWeight: "800", color: Brand.ink },
+  evMeta: { fontSize: 12, color: Brand.soft, marginTop: 3 },
+
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
     borderRadius: 14,
-    padding: 15,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
   },
-  itemHead: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  linkIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: Brand.accentSoft,
     alignItems: "center",
-    paddingRight: 26, // 우상단 삭제(X) 버튼과 날짜가 겹치지 않도록 여백 확보
+    justifyContent: "center",
   },
-  who: { fontWeight: "800", fontSize: 14, color: Brand.ink },
-  date: { fontSize: 12, color: Brand.soft },
-  msg: { fontSize: 14, color: "#333", marginTop: 5, paddingRight: 20 },
-  del: { position: "absolute", top: 10, right: 12, padding: 6 },
+  linkText: { flex: 1, fontSize: 14, fontWeight: "700", color: Brand.ink },
+
+  quickTiles: { flexDirection: "row", gap: 10, marginTop: 2 },
+  qTile: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    backgroundColor: Brand.card,
+    borderWidth: 1,
+    borderColor: Brand.line,
+    borderRadius: 13,
+    paddingVertical: 13,
+  },
+  qLabel: { fontSize: 13.5, fontWeight: "800", color: Brand.ink },
 });

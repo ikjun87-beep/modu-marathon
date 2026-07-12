@@ -4,16 +4,8 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Brand } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
+import { EVENTS } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
-
-type EventDef = { id: string; m: string; d: string; title: string; desc: string };
-
-// 웹(web/index.html)의 EVENTS와 동일 — 같은 attendance 컬렉션·eventId를 공유하므로 제목·설명 정합 유지.
-const EVENTS: EventDef[] = [
-  { id: "ev-0705", m: "7월", d: "05", title: "한강 야간 이지런", desc: "여의나루역 2번 출구 → 물빛광장 시계탑 · 6:50 모여 7:00 출발 · 5km · 대화 가능한 7′00~7′30/km · 안전: 밝은 옷·점멸등" },
-  { id: "ev-0719", m: "7월", d: "19", title: "아침 이지런", desc: "올림픽공원 평화의문 앞 · 오전 8시 · 3km · 걷기+뛰기 병행, 러닝 처음도 환영" },
-  { id: "ev-0802", m: "8월", d: "02", title: "모두의 10K 챌린지", desc: "학여울역 1번 출구(탄천) · 오전 9시 · 10km · 페이스 조 6′00·6′30·7′00 · 완주 메달" },
-];
 
 export function ScheduleSection({ myName }: { myName: string }) {
   const [rows, setRows] = useState<Row[]>([]);
