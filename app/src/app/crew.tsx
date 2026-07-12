@@ -9,15 +9,31 @@ import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand } from "@/lib/brand";
-import { add, fmtDate, remove, subscribe, type Row } from "@/lib/crew";
+import { add, fmtDate, isDemo, remove, subscribe, update, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 
 export default function CrewScreen() {
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
   const [guests, setGuests] = useState<Row[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
+
+  function startEdit(item: Row) {
+    setEditingId(item.id);
+    setEditText(String(item.msg ?? ""));
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText("");
+  }
+  async function saveEdit() {
+    const t = editText.trim();
+    if (t && editingId) await update(COLLECTIONS.guestbook, editingId, { msg: t });
+    cancelEdit();
+  }
 
   async function submit() {
     if (!name.trim()) {
@@ -98,18 +114,54 @@ export default function CrewScreen() {
         ListEmptyComponent={
           <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요!</Text>
         }
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <View style={styles.itemHead}>
-              <Text style={styles.who}>{item.name}</Text>
-              <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
+        renderItem={({ item }) => {
+          const mine = !!name && item.name === name && !isDemo(item.id);
+          const editing = editingId === item.id;
+          return (
+            <View style={styles.item}>
+              <View style={styles.itemHead}>
+                <Text style={styles.who}>{item.name}</Text>
+                <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
+              </View>
+              {editing ? (
+                <View style={styles.editWrap}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editText}
+                    onChangeText={setEditText}
+                    multiline
+                    maxLength={200}
+                    autoFocus
+                  />
+                  <View style={styles.editBtns}>
+                    <PressableScale style={styles.editCancel} onPress={cancelEdit}>
+                      <Text style={styles.editCancelText}>취소</Text>
+                    </PressableScale>
+                    <PressableScale style={styles.editSave} onPress={saveEdit}>
+                      <Text style={styles.editSaveText}>저장</Text>
+                    </PressableScale>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.msg}>{item.msg}</Text>
+                  {mine && (
+                    <PressableScale
+                      style={styles.editBtn}
+                      onPress={() => startEdit(item)}
+                      hitSlop={6}
+                      dim={false}>
+                      <Text style={styles.editBtnText}>수정</Text>
+                    </PressableScale>
+                  )}
+                  <PressableScale style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
+                    <Icon name="close" size={16} color={Brand.faint} />
+                  </PressableScale>
+                </>
+              )}
             </View>
-            <Text style={styles.msg}>{item.msg}</Text>
-            <PressableScale style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
-              <Icon name="close" size={16} color={Brand.faint} />
-            </PressableScale>
-          </View>
-        )}
+          );
+        }}
       />
     </SafeAreaView>
   );
@@ -175,10 +227,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingRight: 26, // 우상단 삭제(X) 버튼과 날짜가 겹치지 않도록 여백 확보
+    paddingRight: 64, // 우상단 수정·삭제 버튼과 날짜가 겹치지 않도록 여백 확보
   },
   who: { fontWeight: "800", fontSize: 14, color: Brand.ink },
   date: { fontSize: 12, color: Brand.soft },
-  msg: { fontSize: 14, color: "#333", marginTop: 5, paddingRight: 20 },
+  msg: { fontSize: 14, color: Brand.ink2, marginTop: 5, paddingRight: 20 },
   del: { position: "absolute", top: 10, right: 12, padding: 6 },
+  editBtn: { position: "absolute", top: 12, right: 40, padding: 4 },
+  editBtnText: { fontSize: 12.5, fontWeight: "800", color: Brand.brand },
+  editWrap: { gap: 9, marginTop: 6 },
+  editInput: {
+    borderWidth: 1,
+    borderColor: Brand.line2,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 14,
+    color: Brand.ink,
+    minHeight: 56,
+    textAlignVertical: "top",
+  },
+  editBtns: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
+  editCancel: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 9,
+    backgroundColor: Brand.warm,
+  },
+  editCancelText: { fontSize: 13, fontWeight: "800", color: Brand.soft },
+  editSave: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 9,
+    backgroundColor: Brand.brand,
+  },
+  editSaveText: { fontSize: 13, fontWeight: "800", color: "#fff" },
 });

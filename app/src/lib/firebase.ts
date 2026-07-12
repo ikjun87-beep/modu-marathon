@@ -41,4 +41,6 @@ export const COLLECTIONS = {
   //   avgHr?, cadence?, createdAt }
   // 워치/외부 소스는 문서 id를 `${source}_${sourceId}`로 두어 멱등 upsert(중복 방지).
   runs: "runs",
+  // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. { parentId, name, msg, createdAt }
+  comments: "comments",
 } as const;

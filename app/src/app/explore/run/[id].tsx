@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { CommentThread } from "@/components/comment-thread";
 import { Icon, type IconName } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -171,6 +172,9 @@ export default function RunDetailScreen() {
             </View>
           ))}
         </View>
+
+        {/* 댓글 */}
+        <CommentThread parentId={run.id} />
       </ScrollView>
     </SafeAreaView>
   );

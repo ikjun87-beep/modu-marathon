@@ -12,7 +12,9 @@ service cloud.firestore {
                     && request.resource.data.name.size() <= 20
                     && request.resource.data.msg is string
                     && request.resource.data.msg.size() <= 200;
-      allow update: if false;
+      // 글 수정(본인 글) — Auth 미도입이라 소유검증 불가, msg 유효성만 검증(App Check 전제).
+      allow update: if request.resource.data.msg is string
+                    && request.resource.data.msg.size() <= 200;
       allow delete: if true;
     }
     match /gallery/{id} {
@@ -39,6 +41,17 @@ service cloud.firestore {
                     && request.resource.data.distanceKm >= 0
                     && request.resource.data.distanceKm <= 500;
       allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx)
+    }
+    // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. parentId로 묶임.
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.parentId is string
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() <= 40
+                    && request.resource.data.msg is string
+                    && request.resource.data.msg.size() <= 200;
+      allow update: if false;
+      allow delete: if true;
     }
     // 앱 출시 알림 대기자(이메일). 열람 차단 — 관리자만 Firebase 콘솔에서 조회.
     // (곽재원 Blocker #1·천도윤 #2 공통: 이메일 하베스팅 차단)
