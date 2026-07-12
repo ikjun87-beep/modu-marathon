@@ -12,12 +12,13 @@
 
 ## Colors
 
+> **⚠️ 2026-07-12 리브랜딩 — Brand Orange → Pine Green.** 메인 강조색을 당근/Strava와 겹치는 오렌지에서 **Pine Green `#0f7d61`**으로 교체(러닝·아웃도어·건강 정체성 + 파인·골드 = 완주 메달 감성). 아래 토큰 표가 현재 단일 기준(값의 실소스는 `app/src/lib/brand.ts` + `web/index.html` CSS 변수). **본문 아래쪽 산문에 남은 "오렌지" 표현은 색상 역할(히어로·CTA·강조)을 뜻하며, 실제 색은 파인 그린으로 읽을 것.**
+
 ### Brand & Accent
-- **Brand Orange** (`--brand` `#ff5a3c`): 브랜드. 모든 primary CTA·활성·포커스 링·강조 링크. 아껴 쓴다.
-- **Brand Deep** (`--brand-deep` `#e8401f`): CTA hover/pressed, 헤드라인 강조.
-- **Brand Soft** (`--brand-soft` `#fff0ec`): 옅은 강조 배경·info 배경. 크롬에는 안 씀.
-- **Teal Accent** (`--accent` `#1e8b6f`): 참석·완료·긍정 상태(참석 버튼 등).
-- **Gold** (`--gold` `#f4b740`): 완주·메달·랭킹 하이라이트.
+- **Pine Green** (`--brand` `#0f7d61`): 브랜드. 모든 primary CTA·활성·포커스 링·강조 링크·경로 stroke. 아껴 쓴다.
+- **Pine Deep** (`--brand-deep` `#0a5f4a`): CTA hover/pressed, 헤드라인 강조, 진한 강조.
+- **Pine Soft** (`--brand-soft` `#e5f3ee`): 옅은 강조 배경·info 배경. 크롬에는 안 씀.
+- **Gold Accent** (`--accent` / `--gold` `#c0841a`): 페이스·완주·메달·랭킹 하이라이트(파인+골드 = 프리미엄 메달감).
 
 ### Surface
 - **Canvas** (`--card` `#ffffff`): 카드·본문 바탕. hairline 테두리로 얹는다.
