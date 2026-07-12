@@ -5,11 +5,13 @@
  */
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
+import { PressableScale } from "@/components/ui/pressable-scale";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Brand } from "@/lib/brand";
 import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -59,12 +61,9 @@ export default function RunDetailScreen() {
   }
 
   const back = (
-    <Pressable
-      style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-      onPress={() => router.back()}
-      hitSlop={10}>
+    <PressableScale style={styles.iconBtn} onPress={() => router.back()} hitSlop={10}>
       <Icon name="chevron-left" size={24} color={Brand.ink} />
-    </Pressable>
+    </PressableScale>
   );
 
   // 로딩(구독 전) — 스켈레톤
@@ -77,9 +76,9 @@ export default function RunDetailScreen() {
           <View style={styles.iconBtn} />
         </View>
         <View style={styles.body}>
-          <View style={[styles.skel, { height: 132 }]} />
-          <View style={[styles.skel, { height: 220 }]} />
-          <View style={[styles.skel, { height: 96 }]} />
+          <Skeleton height={132} radius={18} />
+          <Skeleton height={220} radius={18} />
+          <Skeleton height={96} radius={18} />
         </View>
       </SafeAreaView>
     );
@@ -119,12 +118,9 @@ export default function RunDetailScreen() {
       <View style={styles.topBar}>
         {back}
         <Text style={styles.topTitle}>러닝 상세</Text>
-        <Pressable
-          style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-          onPress={onDelete}
-          hitSlop={10}>
+        <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
           <Icon name="trash" size={19} color={Brand.faint} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -190,12 +186,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 12 },
-  pressed: { opacity: 0.5, backgroundColor: Brand.warm },
   topTitle: { fontSize: 16, fontWeight: "800", color: Brand.ink },
 
   body: { padding: 18, gap: 14, paddingBottom: 48 },
-
-  skel: { backgroundColor: Brand.line, borderRadius: 18, opacity: 0.6 },
 
   missing: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   missingText: { color: Brand.soft, fontSize: 14, fontWeight: "600" },

@@ -4,12 +4,13 @@
  */
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LiveRunModal } from "@/components/live-run";
 import { NameField } from "@/components/name-field";
+import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
@@ -144,16 +145,19 @@ export default function RunScreen() {
 
         {/* 실시간 GPS + 워치 불러오기 */}
         <View style={styles.ctaRow}>
-          <Pressable style={[styles.cta, styles.ctaPrimary]} onPress={() => setLive(true)}>
+          <PressableScale style={[styles.cta, styles.ctaPrimary]} onPress={() => setLive(true)}>
             <Icon name="play" size={20} color="#fff" />
             <Text style={styles.ctaPrimaryText}>러닝 시작</Text>
-          </Pressable>
-          <Pressable style={[styles.cta, styles.ctaSecondary]} onPress={syncWatch} disabled={syncing}>
+          </PressableScale>
+          <PressableScale
+            style={[styles.cta, styles.ctaSecondary]}
+            onPress={syncWatch}
+            disabled={syncing}>
             <Icon name="watch" size={20} color={Brand.ink} />
             <Text style={styles.ctaSecondaryText}>
               {syncing ? "불러오는 중…" : "워치 불러오기"}
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
         {!HC_SUPPORTED && (
           <Text style={styles.watchHint}>
@@ -196,10 +200,10 @@ export default function RunScreen() {
               />
             </View>
           </View>
-          <Pressable style={styles.addBtn} onPress={submitManual}>
+          <PressableScale style={styles.addBtn} onPress={submitManual}>
             <Icon name="plus" size={18} color="#fff" />
             <Text style={styles.addBtnText}>기록 추가</Text>
-          </Pressable>
+          </PressableScale>
         </View>
 
         <Text style={styles.listTitle}>지난 러닝</Text>
@@ -223,9 +227,9 @@ export default function RunScreen() {
           const km = Number(item.distanceKm) || 0;
           const sec = runSeconds(item);
           return (
-            <Pressable
+            <PressableScale
               onPress={() => router.push(`/explore/run/${item.id}`)}
-              style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}>
+              style={styles.item}>
               <View style={styles.itemHead}>
                 <View style={styles.srcBadge}>
                   <Icon name={sourceIcon(item.source)} size={15} color={Brand.brandDeep} />
@@ -250,7 +254,7 @@ export default function RunScreen() {
                   <Text style={styles.hr}>♥ {Math.round(Number(item.avgHr))}</Text>
                 ) : null}
               </View>
-            </Pressable>
+            </PressableScale>
           );
         }}
       />
@@ -365,7 +369,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
   },
-  itemPressed: { opacity: 0.65, backgroundColor: Brand.warm }, // 터치 피드백(부드러움)
   itemHead: { flexDirection: "row", alignItems: "center", gap: 11 },
   srcBadge: {
     width: 34,
