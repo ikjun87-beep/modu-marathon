@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 2,
   },
-  btnOff: { backgroundColor: "#f0b6ab" },
+  btnOff: { backgroundColor: Brand.brandLine },
   btnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
   note: { fontSize: 12.5, color: Brand.soft, textAlign: "center", marginTop: 2 },
 });
