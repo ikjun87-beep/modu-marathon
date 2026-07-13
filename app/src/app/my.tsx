@@ -1,35 +1,40 @@
 /**
- * 마이 — 계정(로그인)·프로필(이름 수정)·내 통계·성과 배지·처리방침·앱 정보.
- * 이름은 session에 기억(웹 #myName 대응). 통계·배지는 stats.ts 순수 함수(runs 구독).
+ * 마이 — 계정(로그인)·프로필(러너 네임)·내 통계·성과 배지·처리방침·앱 정보.
+ * 러너 네임 저장은 identity.saveRunnerName 단일 경로(기기·계정·과거 기록 이름까지 전파).
  * 계정은 이름 신원 위에 얹는 레이어 — 로그인하면 이름↔displayName을 동기화(auth.ts).
  */
 import Constants from "expo-constants";
 import { openBrowserAsync } from "expo-web-browser";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountSheet } from "@/components/account-sheet";
 import { Icon, type IconName } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  HAS_AUTH,
-  signOutUser,
-  updateAccountName,
-  watchAccount,
-  type Account,
-} from "@/lib/auth";
+import { HAS_AUTH, signOutUser, watchAccount, type Account } from "@/lib/auth";
 import { Brand } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
-import { getMyName, setMyName } from "@/lib/session";
+import { saveRunnerName } from "@/lib/identity";
+import { getMyName } from "@/lib/session";
 import { BADGES, earnedBadgeIds, personalStats } from "@/lib/stats";
 
 const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
 
 export default function MyScreen() {
-  const [name, setName] = useState("");
+  const [name, setName] = useState(""); // 저장된 러너 네임
+  const [draft, setDraft] = useState(""); // 입력 중인 값(저장 눌러야 반영)
+  const [saving, setSaving] = useState(false);
   const [loadedName, setLoadedName] = useState(false);
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
@@ -38,6 +43,7 @@ export default function MyScreen() {
   useEffect(() => {
     getMyName().then((n) => {
       setName(n);
+      setDraft(n);
       setLoadedName(true);
     });
   }, []);
@@ -46,14 +52,37 @@ export default function MyScreen() {
 
   // 로그인 후 계정 표시이름이 있으면 화면의 이름도 그 값으로 맞춘다(auth.ts가 session에 이미 저장).
   useEffect(() => {
-    if (account?.name && account.name !== name) setName(account.name);
+    if (account?.name && account.name !== name) {
+      setName(account.name);
+      setDraft(account.name);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account?.name]);
 
-  function updateName(v: string) {
-    setName(v);
-    void setMyName(v);
-    void updateAccountName(v); // 로그인 상태면 계정 표시이름도 함께
+  const dirty = draft.trim().length > 0 && draft.trim() !== name.trim();
+
+  /** 러너 네임 저장 — 기기·계정에 저장하고, **이미 남긴 글·참석·러닝·댓글의 이름도 함께 갱신**한다.
+   *  (타이핑마다 돌면 안 되므로 저장 버튼으로만 실행) */
+  async function saveName() {
+    const next = draft.trim();
+    const prev = name.trim();
+    if (!next || next === prev) return;
+
+    setSaving(true);
+    try {
+      const changed = await saveRunnerName(prev, next); // 기기·계정·과거 기록까지 한 번에
+      setName(next);
+      Alert.alert(
+        "러너 네임을 바꿨어요",
+        changed > 0
+          ? `이미 남긴 기록 ${changed}건의 이름도 함께 바꿨어요.`
+          : "이제부터 이 이름으로 보여요."
+      );
+    } catch {
+      Alert.alert("이런", "이름을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function logout() {
@@ -85,20 +114,46 @@ export default function MyScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* 프로필 */}
         <View style={styles.profile}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(name.trim()[0] ?? "🏃").toUpperCase()}</Text>
+          <View style={styles.profileHead}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{(name.trim()[0] ?? "🏃").toUpperCase()}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.pLabel}>러너 네임</Text>
+              <Text style={styles.pHint}>크루에서 이렇게 보여요</Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.pLabel}>내 이름</Text>
+          <View style={styles.nameRow}>
             <TextInput
               style={styles.nameInput}
-              value={name}
-              onChangeText={updateName}
+              value={draft}
+              onChangeText={setDraft}
               placeholder="예: 김캡틴"
               placeholderTextColor={Brand.faint}
               maxLength={20}
+              editable={!saving}
+              returnKeyType="done"
+              onSubmitEditing={() => dirty && void saveName()}
             />
+            {dirty && (
+              <PressableScale
+                style={styles.saveBtn}
+                onPress={() => void saveName()}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.saveBtnText}>저장</Text>
+                )}
+              </PressableScale>
+            )}
           </View>
+          {dirty && (
+            <Text style={styles.renameNote}>
+              이미 남긴 글·참석·러닝 기록의 이름도 함께 바뀝니다.
+            </Text>
+          )}
         </View>
 
         {/* 계정 — Firebase 설정된 경우에만 노출(미설정 시 앱은 이름 기반으로 정상 동작) */}
@@ -215,15 +270,27 @@ const styles = StyleSheet.create({
   content: { padding: 18, gap: 12, paddingBottom: 120 },
 
   profile: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
+    gap: 12,
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
     borderRadius: 18,
     padding: 16,
   },
+  profileHead: { flexDirection: "row", alignItems: "center", gap: 14 },
+  pHint: { fontSize: 12, color: Brand.faint, marginTop: 2 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  saveBtn: {
+    backgroundColor: Brand.brand,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minWidth: 62,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "800" },
+  renameNote: { fontSize: 12, color: Brand.soft, lineHeight: 17 },
   avatar: {
     width: 56,
     height: 56,
@@ -235,7 +302,7 @@ const styles = StyleSheet.create({
   avatarText: { color: "#fff", fontSize: 24, fontWeight: "900" },
   pLabel: { fontSize: 12, fontWeight: "700", color: Brand.soft },
   nameInput: {
-    marginTop: 4,
+    flex: 1,
     borderWidth: 1,
     borderColor: Brand.line,
     borderRadius: 10,

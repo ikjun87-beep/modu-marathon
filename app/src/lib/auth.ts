@@ -143,8 +143,13 @@ function requireAuth(): Auth {
 export class AuthError extends Error {}
 
 const MESSAGES: Record<string, string> = {
+  // Firebase 콘솔에서 Authentication을 아직 "시작하기" 하지 않은 상태(서버가 CONFIGURATION_NOT_FOUND).
+  "auth/configuration-not-found":
+    "로그인 기능이 아직 준비되지 않았어요. (관리자: Firebase 콘솔 → Authentication → 시작하기 → 이메일/비밀번호·익명 사용설정)",
   "auth/operation-not-allowed":
-    "이 로그인 방식이 아직 켜져 있지 않아요. Firebase 콘솔 → Authentication → 로그인 방법에서 활성화해 주세요.",
+    "이 로그인 방식이 아직 켜져 있지 않아요. (관리자: Firebase 콘솔 → Authentication → 로그인 방법에서 활성화)",
+  "auth/admin-restricted-operation":
+    "게스트 로그인이 꺼져 있어요. (관리자: Firebase 콘솔 → Authentication → 익명 사용설정)",
   "auth/email-already-in-use": "이미 가입된 이메일이에요. 로그인해 주세요.",
   "auth/invalid-email": "이메일 형식이 올바르지 않아요.",
   "auth/weak-password": "비밀번호는 6자 이상이어야 해요.",
@@ -160,6 +165,9 @@ async function run<T>(fn: () => Promise<T>): Promise<T> {
     return await fn();
   } catch (e) {
     const code = (e as { code?: string }).code ?? "";
-    throw new AuthError(MESSAGES[code] ?? "로그인 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
+    // 모르는 코드는 코드까지 같이 보여준다 — 안 그러면 원인을 못 찾는다(12차 교훈).
+    throw new AuthError(
+      MESSAGES[code] ?? `로그인 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.${code ? `\n(${code})` : ""}`
+    );
   }
 }

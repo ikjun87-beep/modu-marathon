@@ -30,7 +30,7 @@ export function AccountSheet({
   onClose,
 }: {
   visible: boolean;
-  /** 온보딩에서 받은 이 기기의 이름 — 가입 시 표시이름으로 쓴다. */
+  /** 온보딩에서 받은 러너 네임 — 가입 시 계정 표시이름으로 심는다. */
   myName: string;
   onClose: () => void;
 }) {
@@ -88,7 +88,7 @@ export function AccountSheet({
                 </PressableScale>
               </View>
               <Text style={styles.sub}>
-                기기를 바꿔도 기록이 따라옵니다. 지금은 이름만으로도 쓸 수 있어요.
+                기기를 바꿔도 러닝 기록이 따라옵니다. 지금은 러너 네임만으로도 쓸 수 있어요.
               </Text>
 
               {/* 로그인 / 가입 전환 */}

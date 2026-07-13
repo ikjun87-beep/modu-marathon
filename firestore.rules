@@ -1,6 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 러너 네임 변경 전파 — 이름을 바꾸면 과거 글·참석·러닝·댓글의 작성자명도 함께 갱신된다
+    // (crew.ts renameAuthor). 작성자가 name 문자열로 박제되는 스키마라 필요한 예외.
+    // **name 필드 하나만 바뀌는 수정**으로 한정 → 본문·거리·이미지 등 내용 변조는 여전히 차단.
+    function isRenameOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+             && request.resource.data.name is string
+             && request.resource.data.name.size() <= 40;
+    }
+
     // 친목용: 누구나 읽기. 생성은 타입·크기 검증으로 도배/오염 방지.
     // ⚠ 인증(Firebase Auth) 도입 전까지 delete는 소유 검증이 불가능하다.
     //    delete 버튼(방명록·갤러리·참석취소·러닝)을 살리려면 전면 허용이 유일한 방법이므로,
@@ -21,14 +30,14 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.resource.data.image is string
                     && request.resource.data.image.size() < 1000000;
-      allow update: if false;
+      allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;
     }
     match /attendance/{id} {
       allow read: if true;
       allow create: if request.resource.data.name is string
                     && request.resource.data.name.size() <= 40;
-      allow update: if false;
+      allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;   // 참석 취소 토글(remove)
     }
     // 러닝 기록(웹·앱·워치 공용). 결정적 id로 멱등 upsert(create+update=merge).
@@ -50,7 +59,7 @@ service cloud.firestore {
                     && request.resource.data.name.size() <= 40
                     && request.resource.data.msg is string
                     && request.resource.data.msg.size() <= 200;
-      allow update: if false;
+      allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;
     }
     // 앱 출시 알림 대기자(이메일). 열람 차단 — 관리자만 Firebase 콘솔에서 조회.

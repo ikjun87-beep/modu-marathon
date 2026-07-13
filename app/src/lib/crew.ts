@@ -6,15 +6,18 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 import { demoRows } from "./demo";
-import { db, HAS_FIREBASE } from "./firebase";
+import { COLLECTIONS, db, HAS_FIREBASE } from "./firebase";
 
 export type Row = Record<string, any> & { id: string; createdAt?: any };
 
@@ -138,6 +141,66 @@ export function put(
   createdAtMs?: number
 ): Promise<unknown> {
   return HAS_FIREBASE ? fbPut(col, id, item, createdAtMs) : localPut(col, id, item, createdAtMs);
+}
+
+/** 러너 네임을 바꿀 때 **이미 남긴 글·참석·러닝·댓글의 이름도 함께 갈아끼운다.**
+ *
+ *  왜: 문서에 작성자가 `name` 문자열로 박제돼 저장된다(웹과 공유하는 스키마라 uid 키로 못 바꿈).
+ *  그래서 이름만 바꾸면 과거 기록은 옛 이름으로 남아 "내 것"으로 안 보인다(회장 지적).
+ *  → 이름 변경 시 옛 이름으로 된 내 문서를 찾아 새 이름으로 일괄 수정한다.
+ *
+ *  한계(정직하게): 같은 이름을 쓰는 다른 사람의 문서도 함께 바뀐다. 지금 신원이 이름 기반이라
+ *  구분할 방법이 없다. 웹까지 Auth를 붙이고 문서에 uid를 심으면 그때 소유 기반으로 교체할 것.
+ *
+ *  @returns 바뀐 문서 수
+ */
+const NAMED_COLLECTIONS = [
+  COLLECTIONS.guestbook,
+  COLLECTIONS.gallery,
+  COLLECTIONS.attendance,
+  COLLECTIONS.runs,
+  COLLECTIONS.comments,
+];
+
+export async function renameAuthor(oldName: string, newName: string): Promise<number> {
+  const from = oldName.trim();
+  const to = newName.trim();
+  if (!from || !to || from === to) return 0;
+
+  if (!HAS_FIREBASE) {
+    let n = 0;
+    for (const col of NAMED_COLLECTIONS) {
+      const list = await localGet(col);
+      let touched = false;
+      for (const row of list) {
+        if (row.name === from) {
+          row.name = to;
+          touched = true;
+          n++;
+        }
+      }
+      if (touched) {
+        await AsyncStorage.setItem(lkey(col), JSON.stringify(list));
+        emit(col);
+      }
+    }
+    return n;
+  }
+
+  let n = 0;
+  for (const col of NAMED_COLLECTIONS) {
+    const snap = await getDocs(query(collection(db, col), where("name", "==", from)));
+    if (snap.empty) continue;
+    // 데모 행은 저장소에 없는 가짜라 대상 아님(id가 demo_ 접두).
+    const targets = snap.docs.filter((d) => !isDemo(d.id));
+    for (let i = 0; i < targets.length; i += 400) {
+      const batch = writeBatch(db);
+      targets.slice(i, i + 400).forEach((d) => batch.update(d.ref, { name: to }));
+      await batch.commit();
+    }
+    n += targets.length;
+  }
+  return n;
 }
 
 /** createdAt(Firestore Timestamp | number)을 ko 날짜 문자열로 */

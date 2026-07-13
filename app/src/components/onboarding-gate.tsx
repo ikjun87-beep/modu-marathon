@@ -89,7 +89,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.label}>어떻게 불러드릴까요?</Text>
+            <Text style={styles.label}>러너 네임을 정해주세요</Text>
             <TextInput
               style={styles.input}
               value={name}
@@ -108,7 +108,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
             >
               <Text style={styles.btnText}>시작하기</Text>
             </Pressable>
-            <Text style={styles.note}>이름은 이 기기에만 저장돼요. 언제든 바꿀 수 있어요.</Text>
+            <Text style={styles.note}>크루에서 이렇게 보여요. 언제든 바꿀 수 있어요.</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
