@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="모두의 마라톤">
   <defs>
     <linearGradient id="mm-fav" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ff7a4d"/>
-      <stop offset="0.55" stop-color="#ff5a3c"/>
-      <stop offset="1" stop-color="#e8401f"/>
+      <stop offset="0" stop-color="#4c85e8"/>
+      <stop offset="0.55" stop-color="#2563c9"/>
+      <stop offset="1" stop-color="#1b4ea3"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#mm-fav)"/>
