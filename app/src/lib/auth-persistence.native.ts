@@ -15,8 +15,20 @@ type ReactNativeAuth = {
 
 const rn = firebaseAuth as unknown as ReactNativeAuth;
 
-/** 번들 해석이 틀어져(웹 빌드로 잡히는 등) 함수가 없으면 크래시 대신 메모리 세션으로 강등한다.
- *  → 앱은 정상 동작하고, 재시작 시 로그인만 풀린다. */
-export const authPersistence: Persistence | undefined = rn.getReactNativePersistence
-  ? rn.getReactNativePersistence(AsyncStorage)
-  : (console.warn("[auth] RN 영속성 API 없음 — 메모리 세션으로 동작합니다."), undefined);
+/** 이 모듈은 앱 부팅 경로에서 평가된다 → **여기서 던지면 앱이 즉사한다.**
+ *  번들 해석이 틀어져 함수가 없거나(웹 빌드로 잡히는 등) 생성이 실패하면
+ *  크래시 대신 undefined(메모리 세션)로 강등한다. 앱은 정상 동작하고 로그인만 재시작 시 풀린다. */
+function createPersistence(): Persistence | undefined {
+  try {
+    if (typeof rn.getReactNativePersistence !== "function") {
+      console.warn("[auth] RN 영속성 API 없음 — 메모리 세션으로 동작합니다.");
+      return undefined;
+    }
+    return rn.getReactNativePersistence(AsyncStorage);
+  } catch (e) {
+    console.warn("[auth] RN 영속성 생성 실패 — 메모리 세션으로 동작합니다.", e);
+    return undefined;
+  }
+}
+
+export const authPersistence: Persistence | undefined = createPersistence();

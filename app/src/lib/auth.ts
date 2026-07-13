@@ -30,7 +30,10 @@ import { authPersistence } from "./auth-persistence";
 import { app, HAS_FIREBASE } from "./firebase";
 import { setMyName } from "./session";
 
-/** Fast Refresh·중복 초기화 방어: 이미 초기화됐으면 기존 인스턴스를 쓴다. */
+/** Auth 초기화는 **앱 시작을 절대 막지 않는다**.
+ *  이 모듈은 마이 탭 등에서 import되어 앱 부팅 경로에 올라가므로,
+ *  여기서 예외가 새어나가면 JS 번들 로드가 실패해 앱이 즉사한다(=런처에서 바로 "중단됨").
+ *  → 어떤 실패든 삼키고 auth=null(계정 기능만 숨김, 앱은 이름 기반으로 정상 동작). */
 function createAuth(): Auth | null {
   if (!HAS_FIREBASE) return null;
   try {
@@ -38,8 +41,13 @@ function createAuth(): Auth | null {
       ? initializeAuth(app, { persistence: authPersistence })
       : initializeAuth(app);
   } catch {
-    // already-initialized
-    return getAuth(app);
+    // 이미 초기화됨(Fast Refresh) 또는 initializeAuth 실패 → 기존 인스턴스 시도
+    try {
+      return getAuth(app);
+    } catch (e) {
+      console.warn("[auth] 초기화 실패 — 계정 기능 없이 계속합니다.", e);
+      return null;
+    }
   }
 }
 
