@@ -796,8 +796,10 @@ async function toggleAtt(evId){
   const list=attData[evId]||[];
   const mine=list.find(a=>a.name===name);
   if(HAS_FB){
-    if(mine){ await deleteDoc(doc(db,'attendance',mine.id)); }
-    else{ await addDoc(collection(db,'attendance'),withUid({eventId:evId,name,createdAt:serverTimestamp()})); }
+    try{
+      if(mine){ await deleteDoc(doc(db,'attendance',mine.id)); }
+      else{ await addDoc(collection(db,'attendance'),withUid({eventId:evId,name,createdAt:serverTimestamp()})); }
+    }catch(err){ toast('잠시 후 다시 시도해 주세요 🙏'); return; }
   }else{
     let all=LS.get('attendance');
     if(mine){ all=all.filter(a=>!(a.eventId===evId&&a.name===name)); }
@@ -841,7 +843,7 @@ function renderGallery(rows){
   setStat('#stGal', rows.length);
   if(!rows.length){ box.innerHTML='<div class="gal-empty">아직 사진이 없어요. 첫 인증샷을 올려보세요!</div>'; return; }
   box.innerHTML=rows.map(g=>`<div class="gal-item">
-      <img src="${g.image}" alt="${esc(g.caption||'러닝 사진')}" loading="lazy">
+      <img src="${/^data:image\//.test(g.image||'')?esc(g.image):''}" alt="${esc(g.caption||'러닝 사진')}" loading="lazy">
       ${g.caption?`<div class="gal-cap"><b>${esc(g.name)}</b> · ${esc(g.caption)}</div>`:`<div class="gal-cap"><b>${esc(g.name)}</b></div>`}
       ${g.name===myName()?`<button class="gal-del" data-id="${g.id}" aria-label="내 사진 삭제" title="삭제">${icon('i-close')}</button>`:''}
     </div>`).join('');
@@ -849,7 +851,7 @@ function renderGallery(rows){
 }
 async function delGallery(id){
   if(!confirm('이 사진을 삭제할까요?')) return;
-  if(HAS_FB){ await deleteDoc(doc(db,'gallery',id)); }
+  if(HAS_FB){ try{ await deleteDoc(doc(db,'gallery',id)); }catch(err){ toast('삭제하지 못했어요. 잠시 후 다시 시도해 주세요'); return; } }
   else{ LS.set('gallery', LS.get('gallery').filter(g=>g.id!==id)); renderGallery(LS.get('gallery')); }
   toast('삭제했어요');
 }
@@ -859,7 +861,10 @@ $('#gbForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const name=$('#g-name').value.trim(), msg=$('#g-msg').value.trim();
   if(!name||!msg) return;
-  if(HAS_FB){ await addDoc(collection(db,'guestbook'),withUid({name,msg,createdAt:serverTimestamp()})); }
+  if(HAS_FB){
+    try{ await addDoc(collection(db,'guestbook'),withUid({name,msg,createdAt:serverTimestamp()})); }
+    catch(err){ toast('잠시 후 다시 시도해 주세요 🙏'); return; }
+  }
   else{ const all=LS.get('guestbook'); all.unshift({id:'l'+Date.now(),name,msg,createdAt:Date.now()}); LS.set('guestbook',all.slice(0,50)); renderGuest(LS.get('guestbook')); }
   $('#g-name').value=''; $('#g-msg').value='';
   toast('방명록을 남겼어요! 😊');
@@ -877,7 +882,7 @@ function renderGuest(rows){
 }
 async function delGuest(id){
   if(!confirm('이 방명록을 삭제할까요?')) return;
-  if(HAS_FB){ await deleteDoc(doc(db,'guestbook',id)); }
+  if(HAS_FB){ try{ await deleteDoc(doc(db,'guestbook',id)); }catch(err){ toast('삭제하지 못했어요. 잠시 후 다시 시도해 주세요'); return; } }
   else{ LS.set('guestbook', LS.get('guestbook').filter(g=>g.id!==id)); renderGuest(LS.get('guestbook')); }
 }
 

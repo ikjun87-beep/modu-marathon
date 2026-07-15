@@ -4,6 +4,8 @@ service cloud.firestore {
     // 러너 네임 변경 전파 — 이름을 바꾸면 과거 글·참석·러닝·댓글의 작성자명도 함께 갱신된다
     // (crew.ts renameAuthor). 작성자가 name 문자열로 박제되는 스키마라 필요한 예외.
     // **name 필드 하나만 바뀌는 수정**으로 한정 → 본문·거리·이미지 등 내용 변조는 여전히 차단.
+    // ⚠ 단 소유검증이 없어, '아무 문서의 작성자명을 임의 문자열로' 바꾸는 것 자체(사칭)는 규칙만으론 못 막는다.
+    //    delete 개방과 같은 등급의 pre-Auth 트레이드오프 — Auth 도입 시 uid 소유검증으로 교체.
     function isRenameOnly() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
              && request.resource.data.name is string
@@ -21,15 +23,19 @@ service cloud.firestore {
                     && request.resource.data.name.size() <= 20
                     && request.resource.data.msg is string
                     && request.resource.data.msg.size() <= 200;
-      // 글 수정(본인 글) — Auth 미도입이라 소유검증 불가, msg 유효성만 검증(App Check 전제).
-      allow update: if request.resource.data.msg is string
-                    && request.resource.data.msg.size() <= 200;
+      // 본인 글 수정(msg만) 또는 러너 네임 전파(name만)로 한정.
+      // → 임의 필드 주입·용량 부풀리기(생성 제한 우회)를 차단(diff().hasOnly).
+      allow update: if isRenameOnly()
+                    || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['msg'])
+                        && request.resource.data.msg is string
+                        && request.resource.data.msg.size() <= 200);
       allow delete: if true;
     }
     match /gallery/{id} {
       allow read: if true;
       allow create: if request.resource.data.image is string
-                    && request.resource.data.image.size() < 1000000;
+                    && request.resource.data.image.size() < 1000000
+                    && request.resource.data.image.matches('data:image/.*'); // 실제 이미지 data URI만 — src="" XSS 주입 차단
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;
     }
@@ -44,11 +50,18 @@ service cloud.firestore {
     // distanceKm 범위 검증으로 today 합산·리더보드 통계 오염 방지(천도윤 #4).
     match /runs/{id} {
       allow read: if true;
-      allow create, update: if request.resource.data.name is string
+      allow create: if request.resource.data.name is string
                     && request.resource.data.name.size() <= 40
                     && request.resource.data.distanceKm is number
                     && request.resource.data.distanceKm >= 0
                     && request.resource.data.distanceKm <= 500;
+      // 기존 기록 update는 **distanceKm 변경 금지** → 남의 기록을 0으로 지우거나 부풀려
+      // today 합산·리더보드를 오염시키는 공격 차단. 정상 경로(멱등 재저장·러너 네임 전파)는
+      // 거리를 안 바꾸므로 통과. (작성자명 재지정까지 막으려면 Auth 소유검증 필요 — pre-Auth 한계)
+      allow update: if request.resource.data.name is string
+                    && request.resource.data.name.size() <= 40
+                    && request.resource.data.distanceKm is number
+                    && request.resource.data.distanceKm == resource.data.distanceKm;
       allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx)
     }
     // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. parentId로 묶임.
