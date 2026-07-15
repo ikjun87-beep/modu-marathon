@@ -40,6 +40,7 @@ export default function RunScreen() {
   const [runs, setRuns] = useState<Row[]>([]);
   const [live, setLive] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [submitting, setSubmitting] = useState(false); // 수동 기록 저장 중 — 더블탭 이중저장 방지
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
 
@@ -50,6 +51,7 @@ export default function RunScreen() {
   const today = useMemo(() => todayKm(runs, name || undefined), [runs, name]);
 
   async function submitManual() {
+    if (submitting) return; // 이미 저장 중 — 더블탭 시 두 번째 문서 생성 방지(수동 기록엔 sourceId 멱등이 없음)
     if (!name.trim()) {
       Alert.alert("이름을 먼저 입력해 주세요");
       return;
@@ -60,9 +62,16 @@ export default function RunScreen() {
       Alert.alert("거리(km)와 시간(분)을 숫자로 입력해 주세요");
       return;
     }
-    await saveRun({ source: "manual", name: name.trim(), distanceKm: km, durationSec: min * 60 });
-    setDistance("");
-    setDuration("");
+    setSubmitting(true);
+    try {
+      await saveRun({ source: "manual", name: name.trim(), distanceKm: km, durationSec: min * 60 });
+      setDistance("");
+      setDuration("");
+    } catch {
+      Alert.alert("저장에 실패했어요", "잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function syncWatch() {
@@ -200,16 +209,20 @@ export default function RunScreen() {
               />
             </View>
           </View>
-          <PressableScale style={styles.addBtn} onPress={submitManual}>
+          <PressableScale
+            style={[styles.addBtn, submitting && styles.addBtnOff]}
+            onPress={submitManual}
+            disabled={submitting}
+          >
             <Icon name="plus" size={18} color="#fff" />
-            <Text style={styles.addBtnText}>기록 추가</Text>
+            <Text style={styles.addBtnText}>{submitting ? "저장 중…" : "기록 추가"}</Text>
           </PressableScale>
         </View>
 
         <Text style={styles.listTitle}>지난 러닝</Text>
       </View>
     ),
-    [distance, duration, name, runs.length, totalKm, today, syncing]
+    [distance, duration, name, runs.length, totalKm, today, syncing, submitting]
   );
 
   return (
@@ -357,6 +370,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     minHeight: 48,
   },
+  addBtnOff: { opacity: 0.6 },
   addBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
 
   listTitle: { fontSize: 15, fontWeight: "800", color: Brand.ink, marginTop: 4 },

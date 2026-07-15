@@ -97,7 +97,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="예: 김캡틴"
+              placeholder="예: 홍길동"
               placeholderTextColor={Brand.soft}
               maxLength={20}
               autoFocus

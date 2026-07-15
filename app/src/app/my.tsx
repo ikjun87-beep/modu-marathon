@@ -128,7 +128,7 @@ export default function MyScreen() {
               style={styles.nameInput}
               value={draft}
               onChangeText={setDraft}
-              placeholder="예: 김캡틴"
+              placeholder="예: 홍길동"
               placeholderTextColor={Brand.faint}
               maxLength={20}
               editable={!saving}

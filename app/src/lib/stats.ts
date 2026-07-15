@@ -34,25 +34,39 @@ function inRange(r: Row, from: number): boolean {
   return t >= from;
 }
 
+/** 데모 행 여부(id가 demo_ 접두). */
+function isDemo(r: Row): boolean {
+  return String(r.id ?? "").startsWith("demo_");
+}
+/**
+ * 이 행이 name의 것인지 판정.
+ * - name 없음(전체 크루 기준·랭킹): 모두 포함(데모 포함 → populated 화면 유지).
+ * - name 있음(특정 개인 통계·배지): 그 이름 + **데모 제외**.
+ *   데모 러너와 이름이 겹쳐도(예: 실제 회원이 '박준서') 데모 러닝이 내 통계·배지로 새지 않게 한다.
+ */
+function mineOf(r: Row, name?: string): boolean {
+  return !name ? true : r.name === name && !isDemo(r);
+}
+
 /** 이번 주 거리 합계(km). name 주면 그 사람만. */
 export function weekKm(rows: Row[], name?: string, now: number = Date.now()): number {
   const from = startOfWeek(now);
   return rows
-    .filter((r) => inRange(r, from) && (!name || r.name === name))
+    .filter((r) => inRange(r, from) && mineOf(r, name))
     .reduce((a, r) => a + km(r), 0);
 }
 
 /** 이번 주 러닝 횟수. name 주면 그 사람만. */
 export function weekRuns(rows: Row[], name?: string, now: number = Date.now()): number {
   const from = startOfWeek(now);
-  return rows.filter((r) => inRange(r, from) && (!name || r.name === name)).length;
+  return rows.filter((r) => inRange(r, from) && mineOf(r, name)).length;
 }
 
 /** 이번 달 거리 합계(km). name 주면 그 사람만. */
 export function monthKm(rows: Row[], name?: string, now: number = Date.now()): number {
   const from = startOfMonth(now);
   return rows
-    .filter((r) => inRange(r, from) && (!name || r.name === name))
+    .filter((r) => inRange(r, from) && mineOf(r, name))
     .reduce((a, r) => a + km(r), 0);
 }
 
@@ -66,7 +80,7 @@ export type PersonalStats = {
 
 /** 한 사람의 누적/이번주 통계. name 비면 전체 기준. */
 export function personalStats(rows: Row[], name?: string, now: number = Date.now()): PersonalStats {
-  const mine = rows.filter((r) => !name || r.name === name);
+  const mine = rows.filter((r) => mineOf(r, name));
   const totalKm = mine.reduce((a, r) => a + km(r), 0);
   const totalSec = mine.reduce((a, r) => a + sec(r), 0);
   const longestKm = mine.reduce((a, r) => Math.max(a, km(r)), 0);
@@ -115,7 +129,7 @@ export const BADGES: Badge[] = [
 
 /** 한 사람이 획득한 배지 id 집합. */
 export function earnedBadgeIds(rows: Row[], name?: string, now: number = Date.now()): Set<string> {
-  const mine = rows.filter((r) => !name || r.name === name);
+  const mine = rows.filter((r) => mineOf(r, name));
   const ids = new Set<string>();
   if (mine.length >= 1) ids.add("first_run");
   if (mine.some((r) => km(r) >= 5)) ids.add("five_k");

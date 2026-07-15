@@ -69,6 +69,15 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     reset();
     startedAt.current = Date.now();
     setPhase("running");
+    if (!(await armTracking())) {
+      setErr("위치 추적을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setPhase("idle");
+    }
+  }
+
+  // 타이머 + 위치 구독을 건다. 성공 시 true. start()와 저장 실패 후 재개 양쪽에서 재사용.
+  async function armTracking(): Promise<boolean> {
+    stopAll(); // 중복 구독 방지
     timer.current = setInterval(() => {
       if (phaseRef.current === "running") setElapsed((e) => e + 1);
     }, 1000);
@@ -87,9 +96,9 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
           if (last.current && lastAt.current && acc <= 30) {
             const d = haversine(last.current, cur);
             const dt = (t - lastAt.current) / 1000; // 초
-            const speed = dt > 0 ? d / dt : Infinity; // m/s
-            // 1.5m~60m 구간 + 속도 상한(9m/s≈32km/h) 채택 — 정지 드리프트·GPS 튐 제거
-            if (d >= 1.5 && d <= 60 && speed <= MAX_SPEED_MS) {
+            // dt>0일 때만 속도로 판정 — 타임스탬프가 안 흐르거나(0) 역행(<0)하면 이 구간은 건너뛴다(유령거리 방지).
+            // 상한은 고정 60m가 아니라 속도(≤9m/s)로 — 신호가 끊겨 넓게 벌어진 정상 구간을 버리지 않는다.
+            if (dt > 0 && d >= 1.5 && d / dt <= MAX_SPEED_MS) {
               setDistanceM((m) => m + d);
               setPath((p) => [...p, cur]); // 채택된 이동만 경로에 추가 → 깨끗한 라인
             }
@@ -101,10 +110,10 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
           }
         }
       );
+      return true;
     } catch {
-      setErr("위치 추적을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
-      setPhase("idle");
       stopAll();
+      return false;
     }
   }
 
@@ -144,7 +153,10 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
       setPhase("idle");
       onClose(true);
     } catch {
-      setErr("저장에 실패했어요. 다시 시도해 주세요.");
+      setErr("저장에 실패했어요. '계속'으로 이어 달리거나, 다시 [종료·저장]으로 재시도할 수 있어요.");
+      last.current = null; // 중단된 사이 위치가 크게 변했을 수 있으니 재개 시 재앵커(튐 방지)
+      lastAt.current = 0;
+      await armTracking(); // 트래킹을 되살려 '계속'이 실제로 이어 달리게 한다(거리·시간 유실 방지)
       setPhase("paused");
     }
   }

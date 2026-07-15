@@ -49,7 +49,7 @@ export function NameField({ onName }: { onName?: (name: string) => void }) {
         onChangeText={setName}
         onBlur={() => void commit()}
         onSubmitEditing={() => void commit()}
-        placeholder="예: 김캡틴"
+        placeholder="예: 홍길동"
         placeholderTextColor={Brand.soft}
         maxLength={20}
         editable={!saving}
