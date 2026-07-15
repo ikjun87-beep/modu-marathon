@@ -678,6 +678,8 @@ import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, where
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+import { getAuth, signInAnonymously, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ════════════════════════════════════════════════════════════════
    🔧 여기에 Firebase 설정을 붙여넣으세요 (FIREBASE_SETUP.md 참고)
@@ -700,6 +702,11 @@ const APPCHECK_SITE_KEY = "";
 
 const HAS_FB = !!firebaseConfig.projectId;
 let db = null;
+/* 익명 로그인으로 이 브라우저에 부여받는 uid. '내 글만 삭제'(소유 기반 규칙)의 발판.
+   콘솔에서 '익명'을 켜야 채워지며, 미설정·실패여도 null로 남고 사이트는 이름 기반으로 그대로 동작한다. */
+let _uid = null;
+/* 새 문서에 uid를 곁들인다(있을 때만). 규칙이 아직 소유검증을 강제하지 않으므로 100% 뒤로 호환. */
+function withUid(o){ return _uid ? { ...o, uid: _uid } : o; }
 if (HAS_FB) {
   const app = initializeApp(firebaseConfig);
   if (APPCHECK_SITE_KEY) {
@@ -709,6 +716,14 @@ if (HAS_FB) {
     });
   }
   db = getFirestore(app);
+  /* 익명(게스트) 로그인 — 앱과 동일하게 콘솔 Authentication → 익명 사용설정 시 동작.
+     글쓰기를 막지 않도록 fire-and-forget(안 기다림) + 실패는 삼켜 사이트를 죽이지 않는다. */
+  try {
+    const auth = getAuth(app);
+    onAuthStateChanged(auth, u => { _uid = u ? u.uid : null; });
+    signInAnonymously(auth).catch(e =>
+      console.warn('[auth] 익명 로그인 보류 — 이름 기반으로 계속', e?.code || e));
+  } catch (e) { console.warn('[auth] 초기화 보류', e); }
 } else {
   document.getElementById('cfgBanner').style.display = 'block';
 }
@@ -782,7 +797,7 @@ async function toggleAtt(evId){
   const mine=list.find(a=>a.name===name);
   if(HAS_FB){
     if(mine){ await deleteDoc(doc(db,'attendance',mine.id)); }
-    else{ await addDoc(collection(db,'attendance'),{eventId:evId,name,createdAt:serverTimestamp()}); }
+    else{ await addDoc(collection(db,'attendance'),withUid({eventId:evId,name,createdAt:serverTimestamp()})); }
   }else{
     let all=LS.get('attendance');
     if(mine){ all=all.filter(a=>!(a.eventId===evId&&a.name===name)); }
@@ -815,7 +830,7 @@ $('#galFile').addEventListener('change', async (e)=>{
     const data=await resizeImage(file);
     if(data.length>600000){ $('#galStatus').textContent='사진이 너무 큽니다. 다른 사진을 시도해 주세요.'; return; }
     const cap=$('#galCap').value.trim();
-    if(HAS_FB){ await addDoc(collection(db,'gallery'),{name,caption:cap,image:data,createdAt:serverTimestamp()}); }
+    if(HAS_FB){ await addDoc(collection(db,'gallery'),withUid({name,caption:cap,image:data,createdAt:serverTimestamp()})); }
     else{ const all=LS.get('gallery'); all.unshift({id:'l'+Date.now(),name,caption:cap,image:data,createdAt:Date.now()}); LS.set('gallery',all.slice(0,30)); renderGallery(LS.get('gallery')); }
     $('#galCap').value=''; $('#galStatus').textContent=''; e.target.value='';
     toast('사진 업로드 완료! 📸');
@@ -844,7 +859,7 @@ $('#gbForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const name=$('#g-name').value.trim(), msg=$('#g-msg').value.trim();
   if(!name||!msg) return;
-  if(HAS_FB){ await addDoc(collection(db,'guestbook'),{name,msg,createdAt:serverTimestamp()}); }
+  if(HAS_FB){ await addDoc(collection(db,'guestbook'),withUid({name,msg,createdAt:serverTimestamp()})); }
   else{ const all=LS.get('guestbook'); all.unshift({id:'l'+Date.now(),name,msg,createdAt:Date.now()}); LS.set('guestbook',all.slice(0,50)); renderGuest(LS.get('guestbook')); }
   $('#g-name').value=''; $('#g-msg').value='';
   toast('방명록을 남겼어요! 😊');
@@ -872,7 +887,7 @@ $('#wlForm').addEventListener('submit', async (e)=>{
   const email=$('#wl-email').value.trim();
   if(!email) return;
   try{
-    if(HAS_FB){ await addDoc(collection(db,'waitlist'),{email,createdAt:serverTimestamp()}); }
+    if(HAS_FB){ await addDoc(collection(db,'waitlist'),withUid({email,createdAt:serverTimestamp()})); }
     else{ const all=LS.get('waitlist'); all.unshift({id:'l'+Date.now(),email,createdAt:Date.now()}); LS.set('waitlist',all.slice(0,200)); }
     $('#wl-email').value='';
     toast('신청 완료! 출시되면 가장 먼저 알려드릴게요 📱');
