@@ -16,10 +16,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { openBrowserAsync } from "expo-web-browser";
 
 import { Icon, type IconName } from "@/components/icon";
 import { Brand } from "@/lib/brand";
 import { getMyName, setMyName } from "@/lib/session";
+
+const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
 
 const PERKS: { icon: IconName; label: string }[] = [
   { icon: "calendar", label: "모임 참석 체크" },
@@ -109,6 +112,13 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
               <Text style={styles.btnText}>시작하기</Text>
             </Pressable>
             <Text style={styles.note}>크루에서 이렇게 보여요. 언제든 바꿀 수 있어요.</Text>
+            <Text style={styles.consent}>
+              시작하면{" "}
+              <Text style={styles.consentLink} onPress={() => void openBrowserAsync(PRIVACY_URL)}>
+                개인정보 처리방침
+              </Text>
+              에 동의하는 것으로 봅니다.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -168,4 +178,6 @@ const styles = StyleSheet.create({
   btnOff: { backgroundColor: Brand.brandLine },
   btnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
   note: { fontSize: 12.5, color: Brand.soft, textAlign: "center", marginTop: 2 },
+  consent: { fontSize: 11.5, color: Brand.soft, textAlign: "center", marginTop: 6, lineHeight: 17 },
+  consentLink: { color: Brand.brand, fontWeight: "700", textDecorationLine: "underline" },
 });
