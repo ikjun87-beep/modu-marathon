@@ -16,19 +16,16 @@ import { nextEvent } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
 import { todayKm } from "@/lib/run";
 import { searchAll } from "@/lib/search";
-import { getMyName } from "@/lib/session";
+import { useMyName } from "@/lib/session";
 import { weekKm } from "@/lib/stats";
 
 export default function HomeScreen() {
-  const [name, setName] = useState("");
+  const [name] = useMyName(); // 다른 탭에서 개명해도 인사말이 곧바로 따라온다
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [guests, setGuests] = useState<Row[] | null>(null);
   const [attend, setAttend] = useState<Row[]>([]);
   const [q, setQ] = useState("");
 
-  useEffect(() => {
-    getMyName().then((n) => setName(n));
-  }, []);
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
   useEffect(() => subscribe(COLLECTIONS.attendance, setAttend), []);

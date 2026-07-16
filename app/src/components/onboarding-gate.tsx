@@ -43,10 +43,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  function start() {
+  async function start() {
     const v = name.trim();
     if (!v) return;
-    void setMyName(v);
+    // 저장이 끝난 뒤에 넘어간다. 안 기다리면 진입 직후 화면들이 빈 이름을 읽을 수 있다.
+    await setMyName(v);
     setDone(true);
   }
 
@@ -102,11 +103,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
               maxLength={20}
               autoFocus
               returnKeyType="done"
-              onSubmitEditing={start}
+              onSubmitEditing={() => void start()}
             />
             <Pressable
               style={[styles.btn, !name.trim() && styles.btnOff]}
-              onPress={start}
+              onPress={() => void start()}
               disabled={!name.trim()}
             >
               <Text style={styles.btnText}>시작하기</Text>

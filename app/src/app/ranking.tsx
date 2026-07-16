@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Brand } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
-import { getMyName } from "@/lib/session";
+import { useMyName } from "@/lib/session";
 import { monthKm, weeklyRanking } from "@/lib/stats";
 
 const MONTH_GOAL = 100; // 이달의 챌린지: 월 100km
@@ -21,12 +21,9 @@ function medal(rank: number): string {
 }
 
 export default function RankingScreen() {
-  const [name, setName] = useState("");
+  const [name] = useMyName(); // 개명 시 "내 순위" 하이라이트가 바로 따라온다
   const [runs, setRuns] = useState<Row[] | null>(null);
 
-  useEffect(() => {
-    getMyName().then(setName);
-  }, []);
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
 
   const ranking = useMemo(() => (runs ? weeklyRanking(runs) : []), [runs]);

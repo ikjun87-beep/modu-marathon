@@ -8,27 +8,35 @@ import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-nati
 
 import { Brand } from "@/lib/brand";
 import { saveRunnerName } from "@/lib/identity";
-import { getMyName } from "@/lib/session";
+import { useMyName } from "@/lib/session";
 
 export function NameField({ onName }: { onName?: (name: string) => void }) {
+  const [stored] = useMyName(); // 마이 탭·로그인이 이름을 바꾸면 여기로 전달된다
   const [name, setName] = useState("");
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const saved = useRef(""); // 마지막으로 저장된 이름(전파 기준점)
 
+  // 저장소의 이름을 입력칸에 반영한다. 단 **사용자가 타이핑 중일 땐 건드리지 않는다**
+  // (외부 변경이 입력 중인 글자를 덮어쓰면 안 됨).
   useEffect(() => {
-    getMyName().then((n) => {
-      setName(n);
-      saved.current = n;
-      onName?.(n);
-    });
-    // 최초 1회만 로드
+    if (editing || saving) return;
+    setName(stored);
+    saved.current = stored;
+    onName?.(stored);
+    // onName은 부모가 매 렌더 새로 만드는 콜백일 수 있어 의존성에서 뺀다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stored, editing, saving]);
 
   async function commit() {
+    setEditing(false);
     const next = name.trim();
     const prev = saved.current.trim();
-    if (!next || next === prev) return;
+    if (!next) {
+      setName(saved.current); // 빈 이름으로 지워버리는 사고 방지 — 되돌린다
+      return;
+    }
+    if (next === prev) return;
 
     setSaving(true);
     try {
@@ -47,6 +55,7 @@ export function NameField({ onName }: { onName?: (name: string) => void }) {
         style={styles.input}
         value={name}
         onChangeText={setName}
+        onFocus={() => setEditing(true)}
         onBlur={() => void commit()}
         onSubmitEditing={() => void commit()}
         placeholder="예: 홍길동"

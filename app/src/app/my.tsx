@@ -26,38 +26,27 @@ import { Brand } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { saveRunnerName } from "@/lib/identity";
-import { getMyName } from "@/lib/session";
+import { useMyName } from "@/lib/session";
 import { BADGES, earnedBadgeIds, personalStats } from "@/lib/stats";
 
 const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
 
 export default function MyScreen() {
-  const [name, setName] = useState(""); // 저장된 러너 네임
+  // 저장된 러너 네임. 로그인(auth.ts)·크루 탭이 바꿔도 구독으로 따라온다.
+  const [name, loadedName] = useMyName();
   const [draft, setDraft] = useState(""); // 입력 중인 값(저장 눌러야 반영)
   const [saving, setSaving] = useState(false);
-  const [loadedName, setLoadedName] = useState(false);
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [sheet, setSheet] = useState(false);
 
+  // 저장된 이름이 바뀌면 입력칸도 맞춘다. 단 사용자가 고쳐둔 값(dirty)은 덮지 않는다.
   useEffect(() => {
-    getMyName().then((n) => {
-      setName(n);
-      setDraft(n);
-      setLoadedName(true);
-    });
-  }, []);
+    setDraft((d) => (d.trim() === "" || d.trim() === name.trim() ? name : d));
+  }, [name]);
+
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => watchAccount(setAccount), []);
-
-  // 로그인 후 계정 표시이름이 있으면 화면의 이름도 그 값으로 맞춘다(auth.ts가 session에 이미 저장).
-  useEffect(() => {
-    if (account?.name && account.name !== name) {
-      setName(account.name);
-      setDraft(account.name);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account?.name]);
 
   const dirty = draft.trim().length > 0 && draft.trim() !== name.trim();
 
@@ -71,7 +60,7 @@ export default function MyScreen() {
     setSaving(true);
     try {
       const changed = await saveRunnerName(prev, next); // 기기·계정·과거 기록까지 한 번에
-      setName(next);
+      // 화면의 name은 session 구독(useMyName)이 갱신한다 — 여기서 따로 세팅하지 않는다.
       Alert.alert(
         "러너 네임을 바꿨어요",
         changed > 0

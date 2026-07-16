@@ -10,18 +10,15 @@ import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand } from "@/lib/brand";
 import { add, fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
-import { getMyName } from "@/lib/session";
+import { useMyName } from "@/lib/session";
 import { toMs } from "@/lib/run";
 
 export function CommentThread({ parentId }: { parentId: string }) {
   const [all, setAll] = useState<Row[]>([]);
-  const [name, setName] = useState("");
+  const [name] = useMyName(); // 개명 시 새 댓글이 새 이름으로 달린다
   const [msg, setMsg] = useState("");
 
   useEffect(() => subscribe(COLLECTIONS.comments, setAll), []);
-  useEffect(() => {
-    getMyName().then(setName);
-  }, []);
 
   const comments = useMemo(
     () =>
