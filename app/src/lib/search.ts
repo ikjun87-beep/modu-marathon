@@ -1,9 +1,9 @@
 /**
  * 통합 검색 — 러닝 기록·크루 방명록·모임을 한 질의로 훑는다(P7-6).
- * 순수 함수: 구독 데이터(runs·guestbook)와 정적 EVENTS를 받아 카테고리별 결과 반환.
+ * 순수 함수: 구독 데이터(runs·guestbook·events)를 받아 카테고리별 결과 반환.
  */
 import type { Row } from "./crew";
-import { EVENTS, type EventDef } from "./events";
+import type { EventDef } from "./events";
 
 export type SearchResults = {
   runs: Row[];
@@ -42,11 +42,11 @@ function matchEvent(e: EventDef, q: string): boolean {
   return `${norm(e.title)} ${norm(e.desc)} ${norm(e.m)} ${norm(e.d)}`.includes(q);
 }
 
-export function searchAll(query: string, runs: Row[], posts: Row[]): SearchResults {
+export function searchAll(query: string, runs: Row[], posts: Row[], events: EventDef[] = []): SearchResults {
   const q = query.trim().toLowerCase();
   if (!q) return { runs: [], posts: [], events: [], total: 0 };
   const r = runs.filter((x) => matchRun(x, q)).slice(0, LIMIT);
   const p = posts.filter((x) => matchPost(x, q)).slice(0, LIMIT);
-  const e = EVENTS.filter((x) => matchEvent(x, q)).slice(0, LIMIT);
+  const e = events.filter((x) => matchEvent(x, q)).slice(0, LIMIT);
   return { runs: r, posts: p, events: e, total: r.length + p.length + e.length };
 }

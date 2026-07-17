@@ -85,6 +85,19 @@ service cloud.firestore {
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;
     }
+    // 크루 모임 일정. 아무나 생성(친목 수준 — pre-Auth. delete 개방과 같은 등급).
+    // startAt(모임 시각) 필수·타입검증으로 오염 방지. update는 러너 네임 전파만(제목·날짜 변조 차단).
+    match /events/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.title is string
+                    && request.resource.data.title.size() <= 40
+                    && request.resource.data.desc is string
+                    && request.resource.data.desc.size() <= 200
+                    && request.resource.data.startAt is number
+                    && request.resource.data.startAt > 0;
+      allow update: if isRenameOnly();
+      allow delete: if true;   // 모임 취소·정리
+    }
     // 앱 출시 알림 대기자(이메일). 열람 차단 — 관리자만 Firebase 콘솔에서 조회.
     // (곽재원 Blocker #1·천도윤 #2 공통: 이메일 하베스팅 차단)
     match /waitlist/{id} {

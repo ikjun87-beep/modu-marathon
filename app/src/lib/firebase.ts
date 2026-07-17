@@ -43,4 +43,7 @@ export const COLLECTIONS = {
   runs: "runs",
   // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. { parentId, name, msg, createdAt }
   comments: "comments",
+  // 크루 모임 일정. { title, desc, startAt(ms), name, uid?, createdAt }
+  // 문서 id는 기존 하드코딩과 동일(ev-0705 등) 유지 → 옛 attendance(eventId) 기록 무손실.
+  events: "events",
 } as const;

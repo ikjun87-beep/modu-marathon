@@ -13,7 +13,7 @@ import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
-import { nextEvent } from "@/lib/events";
+import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
 import { todayKm } from "@/lib/run";
 import { searchAll } from "@/lib/search";
@@ -25,15 +25,17 @@ export default function HomeScreen() {
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [guests, setGuests] = useState<Row[] | null>(null);
   const [attend, setAttend] = useState<Row[]>([]);
+  const [events, setEvents] = useState<EventDef[]>([]);
   const [q, setQ] = useState("");
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
   useEffect(() => subscribe(COLLECTIONS.attendance, setAttend), []);
+  useEffect(() => subscribeEvents(setEvents), []);
 
-  const ev = useMemo(() => nextEvent(), []);
-  const evCount = attend.filter((a) => a.eventId === ev.id).length;
-  const iAmIn = !!name && attend.some((a) => a.eventId === ev.id && a.name === name);
+  const ev = useMemo(() => nextEvent(events), [events]); // 다가오는 모임 없으면 null
+  const evCount = ev ? attend.filter((a) => a.eventId === ev.id).length : 0;
+  const iAmIn = !!ev && !!name && attend.some((a) => a.eventId === ev.id && a.name === name);
 
   const loading = runs === null || guests === null;
 
@@ -44,8 +46,8 @@ export default function HomeScreen() {
 
   const searching = q.trim().length > 0;
   const results = useMemo(
-    () => searchAll(q, runs ?? [], guests ?? []),
-    [q, runs, guests]
+    () => searchAll(q, runs ?? [], guests ?? [], events),
+    [q, runs, guests, events]
   );
 
   return (
@@ -220,22 +222,35 @@ export default function HomeScreen() {
               </PressableScale>
             </View>
 
-            {/* 다가오는 모임 */}
+            {/* 다가오는 모임 — 없으면 만들기 유도(지난 모임을 억지로 안 보여준다) */}
             <Text style={styles.sectionH}>다가오는 모임</Text>
-            <PressableScale style={styles.evCard} onPress={() => router.push("/crew")}>
-              <View style={styles.evDate}>
-                <Text style={styles.evM}>{ev.m}</Text>
-                <Text style={styles.evD}>{ev.d}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.evTitle}>{ev.title}</Text>
-                <Text style={styles.evMeta}>
-                  {evCount > 0 ? `${evCount}명 참석 예정` : "아직 참석자가 없어요"}
-                  {iAmIn ? " · 나 참석 ✓" : ""}
-                </Text>
-              </View>
-              <Icon name="chevron-right" size={18} color={Brand.faint} />
-            </PressableScale>
+            {ev ? (
+              <PressableScale style={styles.evCard} onPress={() => router.push("/crew")}>
+                <View style={styles.evDate}>
+                  <Text style={styles.evM}>{ev.m}</Text>
+                  <Text style={styles.evD}>{ev.d}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.evTitle}>{ev.title}</Text>
+                  <Text style={styles.evMeta}>
+                    {evCount > 0 ? `${evCount}명 참석 예정` : "아직 참석자가 없어요"}
+                    {iAmIn ? " · 나 참석 ✓" : ""}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={Brand.faint} />
+              </PressableScale>
+            ) : (
+              <PressableScale style={styles.evCard} onPress={() => router.push("/crew")}>
+                <View style={styles.evDate}>
+                  <Icon name="plus" size={20} color={Brand.brandDeep} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.evTitle}>다가오는 모임이 없어요</Text>
+                  <Text style={styles.evMeta}>크루 탭에서 새 모임을 만들어 보세요</Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={Brand.faint} />
+              </PressableScale>
+            )}
 
             {/* 크루 새 글 */}
             <PressableScale style={styles.linkRow} onPress={() => router.push("/crew")}>
