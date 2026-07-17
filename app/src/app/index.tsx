@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
+import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand } from "@/lib/brand";
@@ -50,19 +51,25 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.eyebrowRow}>
-          <Icon name="activity" size={15} color={Brand.brand} />
-          <Text style={styles.eyebrow}>TODAY</Text>
+        {/* 인사말 + 마스코트 — 👋 이모지는 뺐다. 마스코트가 엄지척으로 이미 인사하고 있어 겹친다. */}
+        <View style={styles.greetRow}>
+          <View style={styles.greetText}>
+            <View style={styles.eyebrowRow}>
+              <Icon name="activity" size={15} color={Brand.brand} />
+              <Text style={styles.eyebrow}>TODAY</Text>
+            </View>
+            <Text style={styles.title}>
+              {name ? (
+                <>
+                  안녕하세요, <Text style={{ color: Brand.brand }}>{name}</Text>님
+                </>
+              ) : (
+                <>반가워요, 러너</>
+              )}
+            </Text>
+          </View>
+          <Mascot size={62} />
         </View>
-        <Text style={styles.title}>
-          {name ? (
-            <>
-              안녕하세요, <Text style={{ color: Brand.brand }}>{name}</Text>님 👋
-            </>
-          ) : (
-            <>반가워요, 러너 👋</>
-          )}
-        </Text>
 
         {/* 통합 검색 */}
         <View style={styles.searchBar}>
@@ -265,6 +272,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 14, paddingBottom: 120 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  greetRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  greetText: { flex: 1 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
   title: { fontSize: 30, fontWeight: "900", color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
 

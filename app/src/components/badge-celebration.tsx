@@ -19,6 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Icon, type IconName } from "@/components/icon";
+import { Mascot } from "@/components/mascot";
 import { Brand } from "@/lib/brand";
 import { loadSeenBadges, saveSeenBadges } from "@/lib/badge-seen";
 import { subscribe, type Row } from "@/lib/crew";
@@ -93,8 +94,12 @@ function Card({ badge, onClose }: { badge: Badge; onClose: () => void }) {
 
   return (
     <Animated.View style={[styles.card, cardStyle]}>
-      <View style={styles.badgeIcon}>
-        <Icon name={badge.icon as IconName} size={34} color="#fff" />
+      {/* 마스코트가 배지를 들고 축하해주는 모양 — 아이콘만 있으면 사무적이다 */}
+      <View style={styles.crest}>
+        <Mascot size={92} />
+        <View style={styles.badgeIcon}>
+          <Icon name={badge.icon as IconName} size={26} color="#fff" />
+        </View>
       </View>
       <Text style={styles.eyebrow}>배지 획득</Text>
       <Text style={styles.title}>{badge.label}</Text>
@@ -195,14 +200,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
+  crest: { marginBottom: 4 },
+  // 배지는 마스코트 오른쪽 아래에 살짝 겹쳐 — "얘가 이걸 땄다"가 한눈에 읽힌다
   badgeIcon: {
-    width: 68,
-    height: 68,
-    borderRadius: 22,
+    position: "absolute",
+    right: -6,
+    bottom: -2,
+    width: 46,
+    height: 46,
+    borderRadius: 16,
     backgroundColor: Brand.brand,
+    borderWidth: 3,
+    borderColor: Brand.card,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
   },
   eyebrow: { fontSize: 11.5, fontWeight: "800", letterSpacing: 2, color: Brand.accent },
   title: { fontSize: 24, fontWeight: "900", color: Brand.ink },

@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { openBrowserAsync } from "expo-web-browser";
 
 import { Icon, type IconName } from "@/components/icon";
+import { Mascot } from "@/components/mascot";
 import { Brand } from "@/lib/brand";
 import { getMyName, setMyName } from "@/lib/session";
 
@@ -74,10 +75,16 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.body}>
-            <Text style={styles.eyebrow}>MODU MARATHON</Text>
-            <Text style={styles.title}>
-              모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
-            </Text>
+            {/* 앱의 첫인상 — 문구보다 얼굴이 먼저 맞이한다 */}
+            <View style={styles.heroRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.eyebrow}>MODU MARATHON</Text>
+                <Text style={styles.title}>
+                  모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
+                </Text>
+              </View>
+              <Mascot size={96} />
+            </View>
             <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
 
             <View style={styles.perks}>
@@ -133,6 +140,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   scrollBody: { flexGrow: 1, justifyContent: "center", paddingVertical: 24 },
   body: { justifyContent: "center", paddingHorizontal: 28, gap: 10 },
+  heroRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
   title: { fontSize: 40, fontWeight: "900", color: Brand.ink },
   sub: { fontSize: 15, color: Brand.soft, marginBottom: 8 },

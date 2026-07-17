@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountSheet } from "@/components/account-sheet";
 import { Icon, type IconName } from "@/components/icon";
+import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HAS_AUTH, signOutUser, watchAccount, type Account } from "@/lib/auth";
@@ -26,6 +27,7 @@ import { Brand } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { saveRunnerName } from "@/lib/identity";
+import { setMascot, useMascot, type MascotKind } from "@/lib/mascot";
 import { useMyName } from "@/lib/session";
 import { badgeProgress, personalStats } from "@/lib/stats";
 
@@ -34,6 +36,7 @@ const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
 export default function MyScreen() {
   // 저장된 러너 네임. 로그인(auth.ts)·크루 탭이 바꿔도 구독으로 따라온다.
   const [name, loadedName] = useMyName();
+  const mascot = useMascot();
   const [draft, setDraft] = useState(""); // 입력 중인 값(저장 눌러야 반영)
   const [saving, setSaving] = useState(false);
   const [runs, setRuns] = useState<Row[] | null>(null);
@@ -104,8 +107,9 @@ export default function MyScreen() {
         {/* 프로필 */}
         <View style={styles.profile}>
           <View style={styles.profileHead}>
+            {/* 아바타 = 내가 고른 마스코트. 이름 첫 글자보다 "내 캐릭터"라는 느낌이 산다. */}
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{(name.trim()[0] ?? "🏃").toUpperCase()}</Text>
+              <Mascot size={54} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.pLabel}>러너 네임</Text>
@@ -143,6 +147,20 @@ export default function MyScreen() {
               이미 남긴 글·참석·러닝 기록의 이름도 함께 바뀝니다.
             </Text>
           )}
+
+          {/* 마스코트 고르기 — 러너 네임으로는 성별을 알 수 없어 직접 고르게 한다.
+              이 기기 취향 설정이라 서버에 안 올린다(lib/mascot.ts). */}
+          <View style={styles.mascotRow}>
+            <Text style={styles.mascotLabel}>내 캐릭터</Text>
+            {(["male", "female"] as MascotKind[]).map((k) => (
+              <PressableScale
+                key={k}
+                style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
+                onPress={() => void setMascot(k)}>
+                <Mascot size={40} kind={k} />
+              </PressableScale>
+            ))}
+          </View>
         </View>
 
         {/* 계정 — Firebase 설정된 경우에만 노출(미설정 시 앱은 이름 기반으로 정상 동작) */}
@@ -281,6 +299,19 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "800" },
   renameNote: { fontSize: 12, color: Brand.soft, lineHeight: 17 },
+  mascotRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
+  mascotLabel: { flex: 1, fontSize: 13.5, fontWeight: "700", color: Brand.soft },
+  mascotOpt: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: Brand.line,
+    backgroundColor: Brand.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mascotOptOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
   avatar: {
     width: 56,
     height: 56,
@@ -289,7 +320,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { color: "#fff", fontSize: 24, fontWeight: "900" },
   pLabel: { fontSize: 12, fontWeight: "700", color: Brand.soft },
   nameInput: {
     flex: 1,

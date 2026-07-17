@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { GallerySection } from "@/components/gallery-section";
 import { Icon } from "@/components/icon";
+import { Mascot } from "@/components/mascot";
 import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -112,7 +113,10 @@ export default function CrewScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요!</Text>
+          <View style={styles.emptyBox}>
+            <Mascot size={76} />
+            <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요!</Text>
+          </View>
         }
         renderItem={({ item }) => {
           const mine = !!name && item.name === name && !isDemo(item.id);
@@ -215,7 +219,8 @@ const styles = StyleSheet.create({
   },
   btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   listHint: { fontSize: 12.5, color: Brand.soft, fontWeight: "600", marginTop: 4 },
-  empty: { color: Brand.soft, fontSize: 14, textAlign: "center", paddingVertical: 24 },
+  emptyBox: { alignItems: "center", paddingVertical: 8 },
+  empty: { color: Brand.soft, fontSize: 14, textAlign: "center", paddingVertical: 8 },
   item: {
     backgroundColor: Brand.card,
     borderWidth: 1,

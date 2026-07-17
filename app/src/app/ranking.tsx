@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
+import { Mascot } from "@/components/mascot";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
@@ -70,7 +71,8 @@ export default function RankingScreen() {
             {/* 주간 랭킹 */}
             {ranking.length === 0 ? (
               <View style={styles.empty}>
-                <Icon name="run" size={28} color={Brand.faint} />
+                {/* 회색 아이콘 + "없어요"는 첫인상이 초라하다 — 마스코트가 대신 맞이한다 */}
+                <Mascot size={84} />
                 <Text style={styles.emptyText}>
                   이번 주 러닝 기록이 아직 없어요.{"\n"}첫 주자가 되어 보세요!
                 </Text>
