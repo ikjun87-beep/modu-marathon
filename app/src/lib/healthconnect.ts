@@ -1,23 +1,40 @@
 /**
- * Health Connect — 갤럭시워치/삼성헬스가 Health Connect에 기록한 러닝을 앱으로 가져온다.
- * 오늘의 ExerciseSession(러닝) + Distance + HeartRate를 읽어 통합 Run(source:'healthconnect')으로 멱등 저장.
+ * Health Connect — 갤럭시워치/삼성헬스가 Health Connect에 기록한 운동을 앱으로 가져온다.
+ * 오늘의 ExerciseSession(달리기·걷기) + Distance + HeartRate를 읽어
+ * 통합 Run(source:'healthconnect')으로 멱등 저장.
  *
- * ⚠️ Android 전용 · **EAS dev build에서만 동작**(Expo Go/웹 불가).
- *    폰에 "Health Connect" 앱 + 삼성헬스 → Health Connect 동기화가 켜져 있어야 데이터가 보인다.
+ * ⚠️ Android 전용 · **dev/preview build에서만 동작**(Expo Go/웹 불가).
+ *    폰에 "Health Connect"(Android 14+는 OS 내장) + 삼성헬스 → Health Connect 동기화가 켜져 있어야 한다.
+ *
+ * 📌 삼성헬스 이력(2026-07): 한때 운동·거리를 HC에 아예 안 써서 "플랫폼 한계"로 판단했으나,
+ *    이는 **삼성헬스 특정 버전의 회귀 버그**였고 7.00.5.009에서 고쳐진 것을 실기기로 확인.
+ *    (HC는 forward-looking — 연동이 켜진 **이후** 기록분만 올라온다. 과거 운동은 안 올라와도 정상.)
  */
 import { Platform } from "react-native";
 
-import { saveRun } from "./run";
+import { saveRun, type RunKind } from "./run";
 
 export const HC_SUPPORTED = Platform.OS === "android";
 
-// Health Connect 러닝 계열 운동 타입
-const RUNNING_TYPES = new Set<number>([56 /* RUNNING */, 57 /* RUNNING_TREADMILL */]);
+/** Health Connect 운동 타입 상수. 라이브러리(ExerciseType)에서 읽되, 못 읽으면 이 값으로 폴백한다.
+ *  폴백이 없으면 상수를 못 가져왔을 때 **조용히 0건 동기화**가 되어 원인 추적이 지옥이 된다. */
+const FALLBACK_TYPES = { RUNNING: 56, RUNNING_TREADMILL: 57, WALKING: 79, HIKING: 37 } as const;
+
+/** 우리가 받아들이는 운동 타입 → 우리 기록 종류.
+ *  걷기도 받는다 — 크루 모임이 "걷기+뛰기 병행, 러닝 처음도 환영"이고, 입문자가 가장 먼저 하는 게 걷기다.
+ *  다만 러닝과 섞이면 페이스·랭킹이 왜곡되므로 kind로 구분해 저장한다(집계 분리는 lib/stats).
+ *  자전거·수영 등은 러닝 앱 범위 밖이라 안 받는다. */
+function kindOf(exerciseType: number, T: Record<string, number>): RunKind | null {
+  if (exerciseType === T.RUNNING || exerciseType === T.RUNNING_TREADMILL) return "run";
+  if (exerciseType === T.WALKING || exerciseType === T.HIKING) return "walk";
+  return null;
+}
 
 export type SyncResult = {
   ok: boolean;
-  synced: number; // 저장된 러닝 세션 수
-  totalKm: number; // 오늘 러닝 총 거리
+  synced: number; // 저장된 세션 수(달리기+걷기)
+  totalKm: number; // 오늘 불러온 총 거리
+  walks: number; // 그중 걷기 수 — 안내 문구를 정확히 쓰려고 따로 센다
   reason?: string; // 실패/안내 사유
 };
 
@@ -40,13 +57,13 @@ export async function syncTodayRuns(
 ): Promise<SyncResult> {
   const readHeartRate = opts.readHeartRate ?? false;
   if (!HC_SUPPORTED) {
-    return { ok: false, synced: 0, totalKm: 0, reason: "안드로이드에서만 지원돼요." };
+    return { ok: false, synced: 0, totalKm: 0, walks: 0, reason: "안드로이드에서만 지원돼요." };
   }
   let HC: typeof import("react-native-health-connect");
   try {
     HC = await import("react-native-health-connect");
   } catch {
-    return { ok: false, synced: 0, totalKm: 0, reason: "Health Connect 모듈을 불러오지 못했어요 (dev build 필요)." };
+    return { ok: false, synced: 0, totalKm: 0, walks: 0, reason: "Health Connect 모듈을 불러오지 못했어요 (dev build 필요)." };
   }
 
   try {
@@ -56,11 +73,12 @@ export async function syncTodayRuns(
         ok: false,
         synced: 0,
         totalKm: 0,
+        walks: 0,
         reason: "폰에 Health Connect가 필요해요. Play스토어에서 설치 후 삼성헬스 동기화를 켜주세요.",
       };
     }
     const inited = await HC.initialize();
-    if (!inited) return { ok: false, synced: 0, totalKm: 0, reason: "Health Connect 초기화 실패." };
+    if (!inited) return { ok: false, synced: 0, totalKm: 0, walks: 0, reason: "Health Connect 초기화 실패." };
 
     // 심박(민감정보)은 별도 동의(readHeartRate)가 있을 때만 권한 요청 — 최소수집 원칙
     const perms: any[] = [
@@ -85,6 +103,7 @@ export async function syncTodayRuns(
         ok: false,
         synced: 0,
         totalKm: 0,
+        walks: 0,
         reason:
           "Health Connect에서 '모두의 마라톤'에 운동·거리 읽기 권한을 허용해 주세요.\n(Health Connect 앱 → 앱 및 기기 권한 → 모두의 마라톤 → 운동·거리 켜기)",
       };
@@ -108,9 +127,15 @@ export async function syncTodayRuns(
 
     let synced = 0;
     let totalKm = 0;
+    let walks = 0;
 
+    // 라이브러리 상수 우선, 없으면 폴백(위 주석 참조).
+    const lib = (HC as any).ExerciseType;
+    const T: Record<string, number> =
+      lib && typeof lib.RUNNING === "number" ? lib : FALLBACK_TYPES;
     for (const s of sessions) {
-      if (!RUNNING_TYPES.has(Number(s.exerciseType))) continue;
+      const kind = kindOf(Number(s.exerciseType), T);
+      if (!kind) continue; // 자전거·수영 등 러닝 앱 범위 밖
       const sS = new Date(s.startTime).getTime();
       const sE = new Date(s.endTime).getTime();
       if (!(sE > sS)) continue;
@@ -149,6 +174,7 @@ export async function syncTodayRuns(
       await saveRun({
         source: "healthconnect",
         sourceId,
+        kind,
         name: name.trim() || "익명",
         distanceKm: km,
         durationSec: (sE - sS) / 1000,
@@ -157,15 +183,23 @@ export async function syncTodayRuns(
       });
       synced++;
       totalKm += km;
+      if (kind === "walk") walks++;
     }
 
     return {
       ok: true,
       synced,
       totalKm,
-      reason: synced === 0 ? "오늘 워치에 기록된 러닝이 없어요." : undefined,
+      walks,
+      reason: synced === 0 ? "오늘 워치에 기록된 러닝·걷기가 없어요." : undefined,
     };
   } catch (e: any) {
-    return { ok: false, synced: 0, totalKm: 0, reason: e?.message ?? "동기화 중 오류가 발생했어요." };
+    return {
+      ok: false,
+      synced: 0,
+      totalKm: 0,
+      walks: 0,
+      reason: e?.message ?? "동기화 중 오류가 발생했어요.",
+    };
   }
 }

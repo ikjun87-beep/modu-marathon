@@ -55,13 +55,17 @@ service cloud.firestore {
                     && request.resource.data.distanceKm is number
                     && request.resource.data.distanceKm >= 0
                     && request.resource.data.distanceKm <= 500;
-      // 기존 기록 update는 **distanceKm 변경 금지** → 남의 기록을 0으로 지우거나 부풀려
-      // today 합산·리더보드를 오염시키는 공격 차단. 정상 경로(멱등 재저장·러너 네임 전파)는
-      // 거리를 안 바꾸므로 통과. (작성자명 재지정까지 막으려면 Auth 소유검증 필요 — pre-Auth 한계)
+      // 기존 기록 update는 **distanceKm·kind 변경 금지** → 남의 기록을 0으로 지우거나 부풀려
+      // today 합산·리더보드를 오염시키는 공격 차단. kind를 막는 이유: 남의 러닝에 'walk'를 심으면
+      // 랭킹·배지 집계(lib/stats는 걷기를 뺀다)에서 그 사람을 통째로 지워버릴 수 있다.
+      // 정상 경로(멱등 재저장·러너 네임 전파)는 둘 다 안 바꾸므로 통과.
+      // kind 없는 과거 문서는 'run'으로 간주 — 재동기화 시 우리 코드도 'run'이면 필드를 안 적는다.
+      // (작성자명 재지정까지 막으려면 Auth 소유검증 필요 — pre-Auth 한계)
       allow update: if request.resource.data.name is string
                     && request.resource.data.name.size() <= 40
                     && request.resource.data.distanceKm is number
-                    && request.resource.data.distanceKm == resource.data.distanceKm;
+                    && request.resource.data.distanceKm == resource.data.distanceKm
+                    && request.resource.data.get('kind', 'run') == resource.data.get('kind', 'run');
       allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx)
     }
     // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. parentId로 묶임.

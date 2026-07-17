@@ -7,9 +7,14 @@ import { COLLECTIONS } from "./firebase";
 
 export type RunSource = "manual" | "gps" | "healthconnect" | "garmin";
 
+/** 기록 종류. 걷기도 받되(입문자·"걷기+뛰기 병행" 모임) 러닝과 섞으면 페이스·랭킹이 왜곡되므로 구분한다.
+ *  **없으면 'run'** — 이 필드가 생기기 전 기록(웹·기존 문서)은 전부 러닝이었다(뒤로호환). */
+export type RunKind = "run" | "walk";
+
 export type Run = {
   source: RunSource;
   sourceId?: string; // 멱등 upsert 키(워치/외부 소스 레코드 id)
+  kind?: RunKind; // 생략 = 'run'
   name: string;
   distanceKm: number;
   durationSec: number;
@@ -86,9 +91,25 @@ export function isToday(v: any): boolean {
 
 /** 오늘 뛴 거리 합계(km). name 주면 그 사람만. startedAt 우선, 없으면 createdAt 기준. */
 export function todayKm(rows: Row[], name?: string): number {
-  return rows
+  return runsOnly(rows)
     .filter((r) => isToday(r.startedAt ?? r.createdAt) && (!name || r.name === name))
     .reduce((a, r) => a + (Number(r.distanceKm) || 0), 0);
+}
+
+/** 이 기록이 걷기인가. `kind` 없는 과거 문서는 러닝으로 본다(뒤로호환). */
+export function isWalk(r: Row): boolean {
+  return r.kind === "walk";
+}
+
+/** 러닝만 — 페이스·랭킹·배지처럼 **걷기가 섞이면 왜곡되는** 집계에 쓴다.
+ *  (걷기 5km를 러닝과 합치면 크루 페이스가 무너지고 랭킹이 뒤집힌다.) */
+export function runsOnly(rows: Row[]): Row[] {
+  return rows.filter((r) => !isWalk(r));
+}
+
+/** 걷기만 — "오늘 걸은 거리"처럼 따로 보여줄 때. */
+export function walksOnly(rows: Row[]): Row[] {
+  return rows.filter(isWalk);
 }
 
 /** Run 저장. sourceId 있으면 `${source}_${sourceId}` id로 멱등 upsert, 없으면 신규 add. */
@@ -102,6 +123,7 @@ export async function saveRun(run: Run): Promise<void> {
     durationMin: Math.round(run.durationSec / 60), // 기존 화면·웹 호환
   };
   if (paceSec !== undefined) item.paceSecPerKm = Math.round(paceSec);
+  if (run.kind && run.kind !== "run") item.kind = run.kind; // 'run'은 기본값이라 안 적는다(뒤로호환·문서 경량)
   if (run.startedAt) item.startedAt = run.startedAt;
   if (run.avgHr) item.avgHr = Math.round(run.avgHr);
   if (run.cadence) item.cadence = Math.round(run.cadence);

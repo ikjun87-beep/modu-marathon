@@ -1,9 +1,14 @@
 /**
  * 러닝 집계 — 홈 큐레이션·랭킹·마이 통계가 공유하는 순수 계산 헬퍼.
  * 데이터 소스는 runs 컬렉션(Row[]). 모든 시각은 startedAt 우선, 없으면 createdAt.
+ *
+ * ⚠️ **여기는 전부 "러닝" 기준이다.** runs 컬렉션엔 걷기(kind:'walk')도 들어오지만
+ *    (워치 걷기 — 크루가 "걷기+뛰기 병행"이라 받기로 함), 걷기를 러닝과 합치면
+ *    크루 평균 페이스가 무너지고 주간 랭킹이 뒤집힌다. 그래서 각 집계 입구에서 runsOnly로 거른다.
+ *    걷기를 따로 보여줘야 하면 run.ts의 walksOnly를 쓸 것.
  */
 import type { Row } from "./crew";
-import { paceLabel, toMs } from "./run";
+import { paceLabel, runsOnly, toMs } from "./run";
 
 function runMs(r: Row): number {
   return toMs(r.startedAt ?? r.createdAt);
@@ -51,7 +56,7 @@ function mineOf(r: Row, name?: string): boolean {
 /** 이번 주 거리 합계(km). name 주면 그 사람만. */
 export function weekKm(rows: Row[], name?: string, now: number = Date.now()): number {
   const from = startOfWeek(now);
-  return rows
+  return runsOnly(rows)
     .filter((r) => inRange(r, from) && mineOf(r, name))
     .reduce((a, r) => a + km(r), 0);
 }
@@ -59,13 +64,13 @@ export function weekKm(rows: Row[], name?: string, now: number = Date.now()): nu
 /** 이번 주 러닝 횟수. name 주면 그 사람만. */
 export function weekRuns(rows: Row[], name?: string, now: number = Date.now()): number {
   const from = startOfWeek(now);
-  return rows.filter((r) => inRange(r, from) && mineOf(r, name)).length;
+  return runsOnly(rows).filter((r) => inRange(r, from) && mineOf(r, name)).length;
 }
 
 /** 이번 달 거리 합계(km). name 주면 그 사람만. */
 export function monthKm(rows: Row[], name?: string, now: number = Date.now()): number {
   const from = startOfMonth(now);
-  return rows
+  return runsOnly(rows)
     .filter((r) => inRange(r, from) && mineOf(r, name))
     .reduce((a, r) => a + km(r), 0);
 }
@@ -80,7 +85,7 @@ export type PersonalStats = {
 
 /** 한 사람의 누적/이번주 통계. name 비면 전체 기준. */
 export function personalStats(rows: Row[], name?: string, now: number = Date.now()): PersonalStats {
-  const mine = rows.filter((r) => mineOf(r, name));
+  const mine = runsOnly(rows).filter((r) => mineOf(r, name));
   const totalKm = mine.reduce((a, r) => a + km(r), 0);
   const totalSec = mine.reduce((a, r) => a + sec(r), 0);
   const longestKm = mine.reduce((a, r) => Math.max(a, km(r)), 0);
@@ -99,7 +104,7 @@ export type RankRow = { name: string; km: number; runs: number };
 export function weeklyRanking(rows: Row[], now: number = Date.now()): RankRow[] {
   const from = startOfWeek(now);
   const byName = new Map<string, RankRow>();
-  for (const r of rows) {
+  for (const r of runsOnly(rows)) {
     if (!inRange(r, from)) continue;
     const nm = String(r.name || "").trim();
     if (!nm) continue;
@@ -129,7 +134,7 @@ export const BADGES: Badge[] = [
 
 /** 한 사람이 획득한 배지 id 집합. */
 export function earnedBadgeIds(rows: Row[], name?: string, now: number = Date.now()): Set<string> {
-  const mine = rows.filter((r) => mineOf(r, name));
+  const mine = runsOnly(rows).filter((r) => mineOf(r, name));
   const ids = new Set<string>();
   if (mine.length >= 1) ids.add("first_run");
   if (mine.some((r) => km(r) >= 5)) ids.add("five_k");

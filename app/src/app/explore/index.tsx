@@ -16,7 +16,7 @@ import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 import { hasHealthConsent, setHealthConsent } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
-import { fmtDuration, paceLabel, saveRun, todayKm } from "@/lib/run";
+import { fmtDuration, isWalk, paceLabel, runsOnly, saveRun, todayKm } from "@/lib/run";
 
 function runSeconds(r: Row): number {
   return Number(r.durationSec) || (Number(r.durationMin) || 0) * 60;
@@ -44,9 +44,12 @@ export default function RunScreen() {
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
 
+  // 상단 카드는 "오늘 뛴 거리 / 누적"이라 **러닝 기준**으로 센다(걷기 제외 — todayKm도 동일).
+  // 아래 목록은 걷기까지 보여주되 '걷기' 태그로 구분한다: 통계는 러닝, 로그는 전부.
+  const runOnlyRows = useMemo(() => runsOnly(runs), [runs]);
   const totalKm = useMemo(
-    () => runs.reduce((a, r) => a + (Number(r.distanceKm) || 0), 0),
-    [runs]
+    () => runOnlyRows.reduce((a, r) => a + (Number(r.distanceKm) || 0), 0),
+    [runOnlyRows]
   );
   const today = useMemo(() => todayKm(runs, name || undefined), [runs, name]);
 
@@ -116,9 +119,14 @@ export default function RunScreen() {
     setSyncing(true);
     try {
       const r = await syncTodayRuns(name.trim(), { readHeartRate: withHeartRate });
+      // 걷기도 불러오므로 "러닝 N개"라고만 하면 거짓말이 된다. 실제로 뭘 가져왔는지 그대로 알린다.
+      const runs = r.synced - r.walks;
+      const what = [runs > 0 && `러닝 ${runs}개`, r.walks > 0 && `걷기 ${r.walks}개`]
+        .filter(Boolean)
+        .join(" · ");
       Alert.alert(
         r.ok ? "워치 동기화 완료" : "워치 동기화",
-        r.reason ?? `오늘 러닝 ${r.synced}개 · ${r.totalKm.toFixed(2)}km 불러왔어요`
+        r.reason ?? `오늘 ${what} · ${r.totalKm.toFixed(2)}km 불러왔어요`
       );
     } finally {
       setSyncing(false);
@@ -147,7 +155,7 @@ export default function RunScreen() {
           <View style={styles.todayMeta}>
             <Text style={styles.todayMetaNum}>{totalKm.toFixed(1)}km</Text>
             <Text style={styles.todayMetaLab}>누적</Text>
-            <Text style={[styles.todayMetaNum, { marginTop: 8 }]}>{runs.length}</Text>
+            <Text style={[styles.todayMetaNum, { marginTop: 8 }]}>{runOnlyRows.length}</Text>
             <Text style={styles.todayMetaLab}>기록</Text>
           </View>
         </View>
@@ -222,7 +230,7 @@ export default function RunScreen() {
         <Text style={styles.listTitle}>지난 러닝</Text>
       </View>
     ),
-    [distance, duration, name, runs.length, totalKm, today, syncing, submitting]
+    [distance, duration, name, runOnlyRows.length, totalKm, today, syncing, submitting]
   );
 
   return (
@@ -248,7 +256,15 @@ export default function RunScreen() {
                   <Icon name={sourceIcon(item.source)} size={15} color={Brand.brandDeep} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.who}>{item.name}</Text>
+                  <View style={styles.whoRow}>
+                    <Text style={styles.who}>{item.name}</Text>
+                    {/* 걷기는 러닝과 페이스 성격이 달라 한눈에 구분돼야 한다(랭킹·배지에서도 제외됨). */}
+                    {isWalk(item) ? (
+                      <View style={styles.walkTag}>
+                        <Text style={styles.walkTagText}>걷기</Text>
+                      </View>
+                    ) : null}
+                  </View>
                   <Text style={styles.date}>
                     {sourceLabel(item.source)} · {fmtDate(item.startedAt ?? item.createdAt)}
                   </Text>
@@ -392,7 +408,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  whoRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   who: { fontWeight: "800", fontSize: 14.5, color: Brand.ink },
+  walkTag: {
+    backgroundColor: Brand.brandSoft,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  walkTagText: { fontSize: 10.5, fontWeight: "800", color: Brand.brandDeep },
   date: { fontSize: 12, color: Brand.soft, marginTop: 1 },
   stats: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12 },
   stat: { fontSize: 13.5, color: Brand.soft },
