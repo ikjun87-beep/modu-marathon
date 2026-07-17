@@ -27,7 +27,7 @@ import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { saveRunnerName } from "@/lib/identity";
-import { setMascot, useMascot, type MascotKind } from "@/lib/mascot";
+import { MASCOTS, setMascot, useMascot } from "@/lib/mascot";
 import { useMyName } from "@/lib/session";
 import { badgeProgress, personalStats } from "@/lib/stats";
 
@@ -150,18 +150,20 @@ export default function MyScreen() {
             </Text>
           )}
 
-          {/* 마스코트 고르기 — 러너 네임으로는 성별을 알 수 없어 직접 고르게 한다.
+          {/* 마스코트 고르기 — 4종(남/여 × 레드/그린 팀). 러너 네임으론 성별을 알 수 없어 직접 고른다.
               이 기기 취향 설정이라 서버에 안 올린다(lib/mascot.ts). */}
-          <View style={styles.mascotRow}>
+          <View style={styles.mascotBlock}>
             <Text style={styles.mascotLabel}>내 캐릭터</Text>
-            {(["male", "female"] as MascotKind[]).map((k) => (
-              <PressableScale
-                key={k}
-                style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
-                onPress={() => void setMascot(k)}>
-                <Mascot size={40} kind={k} />
-              </PressableScale>
-            ))}
+            <View style={styles.mascotGrid}>
+              {MASCOTS.map((k) => (
+                <PressableScale
+                  key={k}
+                  style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
+                  onPress={() => void setMascot(k)}>
+                  <Mascot size={44} kind={k} />
+                </PressableScale>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -304,12 +306,12 @@ const styles = StyleSheet.create({
     fontSize: 14, fontWeight: Weight.bold },
   renameNote: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, lineHeight: 17 },
-  mascotRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
-  mascotLabel: { flex: 1, fontFamily: FONT,
-    fontSize: 13.5, fontWeight: Weight.regular, color: Brand.soft },
+  mascotBlock: { marginTop: 12, gap: 8 },
+  mascotLabel: { fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.soft },
+  mascotGrid: { flexDirection: "row", gap: 8 },
   mascotOpt: {
-    width: 52,
-    height: 52,
+    flex: 1,
+    height: 60,
     borderRadius: Radius.card,
     borderWidth: 2,
     borderColor: Brand.line,

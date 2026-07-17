@@ -31,8 +31,11 @@ for (let y = 0; y < H; y++) {
 const cw = maxx - minx + 1;
 const ch = maxy - miny + 1;
 
-// 정사각 캔버스로 맞춘다 — 화면마다 가로세로비를 따로 신경 안 쓰게
-const side = Math.max(cw, ch);
+// 정사각 캔버스로 맞추되 **여백(margin)을 준다.** 여백 0이면 둥근사각 크롭·원형 아바타에서
+// 머리 위·신발 아래가 잘린다(회장 지적). 콘텐츠의 8%를 사방 여백으로.
+const MARGIN = 0.08;
+const content = Math.max(cw, ch);
+const side = Math.round(content * (1 + MARGIN * 2));
 const padX = ((side - cw) / 2) | 0;
 const padY = ((side - ch) / 2) | 0;
 
