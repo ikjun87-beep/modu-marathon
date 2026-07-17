@@ -27,7 +27,7 @@ import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { saveRunnerName } from "@/lib/identity";
 import { useMyName } from "@/lib/session";
-import { BADGES, earnedBadgeIds, personalStats } from "@/lib/stats";
+import { badgeProgress, personalStats } from "@/lib/stats";
 
 const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
 
@@ -85,8 +85,8 @@ export default function MyScreen() {
     () => personalStats(runs ?? [], name || undefined),
     [runs, name]
   );
-  const earned = useMemo(
-    () => earnedBadgeIds(runs ?? [], name || undefined),
+  const progress = useMemo(
+    () => badgeProgress(runs ?? [], name || undefined),
     [runs, name]
   );
   const loading = runs === null || !loadedName;
@@ -213,22 +213,23 @@ export default function MyScreen() {
         {/* 배지 */}
         <Text style={styles.sectionH}>성과 배지</Text>
         <View style={styles.badges}>
-          {BADGES.map((b) => {
-            const got = earned.has(b.id);
-            return (
-              <View key={b.id} style={[styles.badge, !got && styles.badgeLocked]}>
-                <View style={[styles.badgeIcon, got ? styles.badgeIconOn : styles.badgeIconOff]}>
-                  <Icon
-                    name={b.icon as IconName}
-                    size={20}
-                    color={got ? "#fff" : Brand.faint}
-                  />
-                </View>
-                <Text style={[styles.badgeLabel, !got && styles.badgeLabelOff]}>{b.label}</Text>
-                <Text style={styles.badgeDesc}>{got ? b.desc : "미획득"}</Text>
+          {progress.map(({ badge: b, earned: got, ratio, hint }) => (
+            <View key={b.id} style={styles.badge}>
+              <View style={[styles.badgeIcon, got ? styles.badgeIconOn : styles.badgeIconOff]}>
+                <Icon name={b.icon as IconName} size={20} color={got ? "#fff" : Brand.faint} />
               </View>
-            );
-          })}
+              <Text style={[styles.badgeLabel, !got && styles.badgeLabelOff]}>{b.label}</Text>
+              {/* 못 딴 배지엔 "미획득" 대신 **얼마나 왔는지**를 준다 — 채우고 싶게. */}
+              {!got && (
+                <View style={styles.barTrack}>
+                  <View style={[styles.barFill, { width: `${Math.round(ratio * 100)}%` }]} />
+                </View>
+              )}
+              <Text style={[styles.badgeDesc, got && styles.badgeDescOn]} numberOfLines={1}>
+                {got ? `받았어요 ✓` : hint}
+              </Text>
+            </View>
+          ))}
         </View>
 
         {/* 링크 · 설정 */}
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
 
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   badge: {
-    width: "31%",
+    width: "48%",
     flexGrow: 1,
     alignItems: "center",
     backgroundColor: Brand.card,
@@ -392,6 +393,17 @@ const styles = StyleSheet.create({
   badgeLabel: { fontSize: 12.5, fontWeight: "800", color: Brand.ink, textAlign: "center" },
   badgeLabelOff: { color: Brand.soft },
   badgeDesc: { fontSize: 10.5, color: Brand.soft, textAlign: "center" },
+  badgeDescOn: { color: Brand.brandDeep, fontWeight: "700" },
+  // 진행바 — 못 딴 배지에만. 얇게(4px) 두고 라벨과 힌트 사이에.
+  barTrack: {
+    width: "78%",
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Brand.line,
+    overflow: "hidden",
+    marginTop: 2,
+  },
+  barFill: { height: "100%", borderRadius: 2, backgroundColor: Brand.brand },
 
   linkRow: {
     flexDirection: "row",

@@ -116,32 +116,87 @@ export function weeklyRanking(rows: Row[], now: number = Date.now()): RankRow[] 
   return [...byName.values()].sort((a, b) => b.km - a.km);
 }
 
+/** 배지가 무엇을 재는가. 진행도(얼마나 왔나) 계산의 근거. */
+export type BadgeMetric =
+  | "runs" // 총 러닝 횟수
+  | "bestKm" // 한 번에 뛴 최고 거리
+  | "weekRuns" // 이번 주 러닝 횟수
+  | "monthKm"; // 이번 달 누적 거리
+
 export type Badge = {
   id: string;
   icon: string; // Icon 컴포넌트 name
   label: string;
   desc: string;
+  metric: BadgeMetric;
+  goal: number;
 };
 
-/** 정의된 배지 카탈로그(획득 여부는 earnedBadgeIds로). */
+/** 정의된 배지 카탈로그. 획득 여부·진행도 모두 여기 goal 기준으로 계산된다(badgeProgress). */
 export const BADGES: Badge[] = [
-  { id: "first_run", icon: "run", label: "첫 러닝", desc: "첫 기록을 남겼어요" },
-  { id: "five_k", icon: "flag", label: "5K 클럽", desc: "한 번에 5km 이상" },
-  { id: "ten_k", icon: "award", label: "10K 러너", desc: "한 번에 10km 이상" },
-  { id: "week_3", icon: "calendar", label: "꾸준왕", desc: "한 주에 3회 이상" },
-  { id: "century", icon: "shield", label: "월 100K", desc: "이번 달 누적 100km" },
+  { id: "first_run", icon: "run", label: "첫 러닝", desc: "첫 기록을 남겼어요", metric: "runs", goal: 1 },
+  { id: "five_k", icon: "flag", label: "5K 클럽", desc: "한 번에 5km 이상", metric: "bestKm", goal: 5 },
+  { id: "ten_k", icon: "award", label: "10K 러너", desc: "한 번에 10km 이상", metric: "bestKm", goal: 10 },
+  { id: "week_3", icon: "calendar", label: "꾸준왕", desc: "한 주에 3회 이상", metric: "weekRuns", goal: 3 },
+  { id: "century", icon: "shield", label: "월 100K", desc: "이번 달 누적 100km", metric: "monthKm", goal: 100 },
 ];
 
-/** 한 사람이 획득한 배지 id 집합. */
-export function earnedBadgeIds(rows: Row[], name?: string, now: number = Date.now()): Set<string> {
+export type BadgeProgress = {
+  badge: Badge;
+  earned: boolean;
+  ratio: number; // 0..1 — 진행바 길이
+  /** 못 딴 배지에 보여줄 한 마디("1.8km 남았어요"). 딴 배지는 badge.desc를 쓴다. */
+  hint: string;
+};
+
+/**
+ * 배지별 진행도.
+ *
+ * 왜 있나: 예전엔 획득/미획득 이분법이라 **새 사용자에게 회색 "미획득" 다섯 개**가 첫인상이었다.
+ * ("너는 아직 아무것도 아니야") 얼마나 왔는지를 숫자로 주면 사람은 그걸 채우고 싶어한다.
+ */
+export function badgeProgress(
+  rows: Row[],
+  name?: string,
+  now: number = Date.now()
+): BadgeProgress[] {
   const mine = runsOnly(rows).filter((r) => mineOf(r, name));
-  const ids = new Set<string>();
-  if (mine.length >= 1) ids.add("first_run");
-  if (mine.some((r) => km(r) >= 5)) ids.add("five_k");
-  if (mine.some((r) => km(r) >= 10)) ids.add("ten_k");
-  if (weekRuns(rows, name, now) >= 3) ids.add("week_3");
   const monthFrom = startOfMonth(now);
-  const monthKm = mine.filter((r) => runMs(r) >= monthFrom).reduce((a, r) => a + km(r), 0);
-  if (monthKm >= 100) ids.add("century");
-  return ids;
+
+  const cur: Record<BadgeMetric, number> = {
+    runs: mine.length,
+    bestKm: mine.reduce((mx, r) => Math.max(mx, km(r)), 0),
+    weekRuns: weekRuns(rows, name, now),
+    monthKm: mine.filter((r) => runMs(r) >= monthFrom).reduce((a, r) => a + km(r), 0),
+  };
+
+  return BADGES.map((badge) => {
+    const c = cur[badge.metric];
+    const earned = c >= badge.goal;
+    const left = badge.goal - c;
+    return {
+      badge,
+      earned,
+      ratio: badge.goal > 0 ? Math.min(1, Math.max(0, c / badge.goal)) : 0,
+      hint: earned ? badge.desc : hintFor(badge, left),
+    };
+  });
+}
+
+function hintFor(badge: Badge, left: number): string {
+  if (badge.id === "first_run") return "첫 기록을 남겨보세요";
+  // 거리형은 소수 한 자리(1.8km 남았어요), 횟수형은 정수(1회 더!)
+  if (badge.metric === "bestKm" || badge.metric === "monthKm") {
+    return `${left.toFixed(1)}km 남았어요`;
+  }
+  return `${Math.ceil(left)}회 더!`;
+}
+
+/** 한 사람이 획득한 배지 id 집합. (진행도는 badgeProgress) */
+export function earnedBadgeIds(rows: Row[], name?: string, now: number = Date.now()): Set<string> {
+  return new Set(
+    badgeProgress(rows, name, now)
+      .filter((p) => p.earned)
+      .map((p) => p.badge.id)
+  );
 }
