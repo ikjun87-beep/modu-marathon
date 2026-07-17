@@ -62,7 +62,8 @@ adb logcat -d -b crash        # 패키지명=com.modumarathon.app
 ```
 
 ## 지켜야 할 규칙
-- 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`.
+- 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`events`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`. (`events`=모임 일정, 2026-07-18 하드코딩→Firestore 이관. **웹은 아직 하드코딩 EVENTS** — 후속 이관 필요.)
+- **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`.
 - 색·타이포는 `docs/DESIGN.md` 기준(**Brand = Azure Blue `#2563c9`**, accent 골드 `#c0841a` — 2026-07-12 오렌지→블루 리브랜딩). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스).
 - **큰 의존성 추가·배포·push는 실행 전 확인**. 커밋은 작은 단위, main 직접 커밋 시 브랜치 먼저.
 - 앱 코드 작성 전 Expo v57 문서 확인(`app/AGENTS.md`). 워치·네이티브 모듈은 Expo Go/웹 불가 → dev/preview build 필요.
