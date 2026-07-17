@@ -22,6 +22,10 @@ export type Run = {
   startedAt?: number; // epoch ms
   avgHr?: number;
   cadence?: number;
+  /** 누적 상승고도(m) — 오르막에서 올라간 높이의 합(내리막은 안 뺀다. 러닝계 표준 "gain").
+   *  ⚠️ GPS 고도는 크게 흔들려서 **그냥 더하면 가만히 서 있어도 수백 m가 쌓인다.**
+   *  산출은 live-run.tsx의 앵커 히스테리시스 참조(3m 넘게 오른 것만 인정). */
+  elevationGainM?: number;
 };
 
 export type LatLng = { lat: number; lng: number };
@@ -127,6 +131,7 @@ export async function saveRun(run: Run): Promise<void> {
   if (run.startedAt) item.startedAt = run.startedAt;
   if (run.avgHr) item.avgHr = Math.round(run.avgHr);
   if (run.cadence) item.cadence = Math.round(run.cadence);
+  if (run.elevationGainM) item.elevationGainM = Math.round(run.elevationGainM);
 
   if (run.sourceId) {
     item.sourceId = run.sourceId;

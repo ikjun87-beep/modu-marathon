@@ -105,6 +105,7 @@ export default function RunDetailScreen() {
   const km = Number(run.distanceKm) || 0;
   const sec = runSeconds(run);
   const hr = run.avgHr ? Math.round(Number(run.avgHr)) : null;
+  const gain = run.elevationGainM ? Math.round(Number(run.elevationGainM)) : null;
   const hasPath = !!path && path.length > 1;
 
   const tiles: { icon: IconName; label: string; value: string }[] = [
@@ -112,6 +113,8 @@ export default function RunDetailScreen() {
     { icon: "gauge", label: "평균 페이스", value: paceLabel(km, sec) },
   ];
   if (hr) tiles.push({ icon: "heart", label: "평균 심박", value: `${hr} bpm` });
+  // 평지 러닝·워치 기록엔 없다 → 있을 때만 보여준다(0 m 타일은 정보가 아니라 잡음).
+  if (gain) tiles.push({ icon: "mountain", label: "상승고도", value: `${gain} m` });
   tiles.push({ icon: sourceIcon(run.source), label: "기록 방식", value: sourceLabel(run.source) });
 
   return (

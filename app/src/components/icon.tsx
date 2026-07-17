@@ -16,6 +16,7 @@ export type IconName =
   | "users"
   | "flag"
   | "gauge"
+  | "mountain"
   | "shield"
   | "check"
   | "bell"
@@ -92,6 +93,13 @@ export function Icon({ name, size = 24, color = Brand.ink, strokeWidth = 1.75 }:
         </>
       )}
       {name === "flag" && <Path {...s} d="M6 21V4M6 4h11l-2.2 3.2L17 10.5H6" />}
+      {/* 상승고도 — 두 봉우리 산. 24×24 스트로크 규격(다른 아이콘과 동일). */}
+      {name === "mountain" && (
+        <>
+          <Path {...s} d="M3 19l6-10 4.5 7" />
+          <Path {...s} d="M11 19l4-6.5 6 6.5z" />
+        </>
+      )}
       {name === "gauge" && (
         <>
           <Path {...s} d="M4.5 17a7.5 7.5 0 0115 0" />
