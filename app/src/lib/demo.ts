@@ -5,7 +5,7 @@
  */
 import type { Row } from "./crew";
 
-export const DEMO = true;
+export const DEMO = false;
 
 const H = 3600_000;
 const D = 86400_000;
