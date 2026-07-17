@@ -15,8 +15,10 @@
  */
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
   getAuth,
   initializeAuth,
+  linkWithCredential,
   onAuthStateChanged,
   signInAnonymously,
   signInWithEmailAndPassword,
@@ -96,14 +98,37 @@ export async function signInGuest(name?: string): Promise<Account> {
   return toAccount(cred.user)!;
 }
 
-/** 이메일 가입 — 가입과 동시에 표시이름(=크루에서 보이는 내 이름)을 심는다. */
+/** 이메일 가입 — 가입과 동시에 표시이름(=크루에서 보이는 내 이름)을 심는다.
+ *
+ *  ⚠️ **게스트가 가입하면 uid를 유지해야 한다.** 계정 카드는 "이메일로 가입하면 기기를 바꿔도
+ *  이어집니다"라고 약속하는데, 그냥 createUser를 부르면 **새 uid가 발급되어 익명 계정과 갈린다**.
+ *  지금은 신원이 이름 문자열이라 증상이 없지만, 문서에 uid를 심어 소유 기반으로 가는 순간
+ *  게스트로 쓴 글·러닝·참석의 소유권을 가입하면서 통째로 잃는다(= 약속이 거짓말이 됨).
+ *  → 익명 세션이 있으면 **linkWithCredential으로 그 계정을 승격**해 uid를 그대로 가져간다.
+ *  (docs/COMMUNITY_PLAN.md §2-2 함정 ①)
+ */
 export async function signUpEmail(
   email: string,
   password: string,
   name: string
 ): Promise<Account> {
   const a = requireAuth();
-  const cred = await run(() => createUserWithEmailAndPassword(a, email.trim(), password));
+  const guest = a.currentUser?.isAnonymous ? a.currentUser : null;
+  const cred = await run(async () => {
+    if (guest) {
+      try {
+        // 게스트 승격 — uid 유지. 이 계정의 기존 글·기록 소유권이 그대로 따라온다.
+        return await linkWithCredential(guest, EmailAuthProvider.credential(email.trim(), password));
+      } catch (e: any) {
+        // 이미 가입된 이메일이거나 링크가 불가능한 상태면 일반 가입으로 물러선다.
+        // (이 경우 uid가 갈리는 건 불가피 — 그 이메일은 이미 다른 신원이다.)
+        if (e?.code !== "auth/credential-already-in-use" && e?.code !== "auth/email-already-in-use") {
+          throw e;
+        }
+      }
+    }
+    return createUserWithEmailAndPassword(a, email.trim(), password);
+  });
   const display = name.trim();
   if (display) {
     await updateProfile(cred.user, { displayName: display });
