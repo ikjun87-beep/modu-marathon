@@ -20,7 +20,7 @@ import { openBrowserAsync } from "expo-web-browser";
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { getMyName, setMyName } from "@/lib/session";
 
 const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
@@ -141,9 +141,12 @@ const styles = StyleSheet.create({
   scrollBody: { flexGrow: 1, justifyContent: "center", paddingVertical: 24 },
   body: { justifyContent: "center", paddingHorizontal: 28, gap: 10 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
-  title: { fontSize: 40, fontWeight: "900", color: Brand.ink },
-  sub: { fontSize: 15, color: Brand.soft, marginBottom: 8 },
+  eyebrow: { fontFamily: FONT,
+    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
+  title: { fontFamily: FONT,
+    fontSize: 40, fontWeight: Weight.bold, color: Brand.ink },
+  sub: { fontFamily: FONT,
+    fontSize: 15, color: Brand.soft, marginBottom: 8 },
   perks: { gap: 10, marginTop: 8 },
   perk: {
     flexDirection: "row",
@@ -152,41 +155,47 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 14,
+    borderRadius: Radius.input,
     paddingHorizontal: 16,
     paddingVertical: 13,
   },
   perkBadge: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     backgroundColor: Brand.brandSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-  perkLabel: { fontSize: 15, fontWeight: "700", color: Brand.ink },
+  perkLabel: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.regular, color: Brand.ink },
   form: { paddingHorizontal: 28, paddingBottom: 12, gap: 10 },
-  label: { fontSize: 15, fontWeight: "800", color: Brand.ink },
+  label: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.regular, color: Brand.ink },
   input: {
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingHorizontal: 14,
     paddingVertical: 14,
+    fontFamily: FONT,
     fontSize: 16,
     color: Brand.ink,
     backgroundColor: Brand.card,
   },
   btn: {
     backgroundColor: Brand.brand,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingVertical: 15,
     alignItems: "center",
     marginTop: 2,
   },
   btnOff: { backgroundColor: Brand.brandLine },
-  btnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
-  note: { fontSize: 12.5, color: Brand.soft, textAlign: "center", marginTop: 2 },
-  consent: { fontSize: 11.5, color: Brand.soft, textAlign: "center", marginTop: 6, lineHeight: 17 },
-  consentLink: { color: Brand.brand, fontWeight: "700", textDecorationLine: "underline" },
+  btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+    fontSize: 16 },
+  note: { fontFamily: FONT,
+    fontSize: 12.5, color: Brand.soft, textAlign: "center", marginTop: 2 },
+  consent: { fontFamily: FONT,
+    fontSize: 11.5, color: Brand.soft, textAlign: "center", marginTop: 6, lineHeight: 17 },
+  consentLink: { color: Brand.brand, fontWeight: Weight.bold, textDecorationLine: "underline" },
 });

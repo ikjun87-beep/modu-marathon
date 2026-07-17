@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
-import { Brand } from "@/lib/brand";
+import { Brand, Radius } from "@/lib/brand";
 import { MAP_STYLE } from "@/lib/map-style";
 import type { LatLng } from "@/lib/run";
 
@@ -77,7 +77,7 @@ export function RunMap({ path, follow = true }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, borderRadius: 20, overflow: "hidden", backgroundColor: Brand.warm },
+  wrap: { flex: 1, borderRadius: Radius.card, overflow: "hidden", backgroundColor: Brand.warm },
   startDot: {
     width: 14,
     height: 14,
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   endDot: {
     width: 16,
     height: 16,
-    borderRadius: 8,
+    borderRadius: Radius.chip,
     backgroundColor: Brand.brand,
     borderWidth: 3,
     borderColor: "#fff",

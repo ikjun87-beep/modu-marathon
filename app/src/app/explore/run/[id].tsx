@@ -13,7 +13,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { fmtDuration, paceLabel, type LatLng } from "@/lib/run";
@@ -192,32 +192,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 12 },
-  topTitle: { fontSize: 16, fontWeight: "800", color: Brand.ink },
+  iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: Radius.input },
+  topTitle: { fontFamily: FONT,
+    fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
 
   body: { padding: 18, gap: 14, paddingBottom: 48 },
 
   missing: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  missingText: { color: Brand.soft, fontSize: 14, fontWeight: "600" },
+  missingText: { color: Brand.soft, fontFamily: FONT,
+    fontSize: 14, fontWeight: Weight.regular },
 
   metaRow: { flexDirection: "row", alignItems: "center", gap: 9 },
   srcBadge: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     backgroundColor: Brand.brandSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-  metaText: { flex: 1, fontSize: 13, color: Brand.soft, fontWeight: "600" },
+  metaText: { flex: 1, fontFamily: FONT,
+    fontSize: 13, color: Brand.soft, fontWeight: Weight.regular },
 
-  hero: { backgroundColor: Brand.dark, borderRadius: 22, padding: 24 },
-  heroLab: { color: "#aab2bb", fontSize: 13, fontWeight: "600" },
+  hero: { backgroundColor: Brand.dark, borderRadius: Radius.hero, padding: 24 },
+  heroLab: { color: "#aab2bb", fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.regular },
   heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
-  heroNum: { color: "#fff", fontSize: 58, fontWeight: "900", letterSpacing: -2, lineHeight: 60 },
-  heroUnit: { color: Brand.brand, fontSize: 24, fontWeight: "800", marginLeft: 7, marginBottom: 8 },
+  heroNum: { color: "#fff", fontFamily: FONT,
+    fontSize: 58, fontWeight: Weight.bold, letterSpacing: -2, lineHeight: 60 },
+  heroUnit: { color: Brand.brand, fontFamily: FONT,
+    fontSize: 24, fontWeight: Weight.bold, marginLeft: 7, marginBottom: 8 },
 
-  mapCard: { height: 240, borderRadius: 20, overflow: "hidden" },
+  mapCard: { height: 240, borderRadius: Radius.card, overflow: "hidden" },
   noPath: {
     flexDirection: "row",
     alignItems: "center",
@@ -225,10 +231,11 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 14,
+    borderRadius: Radius.input,
     padding: 14,
   },
-  noPathText: { flex: 1, color: Brand.soft, fontSize: 12.5, fontWeight: "600", lineHeight: 18 },
+  noPathText: { flex: 1, color: Brand.soft, fontFamily: FONT,
+    fontSize: 12.5, fontWeight: Weight.regular, lineHeight: 18 },
 
   tiles: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: {
@@ -237,11 +244,13 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 16,
     gap: 8,
   },
   tileHead: { flexDirection: "row", alignItems: "center", gap: 6 },
-  tileLab: { fontSize: 12.5, color: Brand.soft, fontWeight: "700" },
-  tileVal: { fontSize: 20, fontWeight: "900", color: Brand.ink, letterSpacing: -0.4 },
+  tileLab: { fontFamily: FONT,
+    fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
+  tileVal: { fontFamily: FONT,
+    fontSize: 20, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
 });

@@ -5,7 +5,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import type { LatLng } from "@/lib/run";
 
 type Props = { path: LatLng[]; follow?: boolean };
@@ -22,7 +22,7 @@ export function RunMap(_props: Props) {
 const styles = StyleSheet.create({
   ph: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: Radius.card,
     backgroundColor: Brand.warm,
     borderWidth: 1,
     borderColor: Brand.line,
@@ -30,5 +30,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-  t: { color: Brand.soft, fontSize: 13, fontWeight: "600" },
+  t: { color: Brand.soft, fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.regular },
 });

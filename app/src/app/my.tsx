@@ -23,7 +23,7 @@ import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HAS_AUTH, signOutUser, watchAccount, type Account } from "@/lib/auth";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { saveRunnerName } from "@/lib/identity";
@@ -109,7 +109,7 @@ export default function MyScreen() {
           <View style={styles.profileHead}>
             {/* 아바타 = 내가 고른 마스코트. 이름 첫 글자보다 "내 캐릭터"라는 느낌이 산다. */}
             <View style={styles.avatar}>
-              <Mascot size={54} />
+              <Mascot size={50} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.pLabel}>러너 네임</Text>
@@ -282,29 +282,33 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 18,
+    borderRadius: Radius.card,
     padding: 16,
   },
   profileHead: { flexDirection: "row", alignItems: "center", gap: 14 },
-  pHint: { fontSize: 12, color: Brand.faint, marginTop: 2 },
+  pHint: { fontFamily: FONT,
+    fontSize: 12, color: Brand.faint, marginTop: 2 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   saveBtn: {
     backgroundColor: Brand.brand,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     paddingHorizontal: 16,
     paddingVertical: 12,
     minWidth: 62,
     alignItems: "center",
     justifyContent: "center",
   },
-  saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "800" },
-  renameNote: { fontSize: 12, color: Brand.soft, lineHeight: 17 },
+  saveBtnText: { color: "#fff", fontFamily: FONT,
+    fontSize: 14, fontWeight: Weight.bold },
+  renameNote: { fontFamily: FONT,
+    fontSize: 12, color: Brand.soft, lineHeight: 17 },
   mascotRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
-  mascotLabel: { flex: 1, fontSize: 13.5, fontWeight: "700", color: Brand.soft },
+  mascotLabel: { flex: 1, fontFamily: FONT,
+    fontSize: 13.5, fontWeight: Weight.regular, color: Brand.soft },
   mascotOpt: {
     width: 52,
     height: 52,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     borderWidth: 2,
     borderColor: Brand.line,
     backgroundColor: Brand.bg,
@@ -313,27 +317,32 @@ const styles = StyleSheet.create({
   },
   mascotOptOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Brand.brand,
+    // 원형(28)이면 마스코트 다리가 잘린다 → 둥근 사각형. 배경도 진한 파랑이면
+    // 파랑 캐릭터가 묻혀서(아이콘 때 겪은 저대비) 연한 파랑으로.
+    width: 58,
+    height: 58,
+    borderRadius: Radius.card,
+    backgroundColor: Brand.brandSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-  pLabel: { fontSize: 12, fontWeight: "700", color: Brand.soft },
+  pLabel: { fontFamily: FONT,
+    fontSize: 12, fontWeight: Weight.regular, color: Brand.soft },
   nameInput: {
     flex: 1,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     paddingHorizontal: 12,
     paddingVertical: 9,
+    fontFamily: FONT,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: Weight.regular,
     color: Brand.ink,
   },
 
-  sectionH: { fontSize: 15, fontWeight: "800", color: Brand.ink, marginTop: 6 },
+  sectionH: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 6 },
 
   acct: {
     flexDirection: "row",
@@ -342,7 +351,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 14,
   },
   acctCta: {
@@ -352,34 +361,38 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.brandSoft,
     borderWidth: 1,
     borderColor: Brand.brandLine,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 14,
   },
   acctIcon: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     backgroundColor: Brand.brand,
     alignItems: "center",
     justifyContent: "center",
   },
-  acctTitle: { fontSize: 14.5, fontWeight: "800", color: Brand.ink },
-  acctSub: { fontSize: 12, color: Brand.soft, marginTop: 2 },
+  acctTitle: { fontFamily: FONT,
+    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
+  acctSub: { fontFamily: FONT,
+    fontSize: 12, color: Brand.soft, marginTop: 2 },
   acctBtn: {
     backgroundColor: Brand.brand,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
-  acctBtnText: { color: "#fff", fontSize: 13, fontWeight: "800" },
+  acctBtnText: { color: "#fff", fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.bold },
   acctBtnGhost: {
     borderWidth: 1,
     borderColor: Brand.line2,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
-  acctBtnGhostText: { color: Brand.soft, fontSize: 13, fontWeight: "800" },
+  acctBtnGhostText: { color: Brand.soft, fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.bold },
 
   tiles: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   skelTile: { flexGrow: 1, flexBasis: "47%" },
@@ -389,23 +402,26 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 16,
     gap: 8,
   },
   tileHead: { flexDirection: "row", alignItems: "center", gap: 6 },
-  tileLab: { fontSize: 12.5, color: Brand.soft, fontWeight: "700" },
-  tileVal: { fontSize: 19, fontWeight: "900", color: Brand.ink, letterSpacing: -0.4 },
+  tileLab: { fontFamily: FONT,
+    fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
+  tileVal: { fontFamily: FONT,
+    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
 
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   badge: {
+    // flexGrow를 주면 안 된다 — 배지가 5개(홀수)라 마지막 줄에 혼자 남는 카드가
+    // 남는 공간을 다 먹어 전체 너비로 퍼진다(3열일 땐 안 보이던 문제).
     width: "48%",
-    flexGrow: 1,
     alignItems: "center",
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     paddingVertical: 14,
     paddingHorizontal: 6,
     gap: 6,
@@ -420,10 +436,12 @@ const styles = StyleSheet.create({
   },
   badgeIconOn: { backgroundColor: Brand.brand },
   badgeIconOff: { backgroundColor: Brand.warm },
-  badgeLabel: { fontSize: 12.5, fontWeight: "800", color: Brand.ink, textAlign: "center" },
+  badgeLabel: { fontFamily: FONT,
+    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.ink, textAlign: "center" },
   badgeLabelOff: { color: Brand.soft },
-  badgeDesc: { fontSize: 10.5, color: Brand.soft, textAlign: "center" },
-  badgeDescOn: { color: Brand.brandDeep, fontWeight: "700" },
+  badgeDesc: { fontFamily: FONT,
+    fontSize: 10.5, color: Brand.soft, textAlign: "center" },
+  badgeDescOn: { color: Brand.brandDeep, fontWeight: Weight.regular },
   // 진행바 — 못 딴 배지에만. 얇게(4px) 두고 라벨과 힌트 사이에.
   barTrack: {
     width: "78%",
@@ -442,21 +460,24 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 14,
+    borderRadius: Radius.input,
     paddingVertical: 14,
     paddingHorizontal: 14,
   },
   linkIcon: {
     width: 30,
     height: 30,
-    borderRadius: 9,
+    borderRadius: Radius.chip,
     backgroundColor: Brand.brandSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-  linkText: { flex: 1, fontSize: 14, fontWeight: "700", color: Brand.ink },
+  linkText: { flex: 1, fontFamily: FONT,
+    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
 
   appInfo: { alignItems: "center", paddingVertical: 18, gap: 3 },
-  appInfoText: { fontSize: 13, fontWeight: "800", color: Brand.soft },
-  appInfoSub: { fontSize: 12, color: Brand.faint },
+  appInfoText: { fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.regular, color: Brand.soft },
+  appInfoSub: { fontFamily: FONT,
+    fontSize: 12, color: Brand.faint },
 });

@@ -39,6 +39,34 @@
     "plugins": [
       "expo-router",
       [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "LINESeed",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/LINESeedKR-Rg.ttf",
+                    "weight": 400
+                  },
+                  {
+                    "path": "./assets/fonts/LINESeedKR-Bd.ttf",
+                    "weight": 700
+                  }
+                ]
+              }
+            ]
+          },
+          "ios": {
+            "fonts": [
+              "./assets/fonts/LINESeedKR-Rg.ttf",
+              "./assets/fonts/LINESeedKR-Bd.ttf"
+            ]
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#2563c9",

@@ -20,7 +20,7 @@ import Animated, {
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { loadSeenBadges, saveSeenBadges } from "@/lib/badge-seen";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   card: {
     width: "78%",
     backgroundColor: Brand.card,
-    borderRadius: 24,
+    borderRadius: Radius.hero,
     paddingVertical: 26,
     paddingHorizontal: 22,
     alignItems: "center",
@@ -208,22 +208,26 @@ const styles = StyleSheet.create({
     bottom: -2,
     width: 46,
     height: 46,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     backgroundColor: Brand.brand,
     borderWidth: 3,
     borderColor: Brand.card,
     alignItems: "center",
     justifyContent: "center",
   },
-  eyebrow: { fontSize: 11.5, fontWeight: "800", letterSpacing: 2, color: Brand.accent },
-  title: { fontSize: 24, fontWeight: "900", color: Brand.ink },
-  desc: { fontSize: 13.5, color: Brand.soft, textAlign: "center" },
+  eyebrow: { fontFamily: FONT,
+    fontSize: 11.5, fontWeight: Weight.bold, letterSpacing: 2, color: Brand.accent },
+  title: { fontFamily: FONT,
+    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink },
+  desc: { fontFamily: FONT,
+    fontSize: 13.5, color: Brand.soft, textAlign: "center" },
   btn: {
     marginTop: 14,
     backgroundColor: Brand.brand,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingVertical: 12,
     paddingHorizontal: 34,
   },
-  btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+    fontSize: 15 },
 });

@@ -20,7 +20,7 @@ import {
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { AuthError, signInEmail, signInGuest, signUpEmail } from "@/lib/auth";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 
 type Mode = "signin" | "signup";
 
@@ -190,7 +190,8 @@ const styles = StyleSheet.create({
     maxHeight: "92%",
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { fontSize: 22, fontWeight: "900", color: Brand.ink },
+  title: { fontFamily: FONT,
+    fontSize: 22, fontWeight: Weight.bold, color: Brand.ink },
   iconBtn: {
     width: 34,
     height: 34,
@@ -199,49 +200,56 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: Brand.warm,
   },
-  sub: { fontSize: 13, color: Brand.soft, marginTop: 4, marginBottom: 16 },
+  sub: { fontFamily: FONT,
+    fontSize: 13, color: Brand.soft, marginTop: 4, marginBottom: 16 },
 
   seg: {
     flexDirection: "row",
     backgroundColor: Brand.warm,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     padding: 4,
     gap: 4,
     marginBottom: 14,
   },
-  segBtn: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 9 },
+  segBtn: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: Radius.chip },
   segBtnOn: { backgroundColor: Brand.card },
-  segText: { fontSize: 14, fontWeight: "700", color: Brand.soft },
-  segTextOn: { color: Brand.brandDeep, fontWeight: "800" },
+  segText: { fontFamily: FONT,
+    fontSize: 14, fontWeight: Weight.regular, color: Brand.soft },
+  segTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
 
-  label: { fontSize: 13, fontWeight: "800", color: Brand.ink, marginTop: 8, marginBottom: 6 },
+  label: { fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.regular, color: Brand.ink, marginTop: 8, marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingHorizontal: 14,
     paddingVertical: 13,
+    fontFamily: FONT,
     fontSize: 16,
     color: Brand.ink,
     backgroundColor: Brand.bg,
   },
-  error: { marginTop: 12, fontSize: 13, fontWeight: "700", color: "#c0392b", lineHeight: 19 },
+  error: { marginTop: 12, fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.regular, color: "#c0392b", lineHeight: 19 },
 
   primary: {
     marginTop: 16,
     backgroundColor: Brand.brand,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
     minHeight: 50,
   },
   primaryOff: { backgroundColor: Brand.brandLine },
-  primaryText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  primaryText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+    fontSize: 16 },
 
   divider: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 16 },
   rule: { flex: 1, height: 1, backgroundColor: Brand.line },
-  dividerText: { fontSize: 12, color: Brand.faint, fontWeight: "700" },
+  dividerText: { fontFamily: FONT,
+    fontSize: 12, color: Brand.faint, fontWeight: Weight.regular },
 
   ghost: {
     flexDirection: "row",
@@ -251,9 +259,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.brandLine,
     backgroundColor: Brand.brandSoft,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingVertical: 14,
   },
-  ghostText: { fontSize: 15, fontWeight: "800", color: Brand.brandDeep },
-  note: { fontSize: 12, color: Brand.faint, textAlign: "center", marginTop: 10, lineHeight: 18 },
+  ghostText: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.brandDeep },
+  note: { fontFamily: FONT,
+    fontSize: 12, color: Brand.faint, textAlign: "center", marginTop: 10, lineHeight: 18 },
 });

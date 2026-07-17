@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { saveRunnerName } from "@/lib/identity";
 import { useMyName } from "@/lib/session";
 
@@ -77,18 +77,20 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 14,
+    borderRadius: Radius.input,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  label: { fontWeight: "700", fontSize: 14, color: Brand.ink },
+  label: { fontWeight: Weight.regular, fontFamily: FONT,
+    fontSize: 14, color: Brand.ink },
   input: {
     flex: 1,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 9,
+    borderRadius: Radius.chip,
     paddingHorizontal: 12,
     paddingVertical: 9,
+    fontFamily: FONT,
     fontSize: 14,
     color: Brand.ink,
   },

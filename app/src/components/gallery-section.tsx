@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 
@@ -106,29 +106,32 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 14,
     gap: 10,
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  h: { fontSize: 15, fontWeight: "800", color: Brand.ink },
+  h: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
   up: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     backgroundColor: Brand.brand,
-    borderRadius: 10,
+    borderRadius: Radius.chip,
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
   upBusy: { opacity: 0.6 },
-  upText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-  empty: { color: Brand.soft, fontSize: 13.5, textAlign: "center", paddingVertical: 16 },
+  upText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+    fontSize: 13 },
+  empty: { color: Brand.soft, fontFamily: FONT,
+    fontSize: 13.5, textAlign: "center", paddingVertical: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   cell: {
     width: "31.5%",
     aspectRatio: 1,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     overflow: "hidden",
     backgroundColor: Brand.bg,
     borderWidth: 1,
@@ -140,12 +143,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    fontFamily: FONT,
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: Weight.regular,
     color: "#fff",
     backgroundColor: "rgba(0,0,0,0.5)",
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
-  hint: { fontSize: 11.5, color: Brand.soft },
+  hint: { fontFamily: FONT,
+    fontSize: 11.5, color: Brand.soft },
 });

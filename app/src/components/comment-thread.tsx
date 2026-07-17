@@ -7,7 +7,7 @@ import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { add, fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
@@ -83,11 +83,12 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 16,
     gap: 12,
   },
-  h: { fontSize: 14.5, fontWeight: "800", color: Brand.ink },
+  h: { fontFamily: FONT,
+    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
   item: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
   avatar: {
     width: 30,
@@ -97,20 +98,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { color: Brand.brandDeep, fontSize: 13, fontWeight: "900" },
+  avatarText: { color: Brand.brandDeep, fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.regular },
   itemHead: { flexDirection: "row", alignItems: "center", gap: 8 },
-  who: { fontSize: 13.5, fontWeight: "800", color: Brand.ink },
-  date: { fontSize: 11.5, color: Brand.faint },
-  msg: { fontSize: 13.5, color: Brand.ink2, marginTop: 2, lineHeight: 19 },
-  empty: { fontSize: 13, color: Brand.soft, paddingVertical: 4 },
+  who: { fontFamily: FONT,
+    fontSize: 13.5, fontWeight: Weight.bold, color: Brand.ink },
+  date: { fontFamily: FONT,
+    fontSize: 11.5, color: Brand.faint },
+  msg: { fontFamily: FONT,
+    fontSize: 13.5, color: Brand.ink2, marginTop: 2, lineHeight: 19 },
+  empty: { fontFamily: FONT,
+    fontSize: 13, color: Brand.soft, paddingVertical: 4 },
   inputRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   input: {
     flex: 1,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 11,
+    borderRadius: Radius.input,
     paddingHorizontal: 12,
     paddingVertical: 9,
+    fontFamily: FONT,
     fontSize: 14,
     color: Brand.ink,
     minHeight: 42,
@@ -119,7 +126,7 @@ const styles = StyleSheet.create({
   send: {
     width: 42,
     height: 42,
-    borderRadius: 11,
+    borderRadius: Radius.input,
     backgroundColor: Brand.brand,
     alignItems: "center",
     justifyContent: "center",

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { EVENTS } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -62,34 +62,41 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 14,
     gap: 10,
   },
-  h: { fontSize: 15, fontWeight: "800", color: Brand.ink },
+  h: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   date: {
     width: 52,
     height: 52,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     backgroundColor: Brand.brand,
     alignItems: "center",
     justifyContent: "center",
   },
-  dm: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  dd: { color: "#fff", fontSize: 20, fontWeight: "900", lineHeight: 22 },
+  dm: { color: "#fff", fontFamily: FONT,
+    fontSize: 10, fontWeight: Weight.regular },
+  dd: { color: "#fff", fontFamily: FONT,
+    fontSize: 20, fontWeight: Weight.bold, lineHeight: 22 },
   info: { flex: 1 },
-  title: { fontSize: 15, fontWeight: "700", color: Brand.ink },
-  desc: { fontSize: 12.5, color: Brand.soft, marginTop: 2 },
-  att: { fontSize: 12, color: Brand.soft, marginTop: 4 },
-  cnt: { color: Brand.accent, fontWeight: "800" },
+  title: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+  desc: { fontFamily: FONT,
+    fontSize: 12.5, color: Brand.soft, marginTop: 2 },
+  att: { fontFamily: FONT,
+    fontSize: 12, color: Brand.soft, marginTop: 4 },
+  cnt: { color: Brand.accent, fontWeight: Weight.bold },
   btn: {
     backgroundColor: Brand.accent,
-    borderRadius: 20,
+    borderRadius: Radius.card,
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   btnOn: { backgroundColor: Brand.brandSoft },
-  btnText: { color: "#fff", fontWeight: "800", fontSize: 13 },
+  btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+    fontSize: 13 },
   btnTextOn: { color: Brand.brandDeep },
 });

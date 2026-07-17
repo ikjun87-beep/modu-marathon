@@ -9,7 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
@@ -115,15 +115,18 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 120 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  eyebrow: { fontSize: 12, fontWeight: "800", letterSpacing: 3, color: Brand.brand },
-  title: { fontSize: 30, fontWeight: "900", color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
-  sub: { fontSize: 13, color: Brand.soft, marginBottom: 2 },
+  eyebrow: { fontFamily: FONT,
+    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
+  title: { fontFamily: FONT,
+    fontSize: 30, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
+  sub: { fontFamily: FONT,
+    fontSize: 13, color: Brand.soft, marginBottom: 2 },
 
   challenge: {
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 16,
+    borderRadius: Radius.card,
     padding: 16,
     gap: 12,
   },
@@ -131,18 +134,21 @@ const styles = StyleSheet.create({
   chIcon: {
     width: 36,
     height: 36,
-    borderRadius: 11,
+    borderRadius: Radius.input,
     backgroundColor: Brand.brand,
     alignItems: "center",
     justifyContent: "center",
   },
-  chTitle: { fontSize: 14.5, fontWeight: "800", color: Brand.ink },
-  chSub: { fontSize: 12.5, color: Brand.soft, marginTop: 2, fontWeight: "600" },
-  barBg: { height: 10, borderRadius: 6, backgroundColor: Brand.warm, overflow: "hidden" },
-  barFill: { height: 10, borderRadius: 6, backgroundColor: Brand.brand },
+  chTitle: { fontFamily: FONT,
+    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
+  chSub: { fontFamily: FONT,
+    fontSize: 12.5, color: Brand.soft, marginTop: 2, fontWeight: Weight.regular },
+  barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.warm, overflow: "hidden" },
+  barFill: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.brand },
 
   empty: { alignItems: "center", justifyContent: "center", gap: 12, paddingVertical: 36 },
-  emptyText: { color: Brand.soft, fontSize: 13.5, fontWeight: "600", textAlign: "center", lineHeight: 20 },
+  emptyText: { color: Brand.soft, fontFamily: FONT,
+    fontSize: 13.5, fontWeight: Weight.regular, textAlign: "center", lineHeight: 20 },
 
   row: {
     flexDirection: "row",
@@ -151,16 +157,22 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: 14,
+    borderRadius: Radius.input,
     padding: 14,
   },
   rowMe: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
   rankCol: { width: 30, alignItems: "center" },
-  medal: { fontSize: 20 },
-  rankNum: { fontSize: 16, fontWeight: "900", color: Brand.soft },
-  rowName: { fontSize: 15, fontWeight: "800", color: Brand.ink },
+  medal: { fontFamily: FONT,
+    fontSize: 20 },
+  rankNum: { fontFamily: FONT,
+    fontSize: 16, fontWeight: Weight.bold, color: Brand.soft },
+  rowName: { fontFamily: FONT,
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
   rowNameMe: { color: Brand.brandDeep },
-  rowRuns: { fontSize: 12, color: Brand.soft, marginTop: 1 },
-  rowKm: { fontSize: 19, fontWeight: "900", color: Brand.ink, letterSpacing: -0.5 },
-  rowUnit: { fontSize: 12.5, fontWeight: "800", color: Brand.soft },
+  rowRuns: { fontFamily: FONT,
+    fontSize: 12, color: Brand.soft, marginTop: 1 },
+  rowKm: { fontFamily: FONT,
+    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.5 },
+  rowUnit: { fontFamily: FONT,
+    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.soft },
 });
