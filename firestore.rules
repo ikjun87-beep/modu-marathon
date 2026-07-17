@@ -61,12 +61,18 @@ service cloud.firestore {
       // 정상 경로(멱등 재저장·러너 네임 전파)는 둘 다 안 바꾸므로 통과.
       // kind 없는 과거 문서는 'run'으로 간주 — 재동기화 시 우리 코드도 'run'이면 필드를 안 적는다.
       // (작성자명 재지정까지 막으려면 Auth 소유검증 필요 — pre-Auth 한계)
+      // update는 distanceKm·kind·**durationSec**을 불변으로 강제한다.
+      // durationSec을 뺐던 게 구멍이었다: 페이스 통계(stats.avgPace)·상세 페이스가 전부 duration
+      // 기반이라, 남의 러닝 durationSec을 1로 바꾸면 그 사람 평균 페이스가 괴물이 되고 크루 통계가
+      // 오염된다(distanceKm만 막아 절반만 방어했던 셈). 정상 경로(멱등 재저장·개명 전파)는 duration을
+      // 안 바꾸므로 통과. **거리·시간·종목이 실제로 달라지는 재동기화는 delete→재생성으로 우회**(run.ts).
       allow update: if request.resource.data.name is string
                     && request.resource.data.name.size() <= 40
                     && request.resource.data.distanceKm is number
                     && request.resource.data.distanceKm == resource.data.distanceKm
+                    && request.resource.data.get('durationSec', 0) == resource.data.get('durationSec', 0)
                     && request.resource.data.get('kind', 'run') == resource.data.get('kind', 'run');
-      allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx)
+      allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx) + 재동기화 우회(run.ts)
     }
     // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. parentId로 묶임.
     match /comments/{id} {

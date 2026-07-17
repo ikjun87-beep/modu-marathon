@@ -271,13 +271,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 14, paddingBottom: 120 },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  greetRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
+  greetRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   greetText: { flex: 1 },
+  // LINE Seed는 시스템 폰트보다 자간이 촘촘하다 → 음수 letterSpacing(-0.8)·marginTop(-4)은
+  //   시스템 폰트 때 각진 글자를 붙이려던 값이라, 둥근 폰트엔 오히려 빽빽·겹침을 만든다. 뺀다.
   eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
+    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 2, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 30, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
+    fontSize: 27, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 34 },
 
   searchBar: {
     flexDirection: "row",
@@ -352,7 +354,7 @@ const styles = StyleSheet.create({
   crewSub: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, marginTop: 1 },
   crewNum: { fontFamily: FONT,
-    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.5 },
+    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   crewUnit: { fontFamily: FONT,
     fontSize: 14, fontWeight: Weight.bold, color: Brand.soft },
 

@@ -16,6 +16,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
+import { uid } from "./auth";
 import { demoRows } from "./demo";
 import { COLLECTIONS, db, HAS_FIREBASE } from "./firebase";
 
@@ -44,13 +45,21 @@ export function isDemo(id: string): boolean {
 }
 
 // ── Firestore ──
+/** 로그인돼 있으면 문서에 소유자 uid를 곁들인다(웹 index.html의 withUid와 같은 패턴).
+ *  왜 지금: 앱이야말로 게스트 승격으로 uid 연속성을 지키는데, 그 uid를 문서에 안 남기면
+ *  나중에 소유 기반 규칙으로 갈 때 **핵심 크루원의 전 기록이 유령**이 된다(웹 방문자 글엔 주인이 있는데).
+ *  규칙 무변경·100% 뒤로호환 — 지금부터 쌓이는 데이터에 미리 주인을 새겨 백필 부담을 줄인다. */
+function withUid(item: Record<string, any>): Record<string, any> {
+  const u = uid();
+  return u ? { ...item, uid: u } : item;
+}
 function fbSubscribe(col: string, cb: (rows: Row[]) => void) {
   return onSnapshot(query(collection(db, col), orderBy("createdAt", "desc")), (s) =>
     cb(s.docs.map((d) => ({ id: d.id, ...d.data() })))
   );
 }
 function fbAdd(col: string, item: Record<string, any>) {
-  return addDoc(collection(db, col), { ...item, createdAt: serverTimestamp() });
+  return addDoc(collection(db, col), { ...withUid(item), createdAt: serverTimestamp() });
 }
 function fbRemove(col: string, id: string) {
   return deleteDoc(doc(db, col, id));
@@ -62,7 +71,7 @@ function fbUpdate(col: string, id: string, patch: Record<string, any>) {
 function fbPut(col: string, id: string, item: Record<string, any>, createdAtMs?: number) {
   return setDoc(
     doc(db, col, id),
-    { ...item, createdAt: createdAtMs ? new Date(createdAtMs) : serverTimestamp() },
+    { ...withUid(item), createdAt: createdAtMs ? new Date(createdAtMs) : serverTimestamp() },
     { merge: true }
   );
 }

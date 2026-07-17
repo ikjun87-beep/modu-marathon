@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 30, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.8, marginTop: -4 },
+    fontSize: 30, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   sub: { fontFamily: FONT,
     fontSize: 13, color: Brand.soft, marginBottom: 2 },
 
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   rowRuns: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, marginTop: 1 },
   rowKm: { fontFamily: FONT,
-    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.5 },
+    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   rowUnit: { fontFamily: FONT,
     fontSize: 12.5, fontWeight: Weight.bold, color: Brand.soft },
 });

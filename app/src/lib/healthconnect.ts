@@ -128,6 +128,7 @@ export async function syncTodayRuns(
     let synced = 0;
     let totalKm = 0;
     let walks = 0;
+    let failed = 0;
 
     // 라이브러리 상수 우선, 없으면 폴백(위 주석 참조).
     const lib = (HC as any).ExerciseType;
@@ -171,19 +172,25 @@ export async function syncTodayRuns(
       const avgHr = hrN > 0 ? hrSum / hrN : undefined;
       const sourceId = String(s?.metadata?.id ?? `${sS}`);
 
-      await saveRun({
-        source: "healthconnect",
-        sourceId,
-        kind,
-        name: name.trim() || "익명",
-        distanceKm: km,
-        durationSec: (sE - sS) / 1000,
-        startedAt: sS,
-        avgHr,
-      });
-      synced++;
-      totalKm += km;
-      if (kind === "walk") walks++;
+      // **세션별로 감싼다** — 한 세션 저장이 실패해도 나머지 세션은 계속 불러온다.
+      // (예전엔 바깥 try 하나라, 세션 하나가 던지면 그날 동기화 전체가 멈췄다.)
+      try {
+        await saveRun({
+          source: "healthconnect",
+          sourceId,
+          kind,
+          name: name.trim() || "익명",
+          distanceKm: km,
+          durationSec: (sE - sS) / 1000,
+          startedAt: sS,
+          avgHr,
+        });
+        synced++;
+        totalKm += km;
+        if (kind === "walk") walks++;
+      } catch {
+        failed++;
+      }
     }
 
     return {
@@ -191,7 +198,12 @@ export async function syncTodayRuns(
       synced,
       totalKm,
       walks,
-      reason: synced === 0 ? "오늘 워치에 기록된 러닝·걷기가 없어요." : undefined,
+      reason:
+        synced === 0
+          ? failed > 0
+            ? "워치 기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+            : "오늘 워치에 기록된 러닝·걷기가 없어요."
+          : undefined,
     };
   } catch (e: any) {
     return {

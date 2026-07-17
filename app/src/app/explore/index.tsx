@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.8, marginTop: -6 },
+    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
 
   todayCard: {
     flexDirection: "row",

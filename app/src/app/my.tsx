@@ -71,7 +71,9 @@ export default function MyScreen() {
           : "이제부터 이 이름으로 보여요."
       );
     } catch {
-      Alert.alert("이런", "이름을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.");
+      // 전파 실패 시 saveRunnerName이 세션을 안 바꾸므로 name=prev·draft=next 그대로 →
+      // dirty가 유지돼 [저장] 버튼이 살아있다(재시도 가능). draft를 건드리지 않는다.
+      Alert.alert("이름을 바꾸지 못했어요", "잠시 후 [저장]을 다시 눌러 주세요.");
     } finally {
       setSaving(false);
     }
@@ -410,7 +412,7 @@ const styles = StyleSheet.create({
   tileLab: { fontFamily: FONT,
     fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
   tileVal: { fontFamily: FONT,
-    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
+    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
 
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   badge: {

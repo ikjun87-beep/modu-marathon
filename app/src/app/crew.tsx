@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.8 },
+    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   sub: { fontFamily: FONT,
     fontSize: 14, color: Brand.soft },
   banner: {

@@ -4,7 +4,7 @@
  *  그 전파는 무겁고 되돌리기 어려우니 **타이핑마다가 아니라 입력이 끝났을 때 한 번만** 저장한다.
  */
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { saveRunnerName } from "@/lib/identity";
@@ -43,6 +43,11 @@ export function NameField({ onName }: { onName?: (name: string) => void }) {
       await saveRunnerName(prev, next);
       saved.current = next;
       onName?.(next);
+    } catch {
+      // 전파 실패 — 입력칸을 옛 이름으로 되돌린다. saveRunnerName이 전파를 먼저 하고
+      // 성공 후에만 세션을 바꾸므로, 여기서 되돌리면 다음 시도가 prev→next로 다시 걸린다(재시도 가능).
+      setName(saved.current);
+      Alert.alert("이름을 바꾸지 못했어요", "잠시 후 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }

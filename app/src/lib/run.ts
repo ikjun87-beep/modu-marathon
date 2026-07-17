@@ -2,7 +2,7 @@
  * 통합 Run — 수동 입력·GPS 실시간·워치(Health Connect/Garmin)가 공유하는 러닝 모델과 헬퍼.
  * 스키마 단일 소스는 firebase.ts COLLECTIONS.runs. 워치/외부 소스는 source+sourceId로 멱등 저장.
  */
-import { add, put, type Row } from "./crew";
+import { add, put, remove, type Row } from "./crew";
 import { COLLECTIONS } from "./firebase";
 
 export type RunSource = "manual" | "gps" | "healthconnect" | "garmin";
@@ -135,8 +135,30 @@ export async function saveRun(run: Run): Promise<void> {
 
   if (run.sourceId) {
     item.sourceId = run.sourceId;
-    await put(COLLECTIONS.runs, `${run.source}_${run.sourceId}`, item, run.startedAt);
+    const id = `${run.source}_${run.sourceId}`;
+    try {
+      await put(COLLECTIONS.runs, id, item, run.startedAt);
+    } catch (e) {
+      // 멱등 재저장이 rules에 막히는 실경로가 있다: 같은 세션을 다시 불러올 때
+      //  ① 워치 거리가 달라짐(출처 레코드가 뒤늦게 도착) ② 걷기→달리기 종목 정정
+      //  ③ GPS 저장이 서버엔 됐는데 클라만 타임아웃 → 더 긴 거리로 재시도.
+      // rules는 distanceKm·kind 불변을 강제(남의 기록 조작 차단)라 위 경우 update가 영구 거부된다.
+      // → **내 것을 지우고 다시 만든다.** delete는 개방돼 있어 우회 가능하고, 최신 값이 정답이다.
+      // (거부가 아닌 네트워크 오류면 delete도 실패할 테니 그대로 던져 상위에서 재시도된다.)
+      if (isPermissionDenied(e)) {
+        await remove(COLLECTIONS.runs, id);
+        await put(COLLECTIONS.runs, id, item, run.startedAt);
+      } else {
+        throw e;
+      }
+    }
   } else {
     await add(COLLECTIONS.runs, item);
   }
+}
+
+function isPermissionDenied(e: unknown): boolean {
+  const code = (e as { code?: string })?.code ?? "";
+  const msg = (e as { message?: string })?.message ?? "";
+  return code === "permission-denied" || /permission/i.test(msg);
 }

@@ -13,12 +13,18 @@ import { updateAccountName } from "./auth";
 import { renameAuthor } from "./crew";
 import { setMyName } from "./session";
 
-/** @returns 함께 이름이 바뀐 과거 문서 수 */
+/** @returns 함께 이름이 바뀐 과거 문서 수
+ *  @throws 전파(renameAuthor)가 실패하면 던진다 — 이때 **세션 이름은 안 바뀐 채로 남는다.**
+ *
+ *  ⚠️ 순서가 중요하다. 예전엔 setMyName을 먼저 했다가 전파가 실패하면, 세션은 이미 새 이름이라
+ *  "다시 시도"가 `prev === next`로 막혀 **재시도 자체가 불가능**했다(과거 기록 영구 고아).
+ *  → **전파를 먼저** 하고, 성공한 뒤에 세션·계정을 바꾼다. 실패하면 옛 이름 그대로라 재시도가 된다. */
 export async function saveRunnerName(prevName: string, nextName: string): Promise<number> {
   const next = nextName.trim();
   if (!next) return 0;
 
+  const changed = await renameAuthor(prevName, next); // 실패하면 여기서 던짐 → 아래 안 실행
   await setMyName(next);
   await updateAccountName(next);
-  return renameAuthor(prevName, next);
+  return changed;
 }

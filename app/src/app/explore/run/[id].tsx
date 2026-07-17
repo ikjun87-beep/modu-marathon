@@ -252,5 +252,5 @@ const styles = StyleSheet.create({
   tileLab: { fontFamily: FONT,
     fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
   tileVal: { fontFamily: FONT,
-    fontSize: 20, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
+    fontSize: 20, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
 });
