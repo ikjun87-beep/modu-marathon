@@ -94,3 +94,23 @@ export function isPast(e: EventDef, now: number = Date.now()): boolean {
   end.setHours(23, 59, 59, 999);
   return end.getTime() < now;
 }
+
+export type EventInfo = { place?: string; time?: string; distance?: string; extra?: string };
+
+/** 안내 문자열을 **장소·시간·거리 + 나머지**로 쪼갠다(카드 가독성용).
+ *  기존 안내가 " · "로 이어붙인 한 덩어리라 빽빽했다 → 핵심 3개를 칩으로 크게 뽑는다.
+ *  분리자는 **공백 있는 " · "만** — "6′00·6′30" 같은 붙은 가운뎃점은 안 건드린다.
+ *  첫 조각=장소, 나머지 중 km 포함=거리·시각(시/오전/:) 포함=시간, 남은 건 extra. */
+export function parseEventInfo(desc: string): EventInfo {
+  const parts = desc.split(/\s+·\s+/).map((s) => s.trim()).filter(Boolean);
+  if (!parts.length) return {};
+  const [place, ...rest] = parts;
+  let time: string | undefined, distance: string | undefined;
+  const extras: string[] = [];
+  for (const p of rest) {
+    if (!distance && /\d\s*(km|킬로)/i.test(p)) distance = p;
+    else if (!time && /(\d{1,2}\s*:\s*\d{2}|오전|오후|\d+\s*시)/.test(p)) time = p;
+    else extras.push(p);
+  }
+  return { place, time, distance, extra: extras.join(" · ") || undefined };
+}

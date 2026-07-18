@@ -200,3 +200,104 @@ export function earnedBadgeIds(rows: Row[], name?: string, now: number = Date.no
       .map((p) => p.badge.id)
   );
 }
+
+// ── 월간 리포트(골프 앱 "종합레벨+클럽별 분석"의 러닝판) ──────────────
+// 폰 GPS라 볼스피드·백스핀 같은 센서값은 없다. 대신 우리가 실제로 가진 것으로 성장 서사를 만든다:
+//   거리·러닝수·평균페이스·최장거리·꾸준함(뛴 날 수)·상승고도 — 전부 이번달 vs 지난달.
+// runs만·걷기 제외·데모 제외(mineOf 재사용). name 없으면 크루 전체.
+
+export type MonthMetric = {
+  key: string;
+  label: string;
+  unit: string;
+  cur: number;
+  prev: number;
+  /** true면 클수록 좋음(거리·수). false면 작을수록 좋음(페이스 초). */
+  higherBetter: boolean;
+  /** 표시 포맷터(페이스는 "5'30"", 거리는 "12.3") */
+  fmt: (v: number) => string;
+};
+
+export type MonthReport = {
+  monthLabel: string; // "7월"
+  hasData: boolean; // 이번달 러닝이 하나라도 있나
+  metrics: MonthMetric[];
+  /** 주별 평균 페이스 추이(이번달, 데이터 있는 주만). null=그 주 러닝 없음 */
+  paceTrend: { weekLabel: string; paceSec: number | null }[];
+};
+
+function monthRange(now: number, back: number): [number, number] {
+  const d = new Date(now);
+  const start = new Date(d.getFullYear(), d.getMonth() - back, 1).getTime();
+  const end = new Date(d.getFullYear(), d.getMonth() - back + 1, 1).getTime();
+  return [start, end];
+}
+
+function fmtKm(v: number): string {
+  return v.toFixed(1);
+}
+function fmtInt(v: number): string {
+  return String(Math.round(v));
+}
+function fmtPaceSec(v: number): string {
+  if (!v || !isFinite(v)) return "-";
+  const m = Math.floor(v / 60);
+  const s = Math.round(v % 60);
+  return `${m}'${String(s === 60 ? 0 : s).padStart(2, "0")}"`;
+}
+
+/** 한 달 구간의 집계값 묶음. */
+function aggregate(rows: Row[], from: number, to: number) {
+  const inRange = rows.filter((r) => {
+    const t = runMs(r);
+    return t >= from && t < to;
+  });
+  const totalKm = inRange.reduce((a, r) => a + km(r), 0);
+  const totalSec = inRange.reduce((a, r) => a + sec(r), 0);
+  const longest = inRange.reduce((mx, r) => Math.max(mx, km(r)), 0);
+  const elevation = inRange.reduce((a, r) => a + (Number(r.elevationGainM) || 0), 0);
+  const days = new Set(inRange.map((r) => new Date(runMs(r)).toDateString())).size;
+  // 평균 페이스 = 전체시간/전체거리(가중). 거리 0이면 0.
+  const avgPaceSec = totalKm > 0 ? totalSec / totalKm : 0;
+  return { runs: inRange.length, totalKm, longest, elevation, days, avgPaceSec };
+}
+
+export function monthReport(rows: Row[], name?: string, now: number = Date.now()): MonthReport {
+  const mine = runsOnly(rows).filter((r) => mineOf(r, name));
+  const [curFrom, curTo] = monthRange(now, 0);
+  const [prevFrom, prevTo] = monthRange(now, 1);
+  const cur = aggregate(mine, curFrom, curTo);
+  const prev = aggregate(mine, prevFrom, prevTo);
+
+  const metrics: MonthMetric[] = [
+    { key: "km", label: "총 거리", unit: "km", cur: cur.totalKm, prev: prev.totalKm, higherBetter: true, fmt: fmtKm },
+    { key: "runs", label: "러닝 수", unit: "회", cur: cur.runs, prev: prev.runs, higherBetter: true, fmt: fmtInt },
+    { key: "days", label: "뛴 날", unit: "일", cur: cur.days, prev: prev.days, higherBetter: true, fmt: fmtInt },
+    { key: "pace", label: "평균 페이스", unit: "/km", cur: cur.avgPaceSec, prev: prev.avgPaceSec, higherBetter: false, fmt: fmtPaceSec },
+    { key: "longest", label: "최장 거리", unit: "km", cur: cur.longest, prev: prev.longest, higherBetter: true, fmt: fmtKm },
+    { key: "elev", label: "상승 고도", unit: "m", cur: cur.elevation, prev: prev.elevation, higherBetter: true, fmt: fmtInt },
+  ];
+
+  // 이번달 주별 평균 페이스(주 시작 기준으로 버킷)
+  const weeks: { weekLabel: string; from: number; to: number }[] = [];
+  let ws = startOfWeek(curFrom);
+  // curFrom이 주 중간이면 그 주부터. 이번달 안에서 진행.
+  for (let i = 0; i < 6; i++) {
+    const from = ws + i * 7 * 86400000;
+    const to = from + 7 * 86400000;
+    if (from >= curTo) break;
+    const d = new Date(Math.max(from, curFrom));
+    weeks.push({ weekLabel: `${d.getMonth() + 1}/${d.getDate()}`, from, to });
+  }
+  const paceTrend = weeks.map((w) => {
+    const seg = aggregate(mine, Math.max(w.from, curFrom), Math.min(w.to, curTo));
+    return { weekLabel: w.weekLabel, paceSec: seg.totalKm > 0 ? seg.avgPaceSec : null };
+  });
+
+  return {
+    monthLabel: `${new Date(now).getMonth() + 1}월`,
+    hasData: cur.runs > 0,
+    metrics,
+    paceTrend,
+  };
+}

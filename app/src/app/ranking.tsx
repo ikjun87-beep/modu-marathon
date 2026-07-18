@@ -8,12 +8,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
+import { MonthReportCard } from "@/components/month-report";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
-import { monthKm, weeklyRanking } from "@/lib/stats";
+import { monthKm, monthReport, weeklyRanking } from "@/lib/stats";
 
 const MONTH_GOAL = 100; // 이달의 챌린지: 월 100km
 
@@ -29,6 +30,7 @@ export default function RankingScreen() {
 
   const ranking = useMemo(() => (runs ? weeklyRanking(runs) : []), [runs]);
   const myMonth = runs ? monthKm(runs, name || undefined) : 0;
+  const report = useMemo(() => monthReport(runs ?? [], name || undefined), [runs, name]);
   const pct = Math.min(100, Math.round((myMonth / MONTH_GOAL) * 100));
   const loading = runs === null;
 
@@ -67,6 +69,9 @@ export default function RankingScreen() {
                 <View style={[styles.barFill, { width: `${pct}%` }]} />
               </View>
             </View>
+
+            {/* 월간 리포트 — 지난달 대비 내 러닝(골프 앱식 성장 서사) */}
+            <MonthReportCard report={report} />
 
             {/* 주간 랭킹 */}
             {ranking.length === 0 ? (

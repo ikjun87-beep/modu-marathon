@@ -7,7 +7,7 @@ import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
-import { isPast, subscribeEvents, type EventDef } from "@/lib/events";
+import { isPast, parseEventInfo, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
 import { EventComposer } from "@/components/event-composer";
 
@@ -41,26 +41,52 @@ export function ScheduleSection({ myName }: { myName: string }) {
     const list = rows.filter((a) => a.eventId === ev.id);
     const mine = list.some((a) => a.name === myName);
     const names = list.map((a) => a.name).join(", ") || "아직 없음";
+    const info = parseEventInfo(ev.desc);
     return (
       <View key={ev.id} style={[styles.row, dim && styles.rowPast]}>
-        <View style={[styles.date, dim && styles.datePast]}>
-          <Text style={styles.dm}>{ev.m}</Text>
-          <Text style={styles.dd}>{ev.d}</Text>
+        <View style={styles.left}>
+          <View style={[styles.date, dim && styles.datePast]}>
+            <Text style={styles.dm}>{ev.m}</Text>
+            <Text style={styles.dd}>{ev.d}</Text>
+          </View>
+          {dim ? (
+            <Text style={styles.pastTag}>지난</Text>
+          ) : (
+            <Pressable style={[styles.btn, mine && styles.btnOn]} onPress={() => toggle(ev)}>
+              <Text style={[styles.btnText, mine && styles.btnTextOn]}>{mine ? "취소" : "참석"}</Text>
+            </Pressable>
+          )}
         </View>
         <View style={styles.info}>
           <Text style={styles.title}>{ev.title}</Text>
-          <Text style={styles.desc}>{ev.desc}</Text>
-          <Text style={styles.att}>
-            <Text style={styles.cnt}>{list.length}명</Text> · {names}
+          {/* 핵심 3개(장소·시간·거리)를 아이콘 칩으로 크게 — 한 덩어리 본문의 빽빽함 해소 */}
+          <View style={styles.chips}>
+            {info.place ? (
+              <View style={styles.chip}>
+                <Icon name="pin" size={12} color={Brand.brandDeep} />
+                <Text style={styles.chipText} numberOfLines={1}>{info.place}</Text>
+              </View>
+            ) : null}
+            {info.time ? (
+              <View style={styles.chip}>
+                <Icon name="watch" size={12} color={Brand.brandDeep} />
+                <Text style={styles.chipText} numberOfLines={1}>{info.time}</Text>
+              </View>
+            ) : null}
+            {info.distance ? (
+              <View style={styles.chip}>
+                <Icon name="run" size={12} color={Brand.brandDeep} />
+                <Text style={styles.chipText} numberOfLines={1}>{info.distance}</Text>
+              </View>
+            ) : null}
+          </View>
+          {info.extra ? (
+            <Text style={styles.extra} numberOfLines={1}>{info.extra}</Text>
+          ) : null}
+          <Text style={styles.att} numberOfLines={1}>
+            <Text style={styles.cnt}>{list.length}명</Text> 참석 · {names}
           </Text>
         </View>
-        {dim ? (
-          <Text style={styles.pastTag}>지난 모임</Text>
-        ) : (
-          <Pressable style={[styles.btn, mine && styles.btnOn]} onPress={() => toggle(ev)}>
-            <Text style={[styles.btnText, mine && styles.btnTextOn]}>{mine ? "취소" : "참석"}</Text>
-          </Pressable>
-        )}
       </View>
     );
   }
@@ -122,8 +148,15 @@ const styles = StyleSheet.create({
   },
   addBtnText: { color: "#fff", fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
   empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, textAlign: "center", paddingVertical: 14 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  rowPast: { opacity: 0.6 },
+  row: {
+    flexDirection: "row",
+    gap: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: Brand.line,
+  },
+  rowPast: { opacity: 0.55 },
+  left: { alignItems: "center", gap: 6, width: 52 },
   date: {
     width: 52,
     height: 52,
@@ -133,18 +166,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   datePast: { backgroundColor: Brand.faint },
-  dm: { color: "#fff", fontFamily: FONT, fontSize: 10, fontWeight: Weight.regular },
-  dd: { color: "#fff", fontFamily: FONT, fontSize: 20, fontWeight: Weight.bold, lineHeight: 22 },
-  info: { flex: 1 },
-  title: { fontFamily: FONT, fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
-  desc: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft, marginTop: 2 },
-  att: { fontFamily: FONT, fontSize: 12, color: Brand.soft, marginTop: 4 },
+  dm: { color: "#fff", fontFamily: FONT, fontSize: 10.5, fontWeight: Weight.regular },
+  dd: { color: "#fff", fontFamily: FONT, fontSize: 21, fontWeight: Weight.bold, lineHeight: 24 },
+  info: { flex: 1, gap: 7 },
+  title: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Brand.brandSoft,
+    borderRadius: Radius.chip,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    maxWidth: "100%",
+  },
+  chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep, flexShrink: 1 },
+  extra: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
+  att: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
   cnt: { color: Brand.accent, fontWeight: Weight.bold },
-  btn: { backgroundColor: Brand.accent, borderRadius: Radius.card, paddingVertical: 8, paddingHorizontal: 16 },
+  btn: {
+    backgroundColor: Brand.accent,
+    borderRadius: Radius.chip,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    minWidth: 52,
+    alignItems: "center",
+  },
   btnOn: { backgroundColor: Brand.brandSoft },
   btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT, fontSize: 13 },
   btnTextOn: { color: Brand.brandDeep },
-  pastTag: { fontFamily: FONT, fontSize: 12, color: Brand.faint, fontWeight: Weight.bold },
+  pastTag: { fontFamily: FONT, fontSize: 11.5, color: Brand.faint, fontWeight: Weight.bold },
   pastToggle: {
     flexDirection: "row",
     alignItems: "center",
