@@ -45,18 +45,26 @@ function toDef(row: Row): EventDef {
   };
 }
 
-let seeded = false;
-/** 구독. 비어 있으면 SEED를 한 번 심는다(경쟁 대비 seeded 가드). startAt 오름차순. */
+let seeding = false;
+/** 구독. 비어 있으면 SEED를 한 번 심는다. startAt 오름차순.
+ *  ⚠️ 시딩 가드는 **쓰기 성공 후에만 내린다.** 예전처럼 시도 즉시 seeded=true로 막으면,
+ *  첫 시딩이 오프라인으로 실패했을 때 앱 재시작 전까지 재시도를 못 해 빈 컬렉션에 갇힌다. */
 export function subscribeEvents(cb: (events: EventDef[]) => void): () => void {
   return subscribe(COLLECTIONS.events, (rows) => {
-    if (!rows.length && !seeded) {
-      seeded = true;
-      for (const s of SEED) {
-        const startAt = new Date(s.y, s.mo - 1, s.d, 0, 0, 0, 0).getTime();
-        void put(COLLECTIONS.events, s.id, { title: s.title, desc: s.desc, startAt }, startAt);
-      }
-      return; // 심으면 스냅샷이 다시 온다
+    if (!rows.length && !seeding) {
+      seeding = true; // 동시 스냅샷 중복 시딩만 막는다(성공/실패로 아래서 해제)
+      Promise.all(
+        SEED.map((s) => {
+          const startAt = new Date(s.y, s.mo - 1, s.d, 0, 0, 0, 0).getTime();
+          return put(COLLECTIONS.events, s.id, { title: s.title, desc: s.desc, startAt }, startAt);
+        })
+      )
+        .catch(() => {
+          seeding = false; // 실패 → 다음 스냅샷에서 재시도 가능
+        });
+      return; // 심으면(또는 실패하면) 스냅샷이 다시 온다
     }
+    if (rows.length) seeding = false; // 데이터가 왔으면 시딩 종료
     cb(rows.map(toDef).sort((a, b) => a.startAt - b.startAt));
   });
 }
