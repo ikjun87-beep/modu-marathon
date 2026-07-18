@@ -66,6 +66,7 @@ adb logcat -d -b crash        # 패키지명=com.modumarathon.app
 - **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`.
 - 색·타이포는 `docs/DESIGN.md` 기준(**Brand = Azure Blue `#2563c9`**, accent 골드 `#c0841a` — 2026-07-12 오렌지→블루 리브랜딩). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스).
 - **큰 의존성 추가·배포·push는 실행 전 확인**. 커밋은 작은 단위, main 직접 커밋 시 브랜치 먼저.
+- **배포 방향(2026-07-18 결정) = 구글 플레이스토어 정식출시.** GitHub/APK 사이드로드는 접음(카톡 .apk 차단·Auto Blocker 마찰). 준비물: 개발자등록 $25(1회)·AAB 빌드·심사(위치/건강 권한). **급하지 않음 → 차분히 준비 트랙, 현재는 앱 기능 집중.** 실기기 테스트는 로컬 APK 빌드 유지. ⚠️ **혼동주의**: Firebase(구글)=데이터DB(회원·글·이미지, 무료로 용량충분) ↔ APK=앱 설치파일. 둘은 별개.
 - 앱 코드 작성 전 Expo v57 문서 확인(`app/AGENTS.md`). 워치·네이티브 모듈은 Expo Go/웹 불가 → dev/preview build 필요.
 - **`app/metro.config.js`의 `unstable_enablePackageExports = false`를 지우지 말 것** — firebase v10이 Metro의 package exports 해석과 충돌해 `@firebase/app` 사본이 갈리고, 앱이 시작과 동시에 `Component auth has not been registered yet`으로 즉사한다. firebase 12+로 올릴 때만 제거하고 실기기 재검증.
 - **신원**: 문서 작성자는 `name` 문자열로 박제된다(웹·앱 공유 스키마). 러너 네임 변경은 반드시 `lib/identity.ts`의 `saveRunnerName()` 단일 경로로 — 과거 글·참석·러닝·댓글의 이름까지 함께 갱신해야 기록이 유실되지 않는다.
