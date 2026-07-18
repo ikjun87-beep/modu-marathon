@@ -1,75 +1,76 @@
 /** "러너 네임" 입력 — 기기에 기억(session). 웹의 #myName 대응.
  *
- *  이름을 바꾸면 이미 남긴 글·참석·러닝의 작성자명도 함께 바뀌어야 한다(identity.saveRunnerName).
- *  그 전파는 무겁고 되돌리기 어려우니 **타이핑마다가 아니라 입력이 끝났을 때 한 번만** 저장한다.
+ *  이름을 바꾸면 이미 남긴 글·참석·러닝의 작성자명도 함께 바뀐다(identity.saveRunnerName).
+ *  그 전파는 무겁고 되돌리기 어려우니 **명시적 [저장] 버튼**을 눌러야만 반영한다(마이 탭과 동일).
+ *  예전엔 onBlur/onSubmit에서 자동 저장이라, 실수로 글자가 들어가거나 포커스만 벗어나도
+ *  전파가 돌아 이름이 오염됐다(회장 지적) → 버튼 방식으로 통일.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius } from "@/lib/brand";
 import { saveRunnerName } from "@/lib/identity";
 import { useMyName } from "@/lib/session";
 
 export function NameField({ onName }: { onName?: (name: string) => void }) {
   const [stored] = useMyName(); // 마이 탭·로그인이 이름을 바꾸면 여기로 전달된다
-  const [name, setName] = useState("");
-  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(""); // 입력 중인 값(저장 눌러야 반영)
   const [saving, setSaving] = useState(false);
-  const saved = useRef(""); // 마지막으로 저장된 이름(전파 기준점)
 
-  // 저장소의 이름을 입력칸에 반영한다. 단 **사용자가 타이핑 중일 땐 건드리지 않는다**
-  // (외부 변경이 입력 중인 글자를 덮어쓰면 안 됨).
+  // 저장된 이름이 바뀌면 입력칸도 맞춘다. 단 사용자가 고쳐둔 값은 덮지 않는다.
   useEffect(() => {
-    if (editing || saving) return;
-    setName(stored);
-    saved.current = stored;
+    setDraft((d) => (d.trim() === "" || d.trim() === stored.trim() ? stored : d));
     onName?.(stored);
     // onName은 부모가 매 렌더 새로 만드는 콜백일 수 있어 의존성에서 뺀다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stored, editing, saving]);
+  }, [stored]);
 
-  async function commit() {
-    setEditing(false);
-    const next = name.trim();
-    const prev = saved.current.trim();
-    if (!next) {
-      setName(saved.current); // 빈 이름으로 지워버리는 사고 방지 — 되돌린다
-      return;
-    }
-    if (next === prev) return;
+  const dirty = draft.trim().length > 0 && draft.trim() !== stored.trim();
 
+  async function save() {
+    const next = draft.trim();
+    const prev = stored.trim();
+    if (!next || next === prev) return;
     setSaving(true);
     try {
       await saveRunnerName(prev, next);
-      saved.current = next;
-      onName?.(next);
+      // 화면의 stored는 session 구독(useMyName)이 갱신 → onName도 위 effect에서 따라온다.
     } catch {
-      // 전파 실패 — 입력칸을 옛 이름으로 되돌린다. saveRunnerName이 전파를 먼저 하고
-      // 성공 후에만 세션을 바꾸므로, 여기서 되돌리면 다음 시도가 prev→next로 다시 걸린다(재시도 가능).
-      setName(saved.current);
-      Alert.alert("이름을 바꾸지 못했어요", "잠시 후 다시 시도해 주세요.");
+      Alert.alert("이름을 바꾸지 못했어요", "잠시 후 [저장]을 다시 눌러 주세요.");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>러너 네임</Text>
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        onFocus={() => setEditing(true)}
-        onBlur={() => void commit()}
-        onSubmitEditing={() => void commit()}
-        placeholder="예: 홍길동"
-        placeholderTextColor={Brand.soft}
-        maxLength={20}
-        editable={!saving}
-        returnKeyType="done"
-      />
-      {saving && <ActivityIndicator color={Brand.brand} size="small" />}
+    <View>
+      <View style={styles.row}>
+        <Text style={styles.label}>러너 네임</Text>
+        <TextInput
+          style={styles.input}
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="예: 홍길동"
+          placeholderTextColor={Brand.soft}
+          maxLength={20}
+          editable={!saving}
+          returnKeyType="done"
+          onSubmitEditing={() => dirty && void save()}
+        />
+        {dirty && (
+          <PressableScale style={styles.saveBtn} onPress={() => void save()} disabled={saving}>
+            {saving ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.saveBtnText}>저장</Text>
+            )}
+          </PressableScale>
+        )}
+      </View>
+      {dirty && (
+        <Text style={styles.note}>이미 남긴 글·참석·러닝 기록의 이름도 함께 바뀝니다.</Text>
+      )}
     </View>
   );
 }
@@ -86,8 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  label: { fontWeight: Weight.regular, fontFamily: FONT,
-    fontSize: 14, color: Brand.ink },
+  label: { fontWeight: Weight.regular, fontFamily: FONT, fontSize: 14, color: Brand.ink },
   input: {
     flex: 1,
     borderWidth: 1,
@@ -99,4 +99,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Brand.ink,
   },
+  saveBtn: {
+    backgroundColor: Brand.brand,
+    borderRadius: Radius.chip,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    minWidth: 52,
+    alignItems: "center",
+  },
+  saveBtnText: { color: "#fff", fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold },
+  note: { fontFamily: FONT, fontSize: 12, color: Brand.soft, marginTop: 6, marginLeft: 2 },
 });
