@@ -18,6 +18,8 @@ app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베�
   plugins/            커스텀 Expo config 플러그인(withHealthConnectPermissionDelegate=워치 권한런처 등록)
   scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
   scripts/build-local-apk.sh  로컬 APK 빌드(prebuild→릴리스 서명 주입→gradlew assembleRelease)
+  scripts/strip-mascot-shadow.mjs  마스코트 PNG에서 발밑 그림자 제거(가장 큰 연결 덩어리만 남김)
+  scripts/optimize-mascot.mjs  마스코트 여백 잘라 512px 축소·압축
   metro.config.js     package exports 끔 — firebase v10의 dual-package hazard 회피(끄지 않으면 앱 즉사)
   eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production) — env에 Firebase 공개키 주입
 docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP·PRIVACY·QA_M3_DEVICE(실기기 대본)·UX_APP_NAV(P7 다중페이지 제안)·WATCH_SAMSUNG_SDK(워치 삼성헬스 한계·SDK 검토)·OPENAI_IMAGE_GEN(이미지 생성 이식 가이드)
@@ -63,8 +65,16 @@ adb logcat -d -b crash        # 패키지명=com.modumarathon.app
 
 ## 지켜야 할 규칙
 - 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`events`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`. (`events`=모임 일정, 2026-07-18 하드코딩→Firestore 이관. **웹은 아직 하드코딩 EVENTS** — 후속 이관 필요.)
-- **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`.
+- **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`. **교체 금지**(2026-07-27 디자인 자문): Pretendard는 국내 AI 스캐폴딩 기본값이라 역효과, 스포카 한 산스는 한글 2350자만 커버(러너 네임 깨짐), 나눔스퀘어는 톤 불일치. 큰 **숫자만** `FONT_DISPLAY`(Black Han Sans, OFL) — 웹과 시각 DNA 일치.
 - 색·타이포는 `docs/DESIGN.md` 기준(**Brand = Azure Blue `#2563c9`**, accent 골드 `#c0841a` — 2026-07-12 오렌지→블루 리브랜딩). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스).
+- **디자인 전역 규칙**(2026-07-27 감사로 확립 — 어기면 화면마다 규칙이 갈려 신뢰도가 깎인다):
+  - 거리 소수점 = **집계·요약 1자리 / 개별 러닝 기록 2자리**(`lib/run.ts` 주석에 명문화)
+  - 숫자 표기 = **숫자(본문색·흰색) + 단위(브랜드 블루)** — 홈·러닝·랭킹·마이·상세 전부
+  - **골드는 순위·챌린지·성과 전용** 시그널. 페이스·참석·본문 숫자엔 쓰지 않는다
+  - **블루 솔리드 = 액션 전용**, 날짜뱃지 같은 정보 블록은 다크 네이비(`Brand.dark`)
+  - 카드는 `Shadow.soft/card`로 띄운다(1px 테두리만 쓰면 와이어프레임처럼 납작). 단 **탭당 1곳은 이 문법을 깨는 시그니처**를 둔다 — 카드가 전 화면 똑같이 반복되는 게 "AI스럽다"의 원인(랭킹 1위 레이아웃이 그 예)
+  - 스크롤은 허용하되 **첫 뷰포트 = 상태요약1 + CTA1 + 최근항목1**. 기준 360×800dp(실사용 550dp), 잘리면 폰트가 아니라 콘텐츠를 줄인다
+- 마스코트 4종(`assets/images/mascot-{m,f}-{red,green}.png`)은 **여성=포니테일**로 실루엣 구분(볼터치 색만 다르면 썸네일에서 4종이 2종으로 보인다). gpt-image-1 재생성 시 발밑 그림자가 딸려오면 `app/scripts/strip-mascot-shadow.mjs`로 제거(연결 덩어리 분석) → `optimize-mascot.mjs`로 512px 축소.
 - **큰 의존성 추가·배포·push는 실행 전 확인**. 커밋은 작은 단위, main 직접 커밋 시 브랜치 먼저.
 - **배포 방향(2026-07-18 결정) = 구글 플레이스토어 정식출시.** GitHub/APK 사이드로드는 접음(카톡 .apk 차단·Auto Blocker 마찰). 준비물: 개발자등록 $25(1회)·AAB 빌드·심사(위치/건강 권한). **급하지 않음 → 차분히 준비 트랙, 현재는 앱 기능 집중.** 실기기 테스트는 로컬 APK 빌드 유지. ⚠️ **혼동주의**: Firebase(구글)=데이터DB(회원·글·이미지, 무료로 용량충분) ↔ APK=앱 설치파일. 둘은 별개.
 - 앱 코드 작성 전 Expo v57 문서 확인(`app/AGENTS.md`). 워치·네이티브 모듈은 Expo Go/웹 불가 → dev/preview build 필요.
