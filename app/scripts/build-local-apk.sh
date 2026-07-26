@@ -19,6 +19,21 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# ── 중복 실행 방지 락 (2026-07-27 추가) ──────────────────────────────
+# 왜: 2026-07-26 이 스크립트가 같은 탭에서 7분 간격으로 두 번 실행돼,
+#     두 빌드가 같은 .cxx 디렉토리를 놓고 서로의 오브젝트 파일을 지웠다.
+#     증상 = CPU 100%인데 빌드는 영원히 진척 없음 → 최종 링크에서
+#     "no such file: Props.cpp.o" 로 실패. 노트북 전체가 멈춘 것처럼 느껴진다.
+# 무엇: 빌드는 항상 한 번에 하나만. 이미 돌고 있으면 즉시 종료한다.
+LOCKFILE="/tmp/modu-marathon-build.lock"
+exec 9>"$LOCKFILE"
+if ! flock -n 9; then
+  echo "❌ 이미 빌드가 실행 중입니다 (락: $LOCKFILE)"
+  echo "   진행 중인 빌드를 기다리거나, 확인: ps -ef | grep -E 'gradlew|build-local-apk'"
+  exit 1
+fi
+# 락은 스크립트(및 자식)가 끝나면 fd 9가 닫히며 자동 해제된다.
+
 export JAVA_HOME="$HOME/android-dev/jdk17"
 export ANDROID_HOME="$HOME/android-dev/sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
@@ -76,7 +91,23 @@ PY
 
 echo "▶ gradle assembleRelease (첫 빌드는 10~20분)"
 cd android
-./gradlew assembleRelease --no-daemon
+
+# ── 빌드 부하 옵션 (2026-07-27) ───────────────────────────────────────
+# ❗여기에 두는 이유: 위 prebuild가 --clean 으로 android/ 를 통째로 재생성하므로
+#   android/gradle.properties 를 고쳐도 매 빌드마다 지워진다. 스크립트만 살아남는다.
+#
+# ABI: 기본값은 4종(armeabi-v7a,arm64-v8a,x86,x86_64) — 같은 C++ 코드를 4벌 컴파일해
+#      빌드 시간·CPU가 4배가 된다. 실기기(arm64)만 쓰므로 1종으로 축소.
+#      에뮬레이터를 쓸 땐 아래를 arm64-v8a,x86_64 로.
+ABIS="${ABIS:-arm64-v8a}"
+# 워커 수: 무제한이면 16코어를 전부 물어 과청약되고 오히려 느려진다(터미널도 멈춤).
+MAXW="${MAXW:-6}"
+
+echo "   ABI=$ABIS  최대워커=$MAXW  (빌드캐시 켬)"
+./gradlew assembleRelease --no-daemon \
+  -PreactNativeArchitectures="$ABIS" \
+  --build-cache \
+  --max-workers="$MAXW"
 
 APK="app/build/outputs/apk/release/app-release.apk"
 echo
