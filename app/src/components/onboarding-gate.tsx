@@ -106,7 +106,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
               value={name}
               onChangeText={setName}
               placeholder="예: 홍길동"
-              placeholderTextColor={Brand.soft}
+              placeholderTextColor={Brand.placeholder}
               maxLength={20}
               autoFocus
               returnKeyType="done"
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 40, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink },
   sub: { fontFamily: FONT,
     fontSize: 15, color: Brand.soft, marginBottom: 8 },
   perks: { gap: 10, marginTop: 8 },

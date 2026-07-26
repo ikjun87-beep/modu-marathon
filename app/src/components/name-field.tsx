@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { saveRunnerName } from "@/lib/identity";
 import { useMyName } from "@/lib/session";
 
@@ -52,7 +52,7 @@ export function NameField({ onName }: { onName?: (name: string) => void }) {
           value={draft}
           onChangeText={setDraft}
           placeholder="예: 홍길동"
-          placeholderTextColor={Brand.soft}
+          placeholderTextColor={Brand.placeholder}
           maxLength={20}
           editable={!saving}
           returnKeyType="done"
@@ -81,18 +81,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.input,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    ...Shadow.soft,
   },
   label: { fontWeight: Weight.regular, fontFamily: FONT, fontSize: 14, color: Brand.ink },
   input: {
     flex: 1,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.input,
     paddingHorizontal: 12,
     paddingVertical: 9,
     fontFamily: FONT,

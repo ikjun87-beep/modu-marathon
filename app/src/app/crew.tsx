@@ -9,7 +9,7 @@ import { Mascot } from "@/components/mascot";
 import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { add, fmtDate, isDemo, remove, subscribe, update, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 
@@ -88,7 +88,7 @@ export default function CrewScreen() {
             value={msg}
             onChangeText={setMsg}
             placeholder="오늘도 화이팅! 다음 모임에 갈게요"
-            placeholderTextColor={Brand.soft}
+            placeholderTextColor={Brand.placeholder}
             maxLength={200}
             multiline
           />
@@ -173,13 +173,13 @@ export default function CrewScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
-  content: { padding: 18, gap: 12, paddingBottom: 120 },
+  content: { padding: 18, gap: 12, paddingBottom: 160 },
   header: { gap: 12, marginBottom: 4 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   sub: { fontFamily: FONT,
     fontSize: 14, color: Brand.soft },
   banner: {
@@ -193,18 +193,17 @@ const styles = StyleSheet.create({
     fontSize: 12.5, fontWeight: Weight.regular },
   formCard: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
     gap: 8,
+    ...Shadow.soft,
   },
   formLabel: { fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular, color: Brand.ink },
   msgInput: {
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontFamily: FONT,
@@ -232,10 +231,9 @@ const styles = StyleSheet.create({
     fontSize: 14, textAlign: "center", paddingVertical: 8 },
   item: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.input,
     padding: 15,
+    ...Shadow.soft,
   },
   itemHead: {
     flexDirection: "row",
@@ -257,7 +255,7 @@ const styles = StyleSheet.create({
   editInput: {
     borderWidth: 1,
     borderColor: Brand.line2,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.input,
     paddingHorizontal: 12,
     paddingVertical: 9,
     fontFamily: FONT,

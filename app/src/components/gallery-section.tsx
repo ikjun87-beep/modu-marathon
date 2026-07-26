@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 
@@ -104,11 +104,10 @@ export function GallerySection({ myName }: { myName: string }) {
 const styles = StyleSheet.create({
   wrap: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 14,
     gap: 10,
+    ...Shadow.soft,
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   h: { fontFamily: FONT,

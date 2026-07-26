@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "modumarathon",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.modumarathon.app",
@@ -55,13 +55,23 @@
                     "weight": 700
                   }
                 ]
+              },
+              {
+                "fontFamily": "BlackHanSans",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/BlackHanSans-Regular.ttf",
+                    "weight": 400
+                  }
+                ]
               }
             ]
           },
           "ios": {
             "fonts": [
               "./assets/fonts/LINESeedKR-Rg.ttf",
-              "./assets/fonts/LINESeedKR-Bd.ttf"
+              "./assets/fonts/LINESeedKR-Bd.ttf",
+              "./assets/fonts/BlackHanSans-Regular.ttf"
             ]
           }
         }

@@ -9,14 +9,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LiveRunModal } from "@/components/live-run";
-import { NameField } from "@/components/name-field";
+import { useMyName } from "@/lib/session";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 import { hasHealthConsent, setHealthConsent } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
-import { fmtDuration, isWalk, paceLabel, runsOnly, saveRun, todayKm } from "@/lib/run";
+import { fmtDuration, isWalk, paceLabel, runsOnly, saveRun, todayKm, toMs } from "@/lib/run";
+
+type KindFilter = "run" | "walk" | "all";
+const KIND_TABS: [KindFilter, string][] = [["run", "달리기"], ["walk", "걷기"], ["all", "전체"]];
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 지난 러닝 목록은 최근 1주만
 
 function runSeconds(r: Row): number {
   return Number(r.durationSec) || (Number(r.durationMin) || 0) * 60;
@@ -34,13 +38,16 @@ function sourceLabel(src?: string): string {
 }
 
 export default function RunScreen() {
-  const [name, setName] = useState("");
+  // 러너 네임은 **읽기 전용**으로 쓴다 — 편집 UI가 크루·러닝·마이 세 곳에 흩어져 있어
+  // 어디가 진짜 소스인지 불명확했다(디자인 감사 지적). 편집은 크루·마이 탭에서만.
+  const [name] = useMyName();
   const [distance, setDistance] = useState("");
   const [duration, setDuration] = useState("");
   const [runs, setRuns] = useState<Row[]>([]);
   const [live, setLive] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [submitting, setSubmitting] = useState(false); // 수동 기록 저장 중 — 더블탭 이중저장 방지
+  const [kind, setKind] = useState<KindFilter>("run"); // 지난 러닝 목록 필터 — 기본은 달리기
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
 
@@ -52,6 +59,18 @@ export default function RunScreen() {
     [runOnlyRows]
   );
   const today = useMemo(() => todayKm(runs, name || undefined), [runs, name]);
+
+  // 지난 러닝 목록 = 최근 1주 + 걷기/달리기 필터(기본 달리기). 상단 카드 집계는 그대로 전체 기준.
+  const listData = useMemo(() => {
+    const since = Date.now() - WEEK_MS;
+    return runs.filter((r) => {
+      const t = toMs(r.startedAt ?? r.createdAt);
+      if (t && t < since) return false;
+      if (kind === "run") return !isWalk(r);
+      if (kind === "walk") return isWalk(r);
+      return true;
+    });
+  }, [runs, kind]);
 
   async function submitManual() {
     if (submitting) return; // 이미 저장 중 — 더블탭 시 두 번째 문서 생성 방지(수동 기록엔 sourceId 멱등이 없음)
@@ -126,7 +145,7 @@ export default function RunScreen() {
         .join(" · ");
       Alert.alert(
         r.ok ? "워치 동기화 완료" : "워치 동기화",
-        r.reason ?? `오늘 ${what} · ${r.totalKm.toFixed(2)}km 불러왔어요`
+        r.reason ?? `오늘 ${what} · ${r.totalKm.toFixed(1)}km 불러왔어요`
       );
     } finally {
       setSyncing(false);
@@ -147,15 +166,22 @@ export default function RunScreen() {
           <View style={styles.todayLeft}>
             <Text style={styles.todayLab}>오늘 뛴 거리</Text>
             <View style={styles.todayNumRow}>
-              <Text style={styles.todayNum}>{today.toFixed(2)}</Text>
+              <Text style={styles.todayNum}>{today.toFixed(1)}</Text>
               <Text style={styles.todayUnit}>km</Text>
             </View>
           </View>
           <View style={styles.todayDiv} />
           <View style={styles.todayMeta}>
-            <Text style={styles.todayMetaNum}>{totalKm.toFixed(1)}km</Text>
+            {/* 좌측 주지표와 같은 단위 문법: 숫자(흰색) + 단위(블루) */}
+            <Text style={styles.todayMetaNum}>
+              {totalKm.toFixed(1)}
+              <Text style={styles.todayMetaUnit}> km</Text>
+            </Text>
             <Text style={styles.todayMetaLab}>누적</Text>
-            <Text style={[styles.todayMetaNum, { marginTop: 8 }]}>{runOnlyRows.length}</Text>
+            <Text style={[styles.todayMetaNum, { marginTop: 8 }]}>
+              {runOnlyRows.length}
+              <Text style={styles.todayMetaUnit}> 회</Text>
+            </Text>
             <Text style={styles.todayMetaLab}>기록</Text>
           </View>
         </View>
@@ -188,7 +214,14 @@ export default function RunScreen() {
           </View>
         )}
 
-        <NameField onName={setName} />
+        {!!name && (
+          <View style={styles.whoBar}>
+            <Icon name="users" size={14} color={Brand.soft} />
+            <Text style={styles.whoBarText}>
+              <Text style={styles.whoBarName}>{name}</Text>님의 기록
+            </Text>
+          </View>
+        )}
 
         {/* 수동 기록 */}
         <View style={styles.formCard}>
@@ -201,7 +234,7 @@ export default function RunScreen() {
                 value={distance}
                 onChangeText={setDistance}
                 placeholder="5"
-                placeholderTextColor={Brand.faint}
+                placeholderTextColor={Brand.placeholder}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -212,7 +245,7 @@ export default function RunScreen() {
                 value={duration}
                 onChangeText={setDuration}
                 placeholder="30"
-                placeholderTextColor={Brand.faint}
+                placeholderTextColor={Brand.placeholder}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -222,27 +255,47 @@ export default function RunScreen() {
             onPress={submitManual}
             disabled={submitting}
           >
-            <Icon name="plus" size={18} color="#fff" />
+            <Icon name="plus" size={18} color={Brand.brandDeep} />
             <Text style={styles.addBtnText}>{submitting ? "저장 중…" : "기록 추가"}</Text>
           </PressableScale>
         </View>
 
-        <Text style={styles.listTitle}>지난 러닝</Text>
+        <View style={styles.listHead}>
+          <Text style={styles.listTitle}>지난 러닝</Text>
+          <Text style={styles.listHint}>최근 1주</Text>
+        </View>
+        <View style={styles.segRow}>
+          {KIND_TABS.map(([k, label]) => (
+            <PressableScale
+              key={k}
+              style={[styles.seg, kind === k && styles.segOn]}
+              onPress={() => setKind(k)}
+              dim={false}>
+              <Text style={[styles.segText, kind === k && styles.segTextOn]}>{label}</Text>
+            </PressableScale>
+          ))}
+        </View>
       </View>
     ),
-    [distance, duration, name, runOnlyRows.length, totalKm, today, syncing, submitting]
+    [distance, duration, name, runOnlyRows.length, totalKm, today, syncing, submitting, kind]
   );
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <FlatList
-        data={runs}
+        data={listData}
         keyExtractor={(r) => r.id}
         ListHeaderComponent={header}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text style={styles.empty}>아직 러닝 기록이 없어요. 러닝을 시작해 보세요!</Text>
+          <Text style={styles.empty}>
+            {kind === "walk"
+              ? "최근 1주 걷기 기록이 없어요."
+              : kind === "all"
+                ? "최근 1주 기록이 없어요. 러닝을 시작해 보세요!"
+                : "최근 1주 달리기 기록이 없어요. 러닝을 시작해 보세요!"}
+          </Text>
         }
         renderItem={({ item }) => {
           const km = Number(item.distanceKm) || 0;
@@ -271,16 +324,18 @@ export default function RunScreen() {
                 </View>
                 <Icon name="chevron-right" size={18} color={Brand.faint} />
               </View>
+              {/* 4개 값이 한 줄 — 좁은 폰에서도 안 넘치게 각 항목에 numberOfLines + 축소를 건다. */}
               <View style={styles.stats}>
-                <Text style={styles.stat}>
-                  <Text style={styles.statNum}>{km.toFixed(2)}</Text> km
+                <Text style={styles.stat} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+                  <Text style={styles.statNum}>{km.toFixed(2)}</Text>
+                  <Text style={styles.statUnit}> km</Text>
                 </Text>
-                <Text style={styles.stat}>
+                <Text style={styles.stat} numberOfLines={1}>
                   <Text style={styles.statNum}>{fmtDuration(sec)}</Text>
                 </Text>
-                <Text style={styles.pace}>{paceLabel(km, sec)}</Text>
+                <Text style={styles.pace} numberOfLines={1}>{paceLabel(km, sec)}</Text>
                 {item.avgHr ? (
-                  <Text style={styles.hr}>♥ {Math.round(Number(item.avgHr))}</Text>
+                  <Text style={styles.hr} numberOfLines={1}>♥ {Math.round(Number(item.avgHr))}</Text>
                 ) : null}
               </View>
             </PressableScale>
@@ -301,29 +356,30 @@ export default function RunScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
-  content: { padding: 18, gap: 12, paddingBottom: 140 },
+  content: { padding: 18, gap: 12, paddingBottom: 160 },
   header: { gap: 14, marginBottom: 4 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
 
   todayCard: {
     flexDirection: "row",
     backgroundColor: Brand.dark,
     borderRadius: Radius.card,
-    padding: 22,
+    padding: 18,
     alignItems: "center",
+    ...Shadow.card,
   },
   todayLeft: { flex: 1 },
   todayLab: { color: "#aab2bb", fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular },
   todayNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 4 },
-  todayNum: { color: "#fff", fontFamily: FONT,
-    fontSize: 46, fontWeight: Weight.bold, letterSpacing: -1.5, lineHeight: 48 },
+  todayNum: { color: "#fff", fontFamily: FONT_DISPLAY,
+    fontSize: 40, fontWeight: Weight.bold, letterSpacing: -1.2, lineHeight: 42 },
   todayUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 20, fontWeight: Weight.bold, marginLeft: 5, marginBottom: 6 },
+    fontSize: 18, fontWeight: Weight.bold, marginLeft: 5, marginBottom: 5 },
   todayDiv: {
     width: 1,
     alignSelf: "stretch",
@@ -333,6 +389,8 @@ const styles = StyleSheet.create({
   todayMeta: { alignItems: "flex-end" },
   todayMetaNum: { color: "#fff", fontFamily: FONT,
     fontSize: 16, fontWeight: Weight.bold },
+  todayMetaUnit: { color: Brand.brand, fontFamily: FONT,
+    fontSize: 12, fontWeight: Weight.bold },
   todayMetaLab: { color: "#8b929b", fontFamily: FONT,
     fontSize: 11, fontWeight: Weight.regular },
 
@@ -347,11 +405,11 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     minHeight: 52,
   },
-  ctaPrimary: { backgroundColor: Brand.brand },
+  ctaPrimary: { backgroundColor: Brand.brand, ...Shadow.soft },
   ctaPrimaryText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
-  ctaSecondary: { backgroundColor: Brand.card, borderWidth: 1, borderColor: Brand.line2 },
-  ctaSecondaryText: { color: Brand.ink, fontWeight: Weight.bold, fontFamily: FONT,
+  ctaSecondary: { backgroundColor: Brand.brandSoft },
+  ctaSecondaryText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
   watchHint: { color: Brand.faint, fontFamily: FONT,
     fontSize: 12, marginTop: -6 },
@@ -368,11 +426,10 @@ const styles = StyleSheet.create({
 
   formCard: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
     gap: 10,
+    ...Shadow.soft,
   },
   formTitle: { fontFamily: FONT,
     fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
@@ -383,38 +440,61 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: Brand.line2,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.input,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontFamily: FONT,
     fontSize: 15,
     color: Brand.ink,
   },
+  // 수동 기록은 GPS·워치를 못 쓸 때 쓰는 **보조** 수단 — 주 CTA("러닝 시작")와 같은
+  // 솔리드 파랑이면 무게가 충돌한다. 톤온톤으로 한 단계 낮춘다.
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: Brand.brand,
+    backgroundColor: Brand.brandSoft,
     borderRadius: Radius.input,
     paddingVertical: 13,
     minHeight: 48,
   },
   addBtnOff: { opacity: 0.6 },
-  addBtnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+  addBtnText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
 
+  whoBar: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: -4 },
+  whoBarText: { fontFamily: FONT,
+    fontSize: 13, color: Brand.soft, fontWeight: Weight.regular },
+  whoBarName: { fontWeight: Weight.bold, color: Brand.ink },
+
+  listHead: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 },
   listTitle: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 4 },
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+  listHint: { fontFamily: FONT,
+    fontSize: 12, color: Brand.faint, fontWeight: Weight.regular },
+  // 미선택 탭이 흰 배경+연회색이라 "탭이 3개 있다"는 것 자체가 안 보였다(접근성 결함).
+  // 미선택도 톤온톤 배경 + 본문색 텍스트로 올려 WCAG AA 대비를 확보한다.
+  segRow: { flexDirection: "row", gap: 6 },
+  seg: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 9,
+    borderRadius: Radius.chip,
+    backgroundColor: Brand.warm,
+  },
+  segOn: { backgroundColor: Brand.brand },
+  segText: { fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.bold, color: Brand.ink2 },
+  segTextOn: { color: "#fff" },
   empty: { color: Brand.soft, fontFamily: FONT,
     fontSize: 14, textAlign: "center", paddingVertical: 24 },
 
   item: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: 15,
     padding: 15,
+    ...Shadow.soft,
   },
   itemHead: { flexDirection: "row", alignItems: "center", gap: 11 },
   srcBadge: {
@@ -438,13 +518,18 @@ const styles = StyleSheet.create({
     fontSize: 10.5, fontWeight: Weight.bold, color: Brand.brandDeep },
   date: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, marginTop: 1 },
-  stats: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12 },
+  // 거리·시간·페이스·심박 4개가 한 줄에 들어가야 한다. 예전 크기(18/13.5·gap16)로는
+  // "6.40km 48:16 7'33\"/km ♥143"이 칸을 넘쳤다(회장 지적) → 값·간격을 한 단계씩 줄인다.
+  stats: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   stat: { fontFamily: FONT,
-    fontSize: 13.5, color: Brand.soft },
+    fontSize: 12.5, color: Brand.soft },
   statNum: { fontFamily: FONT,
-    fontSize: 18, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  statUnit: { fontFamily: FONT,
+    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
+  // 페이스는 성과·순위 신호가 아니라 기록값 — 골드는 리더보드 순위·챌린지 전용으로 남긴다.
   pace: { marginLeft: "auto", fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.bold, color: Brand.accent },
+    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.ink2 },
   hr: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.bold, color: Brand.brandDeep },
+    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep },
 });

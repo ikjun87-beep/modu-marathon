@@ -13,7 +13,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius } from "@/lib/brand";
 import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { fmtDuration, paceLabel, type LatLng } from "@/lib/run";
@@ -108,13 +108,14 @@ export default function RunDetailScreen() {
   const gain = run.elevationGainM ? Math.round(Number(run.elevationGainM)) : null;
   const hasPath = !!path && path.length > 1;
 
-  const tiles: { icon: IconName; label: string; value: string }[] = [
+  // 전역 규칙: 숫자=본문색 + **단위=브랜드 블루**(마이 탭·홈·랭킹과 동일 문법)
+  const tiles: { icon: IconName; label: string; value: string; unit?: string }[] = [
     { icon: "activity", label: "시간", value: fmtDuration(sec) },
     { icon: "gauge", label: "평균 페이스", value: paceLabel(km, sec) },
   ];
-  if (hr) tiles.push({ icon: "heart", label: "평균 심박", value: `${hr} bpm` });
+  if (hr) tiles.push({ icon: "heart", label: "평균 심박", value: String(hr), unit: "bpm" });
   // 평지 러닝·워치 기록엔 없다 → 있을 때만 보여준다(0 m 타일은 정보가 아니라 잡음).
-  if (gain) tiles.push({ icon: "mountain", label: "상승고도", value: `${gain} m` });
+  if (gain) tiles.push({ icon: "mountain", label: "상승고도", value: String(gain), unit: "m" });
   tiles.push({ icon: sourceIcon(run.source), label: "기록 방식", value: sourceLabel(run.source) });
 
   return (
@@ -171,7 +172,10 @@ export default function RunDetailScreen() {
                 <Icon name={t.icon} size={14} color={Brand.soft} />
                 <Text style={styles.tileLab}>{t.label}</Text>
               </View>
-              <Text style={styles.tileVal}>{t.value}</Text>
+              <Text style={styles.tileVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                {t.value}
+                {t.unit ? <Text style={styles.tileUnit}> {t.unit}</Text> : null}
+              </Text>
             </View>
           ))}
         </View>
@@ -218,10 +222,10 @@ const styles = StyleSheet.create({
   heroLab: { color: "#aab2bb", fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular },
   heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
-  heroNum: { color: "#fff", fontFamily: FONT,
-    fontSize: 58, fontWeight: Weight.bold, letterSpacing: -2, lineHeight: 60 },
+  heroNum: { color: "#fff", fontFamily: FONT_DISPLAY,
+    fontSize: 50, fontWeight: Weight.bold, letterSpacing: -1.5, lineHeight: 52 },
   heroUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 24, fontWeight: Weight.bold, marginLeft: 7, marginBottom: 8 },
+    fontSize: 21, fontWeight: Weight.bold, marginLeft: 6, marginBottom: 7 },
 
   mapCard: { height: 240, borderRadius: Radius.card, overflow: "hidden" },
   noPath: {
@@ -252,5 +256,7 @@ const styles = StyleSheet.create({
   tileLab: { fontFamily: FONT,
     fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
   tileVal: { fontFamily: FONT,
-    fontSize: 20, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 18, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+  tileUnit: { fontFamily: FONT,
+    fontSize: 13, fontWeight: Weight.bold, color: Brand.brand },
 });

@@ -78,7 +78,7 @@ export function EventComposer({ visible, myName, onClose }: Props) {
             value={title}
             onChangeText={setTitle}
             placeholder="예: 아침 이지런"
-            placeholderTextColor={Brand.faint}
+            placeholderTextColor={Brand.placeholder}
             maxLength={40}
           />
 
@@ -88,7 +88,7 @@ export function EventComposer({ visible, myName, onClose }: Props) {
             value={desc}
             onChangeText={setDesc}
             placeholder="예: 올림픽공원 평화의문 앞 · 오전 8시 · 3km · 초보 환영"
-            placeholderTextColor={Brand.faint}
+            placeholderTextColor={Brand.placeholder}
             multiline
             maxLength={200}
           />

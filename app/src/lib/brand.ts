@@ -13,6 +13,9 @@ export const Brand = {
   ink2: "#363d49",
   soft: "#5f6773",
   faint: "#98a1ae",
+  /** 입력칸 placeholder 전용 — 실제 입력값(ink)과 확실히 갈라야 "내가 뭘 넣었는지"가 보인다.
+   *  예전엔 soft(#5f6773)·faint가 섞여 쓰여, 예시값이 입력값처럼 읽혔다(감사 지적). */
+  placeholder: "#aab3c0",
   line: "#e8ecf2",
   line2: "#dde3ec",
   bg: "#f5f7fb",
@@ -29,6 +32,15 @@ export const Brand = {
  * 그래서 **600·800·900을 써봐야 400 아니면 700으로 반올림**된다 — 아래 Weight를 쓸 것.
  */
 export const FONT = "LINESeed";
+
+/** 디스플레이(숫자) 서체 — Black Han Sans(OFL). **큰 숫자에만** 쓴다.
+ *
+ *  본문까지 이걸로 덮으면 답답해진다. 거리·기록처럼 "이 앱의 주인공 숫자"만 이 서체로 뽑아
+ *  카드가 똑같이 반복되는 인상을 깬다(디자인 감사: "AI스럽다"의 원인은 폰트가 아니라
+ *  컴포넌트 반복의 단조로움 — 처방은 폰트 교체가 아니라 **시그니처 요소 만들기**).
+ *  웹(index.html)이 이미 같은 서체를 쓰고 있어 웹·앱의 시각 DNA도 맞는다.
+ *  굵기는 1종(400)뿐이라 fontWeight를 줘도 변하지 않는다. */
+export const FONT_DISPLAY = "BlackHanSans";
 
 /** 굵기 — 실제 파일이 있는 값만 쓴다(그래야 의도한 대로 보인다).
  *  이전엔 800이 60곳·900이 22곳이라 화면 전체가 초굵게 = "강하다·스포티하다"였다.
@@ -48,4 +60,43 @@ export const Radius = {
   card: 20, // 일반 카드·리스트 아이템
   hero: 26, // 히어로·모달·큰 카드
   pill: 999, // 완전 둥근 버튼
+} as const;
+
+/** 성장·성공을 나타내는 의미색(월간 리포트 등). 골드와 함께 성취 신호로 쓴다. */
+export const Semantic = {
+  good: "#16a34a",
+  goodSoft: "#e7f6ec",
+  bad: "#dc2626",
+} as const;
+
+/** 그림자 — 카드에 부드러운 입체감. 1px 테두리만 쓰면 와이어프레임처럼 납작하다.
+ *  iOS=shadow* / Android=elevation 병행. 흰 카드를 옅게 띄워 프리미엄 톤을 만든다.
+ *  색은 **브랜드 블루 계열**로 — 순검정·회색 그림자는 탁하고 싸 보인다.
+ *  (RN은 그림자를 한 겹만 지원해 CSS식 2단 그림자는 못 쓴다. 대신 색조로 프리미엄감을 낸다.) */
+export const Shadow = {
+  /** 일반 카드·리스트 아이템 — 살짝 뜬 느낌.
+   *  ⚠️ opacity를 0.07까지 낮췄더니 카드가 배경에 붙어 보여 elevation 위계가 사라졌다(감사 지적).
+   *  흰 카드 위 옅은 배경(#f5f7fb)에서는 0.15 정도는 돼야 "떠 있다"가 읽힌다. */
+  soft: {
+    shadowColor: "#2563c9",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  /** 강조 카드·히어로 — 확실히 떠 있는 느낌 */
+  card: {
+    shadowColor: "#1b3a6b",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 5,
+  },
+} as const;
+
+/** 카드 상단 헤어라인 — 흰 카드가 흰 배경 위에서 밋밋할 때 경계를 은은하게 세운다.
+ *  테두리를 두르면 와이어프레임이 되므로 **위쪽 1px만** 브랜드 톤으로. */
+export const Hairline = {
+  borderTopWidth: 1,
+  borderTopColor: "#e3ecfa",
 } as const;

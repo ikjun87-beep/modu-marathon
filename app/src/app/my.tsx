@@ -23,11 +23,19 @@ import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HAS_AUTH, signOutUser, watchAccount, type Account } from "@/lib/auth";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { saveRunnerName } from "@/lib/identity";
-import { MASCOTS, setMascot, useMascot } from "@/lib/mascot";
+import { MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
+
+/** 캐릭터 선택지 라벨 — 썸네일만으론 남/여·팀색이 구분되지 않는다. */
+const MASCOT_LABEL: Record<MascotKind, string> = {
+  "m-red": "남 · 레드",
+  "m-green": "남 · 그린",
+  "f-red": "여 · 레드",
+  "f-green": "여 · 그린",
+};
 import { useMyName } from "@/lib/session";
 import { badgeProgress, personalStats } from "@/lib/stats";
 
@@ -96,10 +104,12 @@ export default function MyScreen() {
   );
   const loading = runs === null || !loadedName;
 
-  const tiles: { icon: IconName; label: string; value: string }[] = [
-    { icon: "run", label: "총 거리", value: `${stats.totalKm.toFixed(1)} km` },
+  // 전역 규칙: **숫자=본문색 + 단위=브랜드 블루**. 여기만 통짜 문자열이라 규칙에서 빠져 있었다
+  // (감사 지적) → 단위를 분리해 다른 화면과 같은 문법으로 그린다. "회"는 카운트라 대상 아님.
+  const tiles: { icon: IconName; label: string; value: string; unit?: string }[] = [
+    { icon: "run", label: "총 거리", value: stats.totalKm.toFixed(1), unit: "km" },
     { icon: "activity", label: "러닝 수", value: `${stats.totalRuns}회` },
-    { icon: "calendar", label: "이번 주", value: `${stats.weekKm.toFixed(1)} km` },
+    { icon: "calendar", label: "이번 주", value: stats.weekKm.toFixed(1), unit: "km" },
     { icon: "gauge", label: "평균 페이스", value: stats.avgPace },
   ];
 
@@ -124,7 +134,7 @@ export default function MyScreen() {
               value={draft}
               onChangeText={setDraft}
               placeholder="예: 홍길동"
-              placeholderTextColor={Brand.faint}
+              placeholderTextColor={Brand.placeholder}
               maxLength={20}
               editable={!saving}
               returnKeyType="done"
@@ -160,7 +170,11 @@ export default function MyScreen() {
                   key={k}
                   style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
                   onPress={() => void setMascot(k)}>
-                  <Mascot size={44} kind={k} />
+                  <Mascot size={40} kind={k} />
+                  {/* 44px 썸네일에선 머리띠 리본(남/여) 차이가 안 보여 4개가 같아 보였다 → 라벨로 구분. */}
+                  <Text style={[styles.mascotOptText, mascot === k && styles.mascotOptTextOn]}>
+                    {MASCOT_LABEL[k]}
+                  </Text>
                 </PressableScale>
               ))}
             </View>
@@ -226,7 +240,10 @@ export default function MyScreen() {
                   <Icon name={t.icon} size={14} color={Brand.soft} />
                   <Text style={styles.tileLab}>{t.label}</Text>
                 </View>
-                <Text style={styles.tileVal}>{t.value}</Text>
+                <Text style={styles.tileVal}>
+                  {t.value}
+                  {t.unit ? <Text style={styles.tileUnit}> {t.unit}</Text> : null}
+                </Text>
               </View>
             ))}
           </View>
@@ -279,15 +296,14 @@ export default function MyScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
-  content: { padding: 18, gap: 12, paddingBottom: 120 },
+  content: { padding: 18, gap: 12, paddingBottom: 160 },
 
   profile: {
     gap: 12,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
+    ...Shadow.soft,
   },
   profileHead: { flexDirection: "row", alignItems: "center", gap: 14 },
   pHint: { fontFamily: FONT,
@@ -311,7 +327,8 @@ const styles = StyleSheet.create({
   mascotGrid: { flexDirection: "row", gap: 8 },
   mascotOpt: {
     flex: 1,
-    height: 60,
+    paddingVertical: 8,
+    gap: 3,
     borderRadius: Radius.card,
     borderWidth: 2,
     borderColor: Brand.line,
@@ -320,6 +337,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mascotOptOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
+  mascotOptText: { fontFamily: FONT, fontSize: 10.5, color: Brand.soft, fontWeight: Weight.regular },
+  mascotOptTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
   avatar: {
     // 원형(28)이면 마스코트 다리가 잘린다 → 둥근 사각형. 배경도 진한 파랑이면
     // 파랑 캐릭터가 묻혀서(아이콘 때 겪은 저대비) 연한 파랑으로.
@@ -336,7 +355,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: Brand.line,
-    borderRadius: Radius.chip,
+    borderRadius: Radius.input,
     paddingHorizontal: 12,
     paddingVertical: 9,
     fontFamily: FONT,
@@ -353,10 +372,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 14,
+    ...Shadow.soft,
   },
   acctCta: {
     flexDirection: "row",
@@ -404,17 +422,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: "47%",
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
     gap: 8,
+    ...Shadow.soft,
   },
   tileHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   tileLab: { fontFamily: FONT,
     fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
   tileVal: { fontFamily: FONT,
     fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+  tileUnit: { fontFamily: FONT,
+    fontSize: 14, fontWeight: Weight.bold, color: Brand.brand },
 
   badges: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   badge: {
@@ -423,12 +442,11 @@ const styles = StyleSheet.create({
     width: "48%",
     alignItems: "center",
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     paddingVertical: 14,
     paddingHorizontal: 6,
     gap: 6,
+    ...Shadow.soft,
   },
   badgeLocked: { opacity: 0.55 },
   badgeIcon: {
@@ -462,11 +480,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 11,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.input,
     paddingVertical: 14,
     paddingHorizontal: 14,
+    ...Shadow.soft,
   },
   linkIcon: {
     width: 30,

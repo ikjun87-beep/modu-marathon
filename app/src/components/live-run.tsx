@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  bigNum: { fontSize: 54, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -2, fontFamily: mono },
+  bigNum: { fontSize: 48, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -1.5, fontFamily: mono },
   bigUnit: { fontFamily: FONT,
     fontSize: 18, fontWeight: Weight.bold, color: Brand.soft, marginBottom: 8, marginLeft: 5 },
   stats: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   },
   stat: { flex: 1, alignItems: "center", gap: 4 },
   statDiv: { width: 1, alignSelf: "stretch", backgroundColor: Brand.line2, marginVertical: 6 },
-  statNum: { fontSize: 24, fontWeight: Weight.bold, color: Brand.ink, fontFamily: mono },
+  statNum: { fontSize: 21, fontWeight: Weight.bold, color: Brand.ink, fontFamily: mono },
   statLab: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, fontWeight: Weight.regular },
   err: { color: Brand.brandDeep, fontFamily: FONT,

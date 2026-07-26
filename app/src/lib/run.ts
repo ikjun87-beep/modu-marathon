@@ -93,6 +93,11 @@ export function isToday(v: any): boolean {
   );
 }
 
+/** ⚠️ 거리 소수점 표기 규칙(화면마다 자릿수가 달라 데이터 신뢰도가 떨어졌던 것 — 디자인 감사 지적)
+ *  - **집계·요약값 = 1자리** (`toFixed(1)`): 오늘·이번주·이달·누적·랭킹 거리
+ *  - **개별 러닝 기록 = 2자리** (`toFixed(2)`): 러닝 상세 히어로·목록 항목·실시간 트래킹
+ *  집계는 "대략 얼마나", 개별 기록은 "정확히 얼마" 라는 의미 차이를 자릿수로 드러낸다. */
+
 /** 오늘 뛴 거리 합계(km). name 주면 그 사람만. startedAt 우선, 없으면 createdAt 기준. */
 export function todayKm(rows: Row[], name?: string): number {
   return runsOnly(rows)

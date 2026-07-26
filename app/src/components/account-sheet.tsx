@@ -118,7 +118,7 @@ export function AccountSheet({
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor={Brand.faint}
+                placeholderTextColor={Brand.placeholder}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -132,7 +132,7 @@ export function AccountSheet({
                 value={password}
                 onChangeText={setPassword}
                 placeholder="6자 이상"
-                placeholderTextColor={Brand.faint}
+                placeholderTextColor={Brand.placeholder}
                 secureTextEntry
                 autoCapitalize="none"
                 textContentType={mode === "signup" ? "newPassword" : "password"}

@@ -4,7 +4,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, Semantic, Hairline } from "@/lib/brand";
 import type { MonthMetric, MonthReport } from "@/lib/stats";
 
 /** 지난달 대비 좋아졌나 → 색·화살표. 지난달 0이면 신규(중립). */
@@ -22,7 +22,7 @@ function delta(m: MonthMetric): { dir: "up" | "down" | "flat"; good: boolean; te
 
 function MetricTile({ m }: { m: MonthMetric }) {
   const d = delta(m);
-  const color = d.dir === "flat" ? Brand.soft : d.good ? "#16a34a" : "#dc2626";
+  const color = d.dir === "flat" ? Brand.soft : d.good ? Semantic.good : Semantic.bad;
   return (
     <View style={styles.tile}>
       <Text style={styles.tLabel}>{m.label}</Text>
@@ -108,9 +108,19 @@ export function MonthReportCard({ report }: { report: MonthReport }) {
           <PaceTrend report={report} />
         </>
       ) : (
-        <Text style={styles.empty}>
-          이번 달 러닝이 아직 없어요.{"\n"}첫 러닝을 남기면 리포트가 채워져요!
-        </Text>
+        // 텍스트만 두면 휑하다 — 지표가 **채워질 자리**를 옅은 타일로 미리 보여준다.
+        // (마스코트를 쓰면 같은 화면 아래 CTA 카드의 마스코트와 겹쳐 중복이 된다.)
+        <View style={styles.emptyWrap}>
+          {/* 타일 4개는 빈 카드를 너무 키워 아래 리더보드를 화면 밖으로 밀어냈다 → 2개만 예고. */}
+          <View style={styles.ghostGrid}>
+            {[0, 1].map((i) => (
+              <View key={i} style={styles.ghostTile} />
+            ))}
+          </View>
+          <Text style={styles.empty}>
+            이번 달 러닝이 아직 없어요. 첫 러닝을 남기면 리포트가 채워져요!
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -119,18 +129,27 @@ export function MonthReportCard({ report }: { report: MonthReport }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
     gap: 14,
+    ...Shadow.soft,
+    ...Hairline,
   },
   head: { gap: 2 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   eyebrow: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold, letterSpacing: 1.5, color: Brand.brand },
-  title: { fontFamily: FONT, fontSize: 20, fontWeight: Weight.bold, color: Brand.ink },
+  title: { fontFamily: FONT, fontSize: 18, fontWeight: Weight.bold, color: Brand.ink },
   sub: { fontFamily: FONT, fontSize: 13, color: Brand.soft },
-  empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, textAlign: "center", lineHeight: 21, paddingVertical: 12 },
+  emptyWrap: { gap: 12 },
+  ghostGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  ghostTile: {
+    width: "48%",
+    flexGrow: 1,
+    height: 48,
+    borderRadius: Radius.input,
+    backgroundColor: Brand.bg,
+  },
+  empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, lineHeight: 21, textAlign: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: {
     width: "48%",
@@ -143,7 +162,7 @@ const styles = StyleSheet.create({
   },
   tLabel: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
   tValRow: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
-  tVal: { fontFamily: FONT, fontSize: 24, fontWeight: Weight.bold, color: Brand.ink },
+  tVal: { fontFamily: FONT, fontSize: 21, fontWeight: Weight.bold, color: Brand.ink },
   tUnit: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft, marginBottom: 3 },
   tDelta: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold },
   trend: { gap: 8, marginTop: 2 },

@@ -66,7 +66,7 @@ export function CommentThread({ parentId }: { parentId: string }) {
           value={msg}
           onChangeText={setMsg}
           placeholder="따뜻한 한마디 남기기"
-          placeholderTextColor={Brand.faint}
+          placeholderTextColor={Brand.placeholder}
           maxLength={200}
           multiline
         />

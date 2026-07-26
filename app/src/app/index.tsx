@@ -11,7 +11,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -70,7 +70,10 @@ export default function HomeScreen() {
               )}
             </Text>
           </View>
-          <Mascot size={62} />
+          {/* 마스코트가 배경 없이 붕 떠 보였다 — 랭킹 탭처럼 연파랑 원판에 안착시킨다. */}
+          <View style={styles.mascotWrap}>
+            <Mascot size={54} />
+          </View>
         </View>
 
         {/* 통합 검색 */}
@@ -81,7 +84,7 @@ export default function HomeScreen() {
             value={q}
             onChangeText={setQ}
             placeholder="크루·러닝·모임 검색"
-            placeholderTextColor={Brand.faint}
+            placeholderTextColor={Brand.placeholder}
             returnKeyType="search"
           />
           {searching && (
@@ -182,13 +185,25 @@ export default function HomeScreen() {
             ) : (
               <>
                 {/* 오늘 뛴 거리 — 히어로 */}
+                {/* 러닝 탭 스탯카드와 **같은 3슬롯 문법**(라벨/큰숫자/우측 보조지표) —
+                    같은 컴포넌트가 화면마다 다르게 생기면 학습비용이 오른다(디자인 감사 지적). */}
                 <View style={styles.hero}>
-              <Text style={styles.heroLab}>오늘 뛴 거리</Text>
-              <View style={styles.heroNumRow}>
-                <Text style={styles.heroNum}>{myToday.toFixed(2)}</Text>
-                <Text style={styles.heroUnit}>km</Text>
+              <View style={styles.heroLeft}>
+                <Text style={styles.heroLab}>오늘 뛴 거리</Text>
+                <View style={styles.heroNumRow}>
+                  <Text style={styles.heroNum}>{myToday.toFixed(1)}</Text>
+                  <Text style={styles.heroUnit}>km</Text>
+                </View>
               </View>
-              <Text style={styles.heroSub}>이번 주 {myWeek.toFixed(1)}km 달렸어요</Text>
+              <View style={styles.heroDiv} />
+              <View style={styles.heroMeta}>
+                {/* 좌측 주지표와 **같은 단위 문법**: 숫자(흰색) + km(블루). 한 카드 안에서 규칙이 갈리면 안 된다. */}
+                <Text style={styles.heroMetaNum}>
+                  {myWeek.toFixed(1)}
+                  <Text style={styles.heroMetaUnit}> km</Text>
+                </Text>
+                <Text style={styles.heroMetaLab}>이번 주</Text>
+              </View>
             </View>
 
             {/* 이번 주 크루 합계 */}
@@ -285,16 +300,24 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
-  content: { padding: 18, gap: 14, paddingBottom: 120 },
+  content: { padding: 16, gap: 12, paddingBottom: 160 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   greetRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   greetText: { flex: 1 },
+  mascotWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: Brand.brandSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   // LINE Seed는 시스템 폰트보다 자간이 촘촘하다 → 음수 letterSpacing(-0.8)·marginTop(-4)은
   //   시스템 폰트 때 각진 글자를 붙이려던 값이라, 둥근 폰트엔 오히려 빽빽·겹침을 만든다. 뺀다.
   eyebrow: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.bold, letterSpacing: 2, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 27, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 34 },
+    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 30 },
 
   searchBar: {
     flexDirection: "row",
@@ -335,26 +358,44 @@ const styles = StyleSheet.create({
   resSub: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, marginTop: 1 },
 
-  hero: { backgroundColor: Brand.dark, borderRadius: Radius.hero, padding: 24 },
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Brand.dark,
+    borderRadius: Radius.hero,
+    padding: 20,
+    ...Shadow.card,
+  },
+  heroLeft: { flex: 1 },
   heroLab: { color: "#aab2bb", fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular },
-  heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
-  heroNum: { color: "#fff", fontFamily: FONT,
-    fontSize: 54, fontWeight: Weight.bold, letterSpacing: -2, lineHeight: 56 },
+  heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 4 },
+  heroNum: { color: "#fff", fontFamily: FONT_DISPLAY,
+    fontSize: 46, fontWeight: Weight.bold, letterSpacing: -1.5, lineHeight: 48 },
   heroUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 22, fontWeight: Weight.bold, marginLeft: 7, marginBottom: 7 },
-  heroSub: { color: "#8b929b", fontFamily: FONT,
-    fontSize: 12.5, fontWeight: Weight.regular, marginTop: 8 },
+    fontSize: 20, fontWeight: Weight.bold, marginLeft: 6, marginBottom: 6 },
+  heroDiv: {
+    width: 1,
+    alignSelf: "stretch",
+    backgroundColor: "rgba(255,255,255,.12)",
+    marginHorizontal: 18,
+  },
+  heroMeta: { alignItems: "flex-end" },
+  heroMetaNum: { color: "#fff", fontFamily: FONT,
+    fontSize: 16, fontWeight: Weight.bold },
+  heroMetaUnit: { color: Brand.brand, fontFamily: FONT,
+    fontSize: 12, fontWeight: Weight.bold },
+  heroMetaLab: { color: "#8b929b", fontFamily: FONT,
+    fontSize: 11, fontWeight: Weight.regular },
 
   crewCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
+    ...Shadow.soft,
   },
   crewIcon: {
     width: 38,
@@ -369,9 +410,10 @@ const styles = StyleSheet.create({
   crewSub: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, marginTop: 1 },
   crewNum: { fontFamily: FONT,
-    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 21, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+  // 숫자 강조 규칙은 앱 전역 하나: **숫자=본문/흰색 + 단위=브랜드 블루**
   crewUnit: { fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.soft },
+    fontSize: 14, fontWeight: Weight.bold, color: Brand.brand },
 
   ctaRow: { flexDirection: "row", gap: 10 },
   cta: {
@@ -381,14 +423,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 7,
     borderRadius: Radius.input,
-    paddingVertical: 15,
-    minHeight: 52,
+    paddingVertical: 13,
+    minHeight: 48,
   },
-  ctaPrimary: { backgroundColor: Brand.brand },
+  ctaPrimary: { backgroundColor: Brand.brand, ...Shadow.soft },
   ctaPrimaryText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
-  ctaSecondary: { backgroundColor: Brand.card, borderWidth: 1, borderColor: Brand.line2 },
-  ctaSecondaryText: { color: Brand.ink, fontWeight: Weight.bold, fontFamily: FONT,
+  ctaSecondary: { backgroundColor: Brand.brandSoft },
+  ctaSecondaryText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
 
   sectionH: { fontFamily: FONT,
@@ -398,16 +440,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 14,
+    ...Shadow.soft,
   },
+  // 크루 탭 모임카드와 동일 규칙: 날짜=정보(다크 네이비), 블루 솔리드=액션 전용
   evDate: {
     width: 50,
     height: 50,
     borderRadius: Radius.input,
-    backgroundColor: Brand.brand,
+    backgroundColor: Brand.dark,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -425,11 +467,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 11,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.input,
     paddingVertical: 13,
     paddingHorizontal: 14,
+    ...Shadow.soft,
   },
   linkIcon: {
     width: 30,
