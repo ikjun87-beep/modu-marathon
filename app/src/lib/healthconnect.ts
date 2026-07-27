@@ -50,12 +50,18 @@ function overlaps(aS: number, aE: number, bS: number, bE: number): boolean {
 /**
  * 오늘 러닝을 Health Connect에서 읽어 runs에 멱등 저장. name은 이 기기 사용자 이름.
  * readHeartRate=false면 심박(민감정보)을 읽지도·저장하지도 않는다 — 별도 동의 미승인 시 최소수집.
+ *
+ * silent=true면 **권한 요청 팝업을 띄우지 않는다**(앱 켤 때 도는 자동 동기화용).
+ * 자동 실행이 시스템 권한창을 띄우면 앱을 열 때마다 방해가 되고, 사용자가 거부하면
+ * 매번 다시 묻는 꼴이 된다. 자동은 **이미 허용된 권한이 있을 때만** 조용히 동작하고,
+ * 권한이 없으면 조용히 물러난다 — 권한 요청은 사용자가 [워치 불러오기]를 직접 누른 경로에서만.
  */
 export async function syncTodayRuns(
   name: string,
-  opts: { readHeartRate?: boolean } = {}
+  opts: { readHeartRate?: boolean; silent?: boolean } = {}
 ): Promise<SyncResult> {
   const readHeartRate = opts.readHeartRate ?? false;
+  const silent = opts.silent ?? false;
   if (!HC_SUPPORTED) {
     return { ok: false, synced: 0, totalKm: 0, walks: 0, reason: "안드로이드에서만 지원돼요." };
   }
@@ -86,7 +92,9 @@ export async function syncTodayRuns(
       { accessType: "read", recordType: "Distance" },
     ];
     if (readHeartRate) perms.push({ accessType: "read", recordType: "HeartRate" });
-    await HC.requestPermission(perms);
+    // 자동(silent) 경로는 권한창을 띄우지 않는다 — 아래 getGrantedPermissions로 이미 허용된
+    // 권한만 확인하고, 없으면 조용히 물러난다.
+    if (!silent) await HC.requestPermission(perms);
 
     // 실제 부여 여부 확인 — 미부여 시 raw SecurityException 대신 실행 가능한 안내.
     // (매니페스트 선언만으론 부족, Health Connect에서 사용자가 '허용'해야 read 가능)

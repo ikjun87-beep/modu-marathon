@@ -11,6 +11,7 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -26,6 +27,8 @@ import { HAS_AUTH, signOutUser, watchAccount, type Account } from "@/lib/auth";
 import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
+import { isWatchAutoSync, setWatchAutoSync } from "@/lib/health-consent";
+import { HC_SUPPORTED } from "@/lib/healthconnect";
 import { saveRunnerName } from "@/lib/identity";
 import { MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
 
@@ -50,6 +53,7 @@ export default function MyScreen() {
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [sheet, setSheet] = useState(false);
+  const [autoSync, setAutoSync] = useState(false); // 워치 자동 불러오기 — 저장값을 아래에서 읽어온다
 
   // 저장된 이름이 바뀌면 입력칸도 맞춘다. 단 사용자가 고쳐둔 값(dirty)은 덮지 않는다.
   useEffect(() => {
@@ -58,6 +62,14 @@ export default function MyScreen() {
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => watchAccount(setAccount), []);
+  // 워치 불러오기 동의 화면에서 켰다면 스위치도 켠 채로 보여야 한다(설정값이 단일 소스).
+  useEffect(() => {
+    let alive = true;
+    void isWatchAutoSync().then((v) => alive && setAutoSync(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const dirty = draft.trim().length > 0 && draft.trim() !== name.trim();
 
@@ -271,7 +283,34 @@ export default function MyScreen() {
           ))}
         </View>
 
-        {/* 링크 · 설정 */}
+        {/* 설정 — 워치 자동 불러오기 끄기.
+            자동으로 도는 수집은 **끄는 수단이 반드시 있어야 한다**(민감정보 동의 철회 원칙).
+            동의 화면에서 "마이 탭에서 끌 수 있어요"라고 고지했으니 그 약속의 실체이기도 하다. */}
+        {HC_SUPPORTED && (
+          <>
+            <Text style={styles.sectionH}>설정</Text>
+            <View style={styles.linkRow}>
+              <View style={styles.linkIcon}>
+                <Icon name="watch" size={16} color={Brand.brandDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.switchLabel}>워치 자동 불러오기</Text>
+                <Text style={styles.switchSub}>앱을 열면 오늘 기록을 가져와요</Text>
+              </View>
+              <Switch
+                value={autoSync}
+                onValueChange={(v) => {
+                  setAutoSync(v); // 화면은 즉시 반응, 저장은 뒤따른다
+                  void setWatchAutoSync(v);
+                }}
+                trackColor={{ false: Brand.line2, true: Brand.brand }}
+                thumbColor="#fff"
+              />
+            </View>
+          </>
+        )}
+
+        {/* 링크 · 정보 */}
         <Text style={styles.sectionH}>정보</Text>
         <PressableScale style={styles.linkRow} onPress={() => void openBrowserAsync(PRIVACY_URL)}>
           <View style={styles.linkIcon}>
@@ -495,6 +534,11 @@ const styles = StyleSheet.create({
   },
   linkText: { flex: 1, fontFamily: FONT,
     fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+  // 스위치 행은 제목+설명 2줄이라 linkText(flex:1)를 못 쓴다 — 감싼 View가 flex를 갖는다.
+  switchLabel: { fontFamily: FONT,
+    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+  switchSub: { fontFamily: FONT,
+    fontSize: 12, color: Brand.soft, marginTop: 2 },
 
   appInfo: { alignItems: "center", paddingVertical: 18, gap: 3 },
   appInfoText: { fontFamily: FONT,

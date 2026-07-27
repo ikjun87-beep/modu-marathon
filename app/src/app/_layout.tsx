@@ -6,11 +6,14 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { BadgeCelebration } from '@/components/badge-celebration';
 import { OnboardingGate } from '@/components/onboarding-gate';
+import { useWatchAutoSync } from '@/lib/watch-autosync';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  // 워치 기록 자동 불러오기 — 이름이 정해진 뒤(구독형 useMyName) 조용히 돈다. UI 없음.
+  useWatchAutoSync();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
