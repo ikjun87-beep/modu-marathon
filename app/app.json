@@ -96,6 +96,7 @@
       "react-native-health-connect",
       "./plugins/withHealthConnectPermissionDelegate",
       "./plugins/withHealthConnectAndroid14",
+      "./plugins/withBrandDialogTheme",
       [
         "react-native-maps",
         {
