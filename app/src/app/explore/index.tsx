@@ -14,9 +14,10 @@ import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
-import { hasHealthConsent, setHealthConsent } from "@/lib/health-consent";
+import { hasHealthConsent, setHealthConsent, setWatchAutoSync } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
-import { fmtDuration, isWalk, paceLabel, runsOnly, saveRun, todayKm, toMs } from "@/lib/run";
+import { fmtDuration, isWalk, paceLabel, saveRun, todayKm, toMs } from "@/lib/run";
+import { personalStats } from "@/lib/stats";
 
 type KindFilter = "run" | "walk" | "all";
 const KIND_TABS: [KindFilter, string][] = [["run", "달리기"], ["walk", "걷기"], ["all", "전체"]];
@@ -53,11 +54,12 @@ export default function RunScreen() {
 
   // 상단 카드는 "오늘 뛴 거리 / 누적"이라 **러닝 기준**으로 센다(걷기 제외 — todayKm도 동일).
   // 아래 목록은 걷기까지 보여주되 '걷기' 태그로 구분한다: 통계는 러닝, 로그는 전부.
-  const runOnlyRows = useMemo(() => runsOnly(runs), [runs]);
-  const totalKm = useMemo(
-    () => runOnlyRows.reduce((a, r) => a + (Number(r.distanceKm) || 0), 0),
-    [runOnlyRows]
-  );
+  //
+  // ⚠️ 이 카드는 **전부 내 기준**이어야 한다. 예전엔 좌측(오늘)만 내 기록이고 우측(누적·기록)이
+  //   크루 전체 합계라, 카드 바로 아래 "OOO님의 기록" 라벨과 어긋났다. 실기기에서 러닝 탭은
+  //   "누적 6.4km·1회"인데 마이 탭은 "총 거리 0.0km·0회"로 갈렸다(2026-07-27 발견).
+  //   마이 탭과 **같은 personalStats**를 써서 두 화면이 갈릴 수 없게 한다(이름 필터+데모 제외 동일).
+  const mine = useMemo(() => personalStats(runs, name || undefined), [runs, name]);
   const today = useMemo(() => todayKm(runs, name || undefined), [runs, name]);
 
   // 지난 러닝 목록 = 최근 1주 + 걷기/달리기 필터(기본 달리기). 상단 카드 집계는 그대로 전체 기준.
@@ -116,16 +118,28 @@ export default function RunScreen() {
       await runWatchSync(true);
       return;
     }
+    // 고지 범위 = ①심박(민감정보) 수집 ②앱을 열 때 자동으로 불러옴 ③끄는 방법.
+    // ②를 빼놓고 자동 수집을 켜면 고지 없는 수집이 된다 — 그래서 동의 키도 v2로 올렸다.
     Alert.alert(
-      "건강정보 수집 동의",
-      "워치 러닝을 불러올 때 심박 등 건강정보(민감정보)를 함께 저장하려면 별도 동의가 필요해요. 동의하지 않아도 거리·시간·페이스는 불러올 수 있어요.",
+      "워치 기록 불러오기 동의",
+      "갤럭시워치 기록을 불러옵니다.\n\n" +
+        "• 심박 등 건강정보(민감정보)를 함께 저장하려면 별도 동의가 필요해요. 동의하지 않아도 거리·시간·페이스는 불러올 수 있어요.\n" +
+        "• 앞으로는 앱을 열 때 오늘 기록을 자동으로 불러옵니다(최소 30분 간격).\n" +
+        "• 자동 불러오기는 마이 탭에서 언제든 끌 수 있어요.",
       [
         { text: "취소", style: "cancel", onPress: () => setSyncing(false) },
-        { text: "심박 없이 불러오기", onPress: () => void runWatchSync(false) },
+        {
+          text: "심박 없이 불러오기",
+          onPress: async () => {
+            await setWatchAutoSync(true); // 자동은 켜되 심박은 안 읽는다(최소수집)
+            await runWatchSync(false);
+          },
+        },
         {
           text: "동의하고 불러오기",
           onPress: async () => {
             await setHealthConsent(true);
+            await setWatchAutoSync(true);
             await runWatchSync(true);
           },
         },
@@ -174,12 +188,12 @@ export default function RunScreen() {
           <View style={styles.todayMeta}>
             {/* 좌측 주지표와 같은 단위 문법: 숫자(흰색) + 단위(블루) */}
             <Text style={styles.todayMetaNum}>
-              {totalKm.toFixed(1)}
+              {mine.totalKm.toFixed(1)}
               <Text style={styles.todayMetaUnit}> km</Text>
             </Text>
             <Text style={styles.todayMetaLab}>누적</Text>
             <Text style={[styles.todayMetaNum, { marginTop: 8 }]}>
-              {runOnlyRows.length}
+              {mine.totalRuns}
               <Text style={styles.todayMetaUnit}> 회</Text>
             </Text>
             <Text style={styles.todayMetaLab}>기록</Text>
@@ -277,7 +291,7 @@ export default function RunScreen() {
         </View>
       </View>
     ),
-    [distance, duration, name, runOnlyRows.length, totalKm, today, syncing, submitting, kind]
+    [distance, duration, name, mine, today, syncing, submitting, kind]
   );
 
   return (
