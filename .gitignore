@@ -9,3 +9,8 @@ Thumbs.db
 .env
 # 이미지 생성 테스트 산출물
 /out*.png
+
+# 앱 설치파일 — 저장소에 절대 넣지 않는다(한 개당 50MB, 히스토리에 박히면 못 뺀다).
+# app/android/ 는 app/.gitignore가 이미 막고 있지만, 다른 곳에 복사해 두는 경우까지 대비.
+*.apk
+*.aab
