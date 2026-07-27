@@ -133,7 +133,8 @@ export default function HomeScreen() {
                       style={styles.resRow}
                       onPress={() => router.push("/crew")}>
                       <View style={styles.resIcon}>
-                        <Icon name="chat" size={15} color={Brand.accent} />
+                        {/* 골드는 순위·챌린지·성과 전용(전역 규칙) — 검색결과 아이콘엔 쓰지 않는다. */}
+                        <Icon name="chat" size={15} color={Brand.brandDeep} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.resTitle} numberOfLines={1}>
@@ -270,7 +271,7 @@ export default function HomeScreen() {
             {/* 크루 새 글 */}
             <PressableScale style={styles.linkRow} onPress={() => router.push("/crew")}>
               <View style={styles.linkIcon}>
-                <Icon name="chat" size={16} color={Brand.accent} />
+                <Icon name="chat" size={16} color={Brand.brandDeep} />
               </View>
               <Text style={styles.linkText}>크루 방명록 {newPosts}개</Text>
               <Icon name="chevron-right" size={18} color={Brand.faint} />
@@ -472,11 +473,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     ...Shadow.soft,
   },
+  // 골드는 **순위·챌린지·성과** 전용 시그널이다(전역 규칙). 방명록은 커뮤니티 항목이라
+  // 골드를 쓰면 "이게 성과인가?"로 읽히고, 골드의 특별함도 희석된다(실기기 확인).
   linkIcon: {
     width: 30,
     height: 30,
     borderRadius: Radius.chip,
-    backgroundColor: Brand.accentSoft,
+    backgroundColor: Brand.brandSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -484,18 +487,19 @@ const styles = StyleSheet.create({
     fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
 
   quickTiles: { flexDirection: "row", gap: 10, marginTop: 2 },
+  // 랭킹·마이는 하단 탭바로도 갈 수 있는 **보조** 바로가기다. 흰 카드+1px 테두리로 두면
+  // ①규칙 위반(테두리만 쓴 카드는 와이어프레임처럼 납작) ②위 카드들과 같은 무게로 보여
+  // 카드가 끝없이 반복되는 인상을 키웠다(실기기 확인) → 톤온톤 칩으로 한 단계 낮춘다.
   qTile: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
+    backgroundColor: Brand.brandSoft,
     borderRadius: Radius.input,
     paddingVertical: 13,
   },
   qLabel: { fontFamily: FONT,
-    fontSize: 13.5, fontWeight: Weight.regular, color: Brand.ink },
+    fontSize: 13.5, fontWeight: Weight.bold, color: Brand.brandDeep },
 });

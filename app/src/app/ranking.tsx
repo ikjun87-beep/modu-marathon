@@ -34,6 +34,11 @@ export default function RankingScreen() {
   const myRank = name ? ranking.findIndex((r) => r.name === name) + 1 : 0; // 0 = 순위 없음
   const loading = runs === null;
 
+  // 앞 순위와의 거리 차 — 1위인데 "한 번 더 뛰면 순위가 올라가요"라고 하던 모순을 없앤다.
+  // 두루뭉술한 독려보다 "2위와 1.4km 차이"가 실제로 다음 러닝을 부른다(디자인 감사).
+  const rival = myRank > 0 ? ranking[myRank === 1 ? 1 : myRank - 2] : undefined;
+  const gapKm = myRank > 0 && rival ? Math.abs((ranking[myRank - 1]?.km ?? 0) - rival.km) : null;
+
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -55,6 +60,8 @@ export default function RankingScreen() {
             {/* 이달의 챌린지 */}
             <View style={styles.challenge}>
               <View style={styles.chHead}>
+                {/* 챌린지 = 성과 신호라 **골드**. 블루 솔리드는 액션(버튼) 전용으로 남긴다.
+                    같은 카드 안 진행바가 이미 골드라 아이콘까지 맞춰야 한 덩어리로 읽힌다. */}
                 <View style={styles.chIcon}>
                   <Icon name="shield" size={16} color="#fff" />
                 </View>
@@ -76,12 +83,16 @@ export default function RankingScreen() {
             {/* 주간 랭킹 — 카드가 연달아 나오면 어디부터 순위인지 안 보여 섹션 라벨을 둔다. */}
             {ranking.length > 0 && <Text style={styles.sectionH}>크루 순위</Text>}
             {ranking.length === 0 ? (
-              <View style={styles.empty}>
-                {/* 회색 아이콘 + "없어요"는 첫인상이 초라하다 — 마스코트가 대신 맞이한다 */}
-                <Mascot size={84} />
-                <Text style={styles.emptyText}>
-                  이번 주 러닝 기록이 아직 없어요.{"\n"}첫 주자가 되어 보세요!
-                </Text>
+              // 마스코트 84를 세로로 쌓았더니 위 카드들과 합쳐져 안내문이 탭바 뒤로 밀렸다
+              // — 마스코트만 보이고 정작 할 말이 안 보이는 막다른 화면이었다(실기기 2회 확인).
+              // 아래 [다음 행동] 카드와 같은 가로 배치로 바꿔 높이를 절반으로 줄이고 문법도 통일한다.
+              <View style={styles.inviteCard}>
+                <Mascot size={54} />
+                <View style={{ flex: 1 }}>
+                  {/* 320dp에서 15자는 2줄로 넘쳐 마스코트와 세로 정렬이 어긋난다 → 13자로. */}
+                  <Text style={styles.inviteTitle}>이번 주 기록이 아직 없어요</Text>
+                  <Text style={styles.inviteSub}>첫 주자가 되어 보세요!</Text>
+                </View>
               </View>
             ) : (
               ranking.map((r, i) => {
@@ -100,16 +111,19 @@ export default function RankingScreen() {
                         <View style={styles.champCrown}>
                           <Text style={styles.champCrownText}>1</Text>
                         </View>
-                        <Text style={styles.champLabel}>이번 주 1등</Text>
+                        {/* 내 순위 표시를 이름 뒤 " (나)"로 붙이면 그만큼 이름 칸이 줄어
+                            "TESTM24 (…"로 잘렸다(실기기 확인). 여유 있는 라벨 줄에서 말한다. */}
+                        <Text style={styles.champLabel}>
+                          {isMe ? "내가 이번 주 1등!" : "이번 주 1등"}
+                        </Text>
                       </View>
                       <View style={styles.champBody}>
                         <View style={styles.champAvatar}>
-                          <Mascot size={46} />
+                          <Mascot size={42} />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={styles.champName} numberOfLines={1}>
                             {r.name}
-                            {isMe ? " (나)" : ""}
                           </Text>
                           <Text style={styles.champRuns}>{r.runs}회 러닝</Text>
                         </View>
@@ -161,9 +175,15 @@ export default function RankingScreen() {
                     {myRank > 0 ? `이번 주 ${myRank}위예요` : "아직 내 기록이 없어요"}
                   </Text>
                   <Text style={styles.inviteSub}>
-                    {myRank > 0
-                      ? "한 번 더 뛰면 순위가 올라가요!"
-                      : `벌써 ${ranking.length}명이 달렸어요. 지금 뛰면 순위에 이름이 올라가요.`}
+                    {myRank === 1
+                      ? gapKm != null
+                        ? `2위와 ${gapKm.toFixed(1)}km 차이예요. 이대로 지켜요!`
+                        : "크루를 불러 함께 달려볼까요?" // 제목에 이미 "이번 주"가 있어 중복을 뺀다
+                      : myRank > 1
+                        ? gapKm != null
+                          ? `${myRank - 1}위와 ${gapKm.toFixed(1)}km 차이예요. 한 번 더 뛰면 따라잡아요!`
+                          : "한 번 더 뛰면 순위가 올라가요!"
+                        : `벌써 ${ranking.length}명이 달렸어요. 지금 뛰면 순위에 이름이 올라가요.`}
                   </Text>
                 </View>
               </View>
@@ -198,7 +218,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: Radius.input,
-    backgroundColor: Brand.brand,
+    backgroundColor: Brand.gold,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -208,10 +228,6 @@ const styles = StyleSheet.create({
     fontSize: 12.5, color: Brand.soft, marginTop: 2, fontWeight: Weight.regular },
   barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.warm, overflow: "hidden" },
   barFill: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.gold },
-
-  empty: { alignItems: "center", justifyContent: "center", gap: 12, paddingVertical: 36 },
-  emptyText: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 13.5, fontWeight: Weight.regular, textAlign: "center", lineHeight: 20 },
 
   row: {
     flexDirection: "row",
@@ -244,18 +260,20 @@ const styles = StyleSheet.create({
   },
   champCrownText: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: "#fff" },
   champLabel: { fontFamily: FONT, fontSize: 12, fontWeight: Weight.bold, letterSpacing: 1.5, color: Brand.gold },
-  champBody: { flexDirection: "row", alignItems: "center", gap: 12 },
+  // ⚠️ 실기기(320dp 폭)에서 아바타 58 + 거리 30pt가 이름 칸을 먹어 "TESTM2…"로 잘렸다.
+  // 시그니처 카드에서 주인공 이름이 잘리면 카드의 의미가 없다 → 셋 다 한 단계씩 줄인다.
+  champBody: { flexDirection: "row", alignItems: "center", gap: 10 },
   champAvatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: "rgba(255,255,255,.08)",
     alignItems: "center",
     justifyContent: "center",
   },
-  champName: { fontFamily: FONT, fontSize: 17, fontWeight: Weight.bold, color: "#fff" },
+  champName: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: "#fff" },
   champRuns: { fontFamily: FONT, fontSize: 12.5, color: "#8b929b", marginTop: 2 },
-  champKm: { fontFamily: FONT_DISPLAY, fontSize: 30, color: "#fff", letterSpacing: -0.5 },
+  champKm: { fontFamily: FONT_DISPLAY, fontSize: 26, color: "#fff", letterSpacing: -0.5 },
   champUnit: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.gold },
 
   sectionH: { fontFamily: FONT,

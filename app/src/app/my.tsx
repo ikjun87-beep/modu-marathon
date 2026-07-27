@@ -53,6 +53,7 @@ export default function MyScreen() {
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [sheet, setSheet] = useState(false);
+  const [pickingMascot, setPickingMascot] = useState(false); // 캐릭터 4종은 접어둔다(위 주석 참조)
   const [autoSync, setAutoSync] = useState(false); // 워치 자동 불러오기 — 저장값을 아래에서 읽어온다
 
   // 저장된 이름이 바뀌면 입력칸도 맞춘다. 단 사용자가 고쳐둔 값(dirty)은 덮지 않는다.
@@ -117,17 +118,33 @@ export default function MyScreen() {
   const loading = runs === null || !loadedName;
 
   // 전역 규칙: **숫자=본문색 + 단위=브랜드 블루**. 여기만 통짜 문자열이라 규칙에서 빠져 있었다
-  // (감사 지적) → 단위를 분리해 다른 화면과 같은 문법으로 그린다. "회"는 카운트라 대상 아님.
+  // (감사 지적) → 단위를 분리해 다른 화면과 같은 문법으로 그린다.
+  // ⚠️ "회"·"/km"도 단위다 — 러닝 탭 히어로가 이미 "0 회"의 회를 블루로 쓰는데 여기만
+  // 통짜라 같은 값이 화면마다 다르게 보였다(실기기 확인). 예외 없이 전부 분리한다.
+  const hasPaceUnit = stats.avgPace.endsWith("/km");
   const tiles: { icon: IconName; label: string; value: string; unit?: string }[] = [
     { icon: "run", label: "총 거리", value: stats.totalKm.toFixed(1), unit: "km" },
-    { icon: "activity", label: "러닝 수", value: `${stats.totalRuns}회` },
+    { icon: "activity", label: "러닝 수", value: `${stats.totalRuns}`, unit: "회" },
     { icon: "calendar", label: "이번 주", value: stats.weekKm.toFixed(1), unit: "km" },
-    { icon: "gauge", label: "평균 페이스", value: stats.avgPace },
+    {
+      icon: "gauge",
+      label: "평균 페이스",
+      value: hasPaceUnit ? stats.avgPace.slice(0, -3) : stats.avgPace,
+      unit: hasPaceUnit ? "/km" : undefined,
+    },
   ];
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
+        {/* 5탭 중 마이만 페이지 이름표가 없어 카드부터 불쑥 시작됐다(실기기 확인).
+            크루·러닝·랭킹과 같은 EYEBROW+제목 문법을 그대로 따라 위계를 맞춘다. */}
+        <View style={styles.eyebrowRow}>
+          <Icon name="user" size={15} color={Brand.brand} />
+          <Text style={styles.eyebrow}>MY</Text>
+        </View>
+        <Text style={styles.title}>내 프로필</Text>
+
         {/* 프로필 */}
         <View style={styles.profile}>
           <View style={styles.profileHead}>
@@ -173,23 +190,41 @@ export default function MyScreen() {
           )}
 
           {/* 마스코트 고르기 — 4종(남/여 × 레드/그린 팀). 러너 네임으론 성별을 알 수 없어 직접 고른다.
-              이 기기 취향 설정이라 서버에 안 올린다(lib/mascot.ts). */}
+              이 기기 취향 설정이라 서버에 안 올린다(lib/mascot.ts).
+              ⚠️ 4종을 항상 펼쳐두면 프로필 카드가 화면 절반을 먹어 정작 "내 러닝" 통계가
+              첫 뷰포트 밖으로 밀렸다(실기기 확인). 캐릭터는 한 번 고르면 거의 안 바꾸고
+              고른 결과는 위 아바타에 이미 보이니, **접어두고 바꿀 때만 펼친다.** */}
           <View style={styles.mascotBlock}>
-            <Text style={styles.mascotLabel}>내 캐릭터</Text>
-            <View style={styles.mascotGrid}>
-              {MASCOTS.map((k) => (
-                <PressableScale
-                  key={k}
-                  style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
-                  onPress={() => void setMascot(k)}>
-                  <Mascot size={40} kind={k} />
-                  {/* 44px 썸네일에선 머리띠 리본(남/여) 차이가 안 보여 4개가 같아 보였다 → 라벨로 구분. */}
-                  <Text style={[styles.mascotOptText, mascot === k && styles.mascotOptTextOn]}>
-                    {MASCOT_LABEL[k]}
-                  </Text>
-                </PressableScale>
-              ))}
-            </View>
+            <PressableScale
+              style={styles.mascotToggle}
+              onPress={() => setPickingMascot((v) => !v)}
+              dim={false}>
+              <Text style={styles.mascotLabel}>내 캐릭터</Text>
+              <Text style={styles.mascotToggleText}>
+                {pickingMascot ? "닫기" : "바꾸기"}
+              </Text>
+              <Icon
+                name={pickingMascot ? "chevron-left" : "chevron-right"}
+                size={16}
+                color={Brand.brandDeep}
+              />
+            </PressableScale>
+            {pickingMascot && (
+              <View style={styles.mascotGrid}>
+                {MASCOTS.map((k) => (
+                  <PressableScale
+                    key={k}
+                    style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
+                    onPress={() => void setMascot(k)}>
+                    <Mascot size={40} kind={k} />
+                    {/* 44px 썸네일에선 머리띠 리본(남/여) 차이가 안 보여 4개가 같아 보였다 → 라벨로 구분. */}
+                    <Text style={[styles.mascotOptText, mascot === k && styles.mascotOptTextOn]}>
+                      {MASCOT_LABEL[k]}
+                    </Text>
+                  </PressableScale>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
@@ -336,6 +371,11 @@ export default function MyScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
+  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  eyebrow: { fontFamily: FONT,
+    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
+  title: { fontFamily: FONT,
+    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2, marginBottom: 2 },
 
   profile: {
     gap: 12,
@@ -362,7 +402,9 @@ const styles = StyleSheet.create({
   renameNote: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, lineHeight: 17 },
   mascotBlock: { marginTop: 12, gap: 8 },
-  mascotLabel: { fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.soft },
+  mascotToggle: { flexDirection: "row", alignItems: "center", gap: 4 },
+  mascotLabel: { flex: 1, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.soft },
+  mascotToggleText: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.brandDeep },
   mascotGrid: { flexDirection: "row", gap: 8 },
   mascotOpt: {
     flex: 1,

@@ -109,7 +109,7 @@ export function ScheduleSection({ myName }: { myName: string }) {
       <View style={styles.head}>
         <Text style={styles.h} numberOfLines={1}>다가오는 모임</Text>
         <PressableScale style={styles.addBtn} onPress={() => setComposing(true)} dim={false}>
-          <Icon name="plus" size={15} color="#fff" />
+          <Icon name="plus" size={15} color={Brand.brandDeep} />
           <Text style={styles.addBtnText}>모임 만들기</Text>
         </PressableScale>
       </View>
@@ -149,17 +149,20 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
   h: { flex: 1, fontFamily: FONT, fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+  // 크루 화면의 **주 액션은 [참석]** 하나다. 섹션 헤더의 [모임 만들기]까지 솔리드 블루면
+  // 한 화면에 솔리드가 3개(모임 만들기·참석·사진 올리기)가 돼 위계가 사라진다(실기기 확인)
+  // → 보조 액션은 톤온톤(전역 규칙: 주=솔리드 / 보조=톤온톤).
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
     flexShrink: 0,
     gap: 4,
-    backgroundColor: Brand.brand,
+    backgroundColor: Brand.brandSoft,
     borderRadius: Radius.chip,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
-  addBtnText: { color: "#fff", fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
+  addBtnText: { color: Brand.brandDeep, fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
   empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, textAlign: "center", paddingVertical: 14 },
   row: {
     flexDirection: "row",

@@ -151,7 +151,7 @@ export function AccountSheet({
                 {busy ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.primaryText}>
+                  <Text style={[styles.primaryText, !canSubmit && styles.primaryTextOff]}>
                     {mode === "signup" ? "가입하고 시작" : "로그인"}
                   </Text>
                 )}
@@ -242,9 +242,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 50,
   },
-  primaryOff: { backgroundColor: Brand.brandLine },
+  // 비활성이어도 글자는 읽혀야 한다 — 연블루(#c5d8f6) 배경에 흰 글자는 대비 1.5:1로
+  // 사실상 안 보였다(실기기 확인, WCAG AA 4.5:1 미달). 회색 배경 + 본문 회색으로 바꿔
+  // "지금은 못 누른다"는 것도, 무슨 버튼인지도 둘 다 읽히게 한다.
+  primaryOff: { backgroundColor: Brand.warm },
   primaryText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 16 },
+  primaryTextOff: { color: Brand.soft },
 
   divider: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 16 },
   rule: { flex: 1, height: 1, backgroundColor: Brand.line },

@@ -7,7 +7,7 @@ import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { add, fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
@@ -79,13 +79,14 @@ export function CommentThread({ parentId }: { parentId: string }) {
 }
 
 const styles = StyleSheet.create({
+  // 카드는 그림자로 띄운다 — 1px 테두리만 두르면 와이어프레임처럼 납작해, 바로 위
+  // 스탯 타일(Shadow.soft)과 같은 카드인데 다르게 보였다(전역 규칙 · 실기기 확인).
   wrap: {
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     padding: 16,
     gap: 12,
+    ...Shadow.soft,
   },
   h: { fontFamily: FONT,
     fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },

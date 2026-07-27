@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { saveRunPath } from "@/lib/run-path";
 import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/run";
 
@@ -294,6 +294,10 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
           )}
           {(phase === "paused" || phase === "saving") && (
             <View style={styles.pausedRow}>
+              {/* 위계 교정: [계속]이 골드, [종료·저장]이 블루 솔리드였다 —
+                  ①골드는 순위·챌린지·성과 전용이라 액션 버튼에 쓰면 규칙이 깨진다
+                  ②둘 다 솔리드라 위계가 없는데, 되돌릴 수 없는 쪽(종료)이 더 눈에 띄었다.
+                  → 이어 달리기를 주 액션(블루 솔리드·더 넓게), 종료는 톤온톤으로 신중하게. */}
               <Pressable
                 style={[styles.ctrl, styles.ctrlResume]}
                 onPress={resume}
@@ -305,8 +309,8 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
                 style={[styles.ctrl, styles.ctrlStop]}
                 onPress={finish}
                 disabled={phase === "saving"}>
-                <Icon name="stop" size={18} color="#fff" />
-                <Text style={styles.ctrlStartText}>
+                <Icon name="stop" size={18} color={Brand.brandDeep} />
+                <Text style={styles.ctrlStopText}>
                   {phase === "saving" ? "저장 중…" : "종료·저장"}
                 </Text>
               </Pressable>
@@ -347,16 +351,18 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   bigNum: { fontSize: 48, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -1.5, fontFamily: mono },
+  // 전역 규칙: 숫자=본문색 + 단위=브랜드 블루. 트래킹 화면의 주인공 숫자 옆 단위가
+  // 회색이라 다른 화면(홈·러닝·랭킹·상세)과 갈려 있었다.
   bigUnit: { fontFamily: FONT,
-    fontSize: 18, fontWeight: Weight.bold, color: Brand.soft, marginBottom: 8, marginLeft: 5 },
+    fontSize: 18, fontWeight: Weight.bold, color: Brand.brand, marginBottom: 8, marginLeft: 5 },
+  // 카드는 그림자로 띄운다 — 테두리만 두르면 납작하다(전역 규칙).
   stats: {
     flexDirection: "row",
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.card,
     paddingVertical: 18,
     alignItems: "center",
+    ...Shadow.soft,
   },
   stat: { flex: 1, alignItems: "center", gap: 4 },
   statDiv: { width: 1, alignSelf: "stretch", backgroundColor: Brand.line2, marginVertical: 6 },
@@ -384,6 +390,8 @@ const styles = StyleSheet.create({
   ctrlPauseText: { color: Brand.ink, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 17 },
   pausedRow: { flexDirection: "row", gap: 12 },
-  ctrlResume: { flex: 1, backgroundColor: Brand.accent },
-  ctrlStop: { flex: 1.4, backgroundColor: Brand.brand },
+  ctrlResume: { flex: 1.4, backgroundColor: Brand.brand },
+  ctrlStop: { flex: 1, backgroundColor: Brand.brandSoft },
+  ctrlStopText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
+    fontSize: 17 },
 });

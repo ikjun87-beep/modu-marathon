@@ -38,6 +38,20 @@ function sourceLabel(src?: string): string {
   return "직접 입력";
 }
 
+/** 페이스 = 숫자(본문색) + 단위(브랜드 블루) — 전역 규칙.
+ *  paceLabel이 "7'33\"/km" 통짜라 목록에서만 단위가 본문색으로 남아 상세·리포트와 갈렸다.
+ *  거리를 몰라 계산 불가일 때("-")는 단위를 붙이지 않는다. */
+function PaceText({ km, sec }: { km: number; sec: number }) {
+  const label = paceLabel(km, sec);
+  const hasUnit = label.endsWith("/km");
+  return (
+    <Text style={styles.pace} numberOfLines={1}>
+      {hasUnit ? label.slice(0, -3) : label}
+      {hasUnit ? <Text style={styles.paceUnit}>/km</Text> : null}
+    </Text>
+  );
+}
+
 export default function RunScreen() {
   // 러너 네임은 **읽기 전용**으로 쓴다 — 편집 UI가 크루·러닝·마이 세 곳에 흩어져 있어
   // 어디가 진짜 소스인지 불명확했다(디자인 감사 지적). 편집은 크루·마이 탭에서만.
@@ -237,43 +251,6 @@ export default function RunScreen() {
           </View>
         )}
 
-        {/* 수동 기록 */}
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>직접 입력</Text>
-          <View style={styles.formRow}>
-            <View style={styles.field}>
-              <Text style={styles.formLabel}>거리 (km)</Text>
-              <TextInput
-                style={styles.input}
-                value={distance}
-                onChangeText={setDistance}
-                placeholder="5"
-                placeholderTextColor={Brand.placeholder}
-                keyboardType="decimal-pad"
-              />
-            </View>
-            <View style={styles.field}>
-              <Text style={styles.formLabel}>시간 (분)</Text>
-              <TextInput
-                style={styles.input}
-                value={duration}
-                onChangeText={setDuration}
-                placeholder="30"
-                placeholderTextColor={Brand.placeholder}
-                keyboardType="decimal-pad"
-              />
-            </View>
-          </View>
-          <PressableScale
-            style={[styles.addBtn, submitting && styles.addBtnOff]}
-            onPress={submitManual}
-            disabled={submitting}
-          >
-            <Icon name="plus" size={18} color={Brand.brandDeep} />
-            <Text style={styles.addBtnText}>{submitting ? "저장 중…" : "기록 추가"}</Text>
-          </PressableScale>
-        </View>
-
         <View style={styles.listHead}>
           <Text style={styles.listTitle}>지난 러닝</Text>
           <Text style={styles.listHint}>최근 1주</Text>
@@ -291,7 +268,53 @@ export default function RunScreen() {
         </View>
       </View>
     ),
-    [distance, duration, name, mine, today, syncing, submitting, kind]
+    [name, mine, today, syncing, kind]
+  );
+
+  // 직접 입력은 **보조 경로**(주 경로 = 러닝 시작·워치 불러오기)인데 헤더에 있어서
+  // 첫 뷰포트를 통째로 먹고 정작 "지난 러닝"을 화면 밖으로 밀어냈다(실기기 확인).
+  // 첫 뷰포트 = 상태요약1 + CTA1 + 최근항목1 규칙에 맞춰 목록 아래로 내린다.
+  const footer = useMemo(
+    () => (
+      <View style={styles.formCard}>
+        <Text style={styles.formTitle}>직접 입력</Text>
+        <View style={styles.formRow}>
+          <View style={styles.field}>
+            <Text style={styles.formLabel}>거리 (km)</Text>
+            <TextInput
+              style={styles.input}
+              value={distance}
+              onChangeText={setDistance}
+              placeholder="5"
+              placeholderTextColor={Brand.placeholder}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.formLabel}>시간 (분)</Text>
+            <TextInput
+              style={styles.input}
+              value={duration}
+              onChangeText={setDuration}
+              placeholder="30"
+              placeholderTextColor={Brand.placeholder}
+              keyboardType="decimal-pad"
+            />
+          </View>
+        </View>
+        <PressableScale
+          style={[styles.addBtn, submitting && styles.addBtnOff]}
+          onPress={submitManual}
+          disabled={submitting}
+        >
+          <Icon name="plus" size={18} color={Brand.brandDeep} />
+          <Text style={styles.addBtnText}>{submitting ? "저장 중…" : "기록 추가"}</Text>
+        </PressableScale>
+      </View>
+    ),
+    // submitManual은 매 렌더 새로 만들어지므로 의존성에 넣지 않는다(넣으면 memo가 무의미).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [distance, duration, submitting]
   );
 
   return (
@@ -300,6 +323,7 @@ export default function RunScreen() {
         data={listData}
         keyExtractor={(r) => r.id}
         ListHeaderComponent={header}
+        ListFooterComponent={footer}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
@@ -347,9 +371,14 @@ export default function RunScreen() {
                 <Text style={styles.stat} numberOfLines={1}>
                   <Text style={styles.statNum}>{fmtDuration(sec)}</Text>
                 </Text>
-                <Text style={styles.pace} numberOfLines={1}>{paceLabel(km, sec)}</Text>
+                <PaceText km={km} sec={sec} />
                 {item.avgHr ? (
-                  <Text style={styles.hr} numberOfLines={1}>♥ {Math.round(Number(item.avgHr))}</Text>
+                  // 전역 규칙: 숫자=본문색 + 단위/기호=브랜드 블루.
+                  // 통짜로 블루라 이 한 항목만 숫자가 파랗게 튀었다(실기기 확인).
+                  <Text style={styles.hr} numberOfLines={1}>
+                    <Text style={styles.hrMark}>♥ </Text>
+                    {Math.round(Number(item.avgHr))}
+                  </Text>
                 ) : null}
               </View>
             </PressableScale>
@@ -443,6 +472,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     padding: 16,
     gap: 10,
+    marginTop: 14, // 목록 아래로 내려왔으니 마지막 기록 카드와 확실히 떨어뜨린다
     ...Shadow.soft,
   },
   formTitle: { fontFamily: FONT,
@@ -489,18 +519,27 @@ const styles = StyleSheet.create({
     fontSize: 12, color: Brand.faint, fontWeight: Weight.regular },
   // 미선택 탭이 흰 배경+연회색이라 "탭이 3개 있다"는 것 자체가 안 보였다(접근성 결함).
   // 미선택도 톤온톤 배경 + 본문색 텍스트로 올려 WCAG AA 대비를 확보한다.
-  segRow: { flexDirection: "row", gap: 6 },
+  //
+  // 세그먼트 컨트롤은 **트랙 + 선택된 흰 pill** 문법으로 통일한다 — 계정 시트(로그인/가입)가
+  // 이미 이 문법인데 여기만 낱개 칩이라 같은 컨트롤이 화면마다 다르게 보였다(실기기 확인).
+  // 선택색을 블루 솔리드(=액션)나 다크(=정보 블록)로 쓰던 문제도 이 문법이면 함께 사라진다.
+  segRow: {
+    flexDirection: "row",
+    gap: 4,
+    backgroundColor: Brand.warm,
+    borderRadius: Radius.input,
+    padding: 4,
+  },
   seg: {
     flex: 1,
     alignItems: "center",
     paddingVertical: 9,
     borderRadius: Radius.chip,
-    backgroundColor: Brand.warm,
   },
-  segOn: { backgroundColor: Brand.brand },
+  segOn: { backgroundColor: Brand.card, ...Shadow.soft },
   segText: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.bold, color: Brand.ink2 },
-  segTextOn: { color: "#fff" },
+    fontSize: 13, fontWeight: Weight.regular, color: Brand.soft },
+  segTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
   empty: { color: Brand.soft, fontFamily: FONT,
     fontSize: 14, textAlign: "center", paddingVertical: 24 },
 
@@ -544,6 +583,8 @@ const styles = StyleSheet.create({
   // 페이스는 성과·순위 신호가 아니라 기록값 — 골드는 리더보드 순위·챌린지 전용으로 남긴다.
   pace: { marginLeft: "auto", fontFamily: FONT,
     fontSize: 12.5, fontWeight: Weight.bold, color: Brand.ink2 },
+  paceUnit: { color: Brand.brand },
   hr: { fontFamily: FONT,
-    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.ink },
+  hrMark: { color: Brand.brand },
 });

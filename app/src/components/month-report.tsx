@@ -20,7 +20,10 @@ function delta(m: MonthMetric): { dir: "up" | "down" | "flat"; good: boolean; te
   return { dir: up ? "up" : "down", good, text: `지난달 ${m.fmt(m.prev)}${m.unit} · ${up ? "▲" : "▼"}${mag}` };
 }
 
-function MetricTile({ m }: { m: MonthMetric }) {
+/** firstMonth = 지난달 기록이 아예 없는 달. 이때는 모든 타일이 "새 기록"이 돼
+ *  6칸이 같은 초록 문구로 도배된다(실기기 확인) → 델타 줄을 통째로 접고
+ *  카드 소제목에서 "첫 리포트"라고 한 번만 말한다. */
+function MetricTile({ m, firstMonth }: { m: MonthMetric; firstMonth: boolean }) {
   const d = delta(m);
   const color = d.dir === "flat" ? Brand.soft : d.good ? Semantic.good : Semantic.bad;
   return (
@@ -30,7 +33,11 @@ function MetricTile({ m }: { m: MonthMetric }) {
         <Text style={styles.tVal}>{m.fmt(m.cur)}</Text>
         <Text style={styles.tUnit}>{m.unit}</Text>
       </View>
-      {d.text ? <Text style={[styles.tDelta, { color }]}>{d.text}</Text> : <Text style={styles.tDelta}> </Text>}
+      {firstMonth ? null : d.text ? (
+        <Text style={[styles.tDelta, { color }]}>{d.text}</Text>
+      ) : (
+        <Text style={styles.tDelta}> </Text>
+      )}
     </View>
   );
 }
@@ -87,6 +94,7 @@ function PaceTrend({ report }: { report: MonthReport }) {
 }
 
 export function MonthReportCard({ report }: { report: MonthReport }) {
+  const firstMonth = report.hasData && report.metrics.every((m) => m.prev === 0);
   return (
     <View style={styles.card}>
       <View style={styles.head}>
@@ -95,14 +103,17 @@ export function MonthReportCard({ report }: { report: MonthReport }) {
           <Text style={styles.eyebrow}>MONTHLY REPORT</Text>
         </View>
         <Text style={styles.title}>{report.monthLabel} 리포트</Text>
-        <Text style={styles.sub}>지난달과 비교한 내 러닝</Text>
+        <Text style={styles.sub}>
+          {/* 320dp에서 2줄로 넘쳐 카드가 커졌다 → 한 줄로. */}
+          {firstMonth ? "이번 달 첫 리포트예요" : "지난달과 비교한 내 러닝"}
+        </Text>
       </View>
 
       {report.hasData ? (
         <>
           <View style={styles.grid}>
             {report.metrics.map((m) => (
-              <MetricTile key={m.key} m={m} />
+              <MetricTile key={m.key} m={m} firstMonth={firstMonth} />
             ))}
           </View>
           <PaceTrend report={report} />
@@ -111,15 +122,19 @@ export function MonthReportCard({ report }: { report: MonthReport }) {
         // 텍스트만 두면 휑하다 — 지표가 **채워질 자리**를 옅은 타일로 미리 보여준다.
         // (마스코트를 쓰면 같은 화면 아래 CTA 카드의 마스코트와 겹쳐 중복이 된다.)
         <View style={styles.emptyWrap}>
-          {/* 타일 4개는 빈 카드를 너무 키워 아래 리더보드를 화면 밖으로 밀어냈다 → 2개만 예고. */}
+          {/* 타일 4개는 빈 카드를 너무 키워 아래 리더보드를 화면 밖으로 밀어냈다 → 2개만 예고.
+              ⚠️ 빈 회색 상자만 두면 "로딩 중인가?"로 읽힌다(실기기 확인) → 무엇이 채워질지
+              라벨로 밝혀야 '예고'라는 의도가 전달된다. */}
           <View style={styles.ghostGrid}>
-            {[0, 1].map((i) => (
-              <View key={i} style={styles.ghostTile} />
+            {["총 거리", "러닝 수"].map((label) => (
+              <View key={label} style={styles.ghostTile}>
+                <Text style={styles.ghostLabel}>{label}</Text>
+                <Text style={styles.ghostDash}>—</Text>
+              </View>
             ))}
           </View>
-          <Text style={styles.empty}>
-            이번 달 러닝이 아직 없어요. 첫 러닝을 남기면 리포트가 채워져요!
-          </Text>
+          {/* 2줄이면 빈 카드가 커져 아래 리더보드를 화면 밖으로 밀어낸다 → 1줄로. */}
+          <Text style={styles.empty}>첫 러닝을 남기면 리포트가 채워져요!</Text>
         </View>
       )}
     </View>
@@ -145,10 +160,14 @@ const styles = StyleSheet.create({
   ghostTile: {
     width: "48%",
     flexGrow: 1,
-    height: 48,
     borderRadius: Radius.input,
     backgroundColor: Brand.bg,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    gap: 1,
   },
+  ghostLabel: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
+  ghostDash: { fontFamily: FONT, fontSize: 18, fontWeight: Weight.bold, color: Brand.faint },
   empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, lineHeight: 21, textAlign: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: {
@@ -163,7 +182,9 @@ const styles = StyleSheet.create({
   tLabel: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
   tValRow: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
   tVal: { fontFamily: FONT, fontSize: 21, fontWeight: Weight.bold, color: Brand.ink },
-  tUnit: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft, marginBottom: 3 },
+  // 전역 규칙: 숫자=본문색 + 단위=브랜드 블루. 이 카드만 단위가 회색이라
+  // 홈·러닝·랭킹과 표기가 갈려 있었다(실기기 확인) → 다른 화면과 같은 문법으로.
+  tUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand, marginBottom: 3 },
   tDelta: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold },
   trend: { gap: 8, marginTop: 2 },
   trendH: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.ink },

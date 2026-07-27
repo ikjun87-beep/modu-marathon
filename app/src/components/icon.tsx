@@ -10,6 +10,7 @@ import { Brand } from "@/lib/brand";
 export type IconName =
   | "run"
   | "activity"
+  | "clock"
   | "calendar"
   | "camera"
   | "watch"
@@ -64,6 +65,14 @@ export function Icon({ name, size = 24, color = Brand.ink, strokeWidth = 1.75 }:
         </>
       )}
       {name === "activity" && <Path {...s} d="M3 12h4l2.5-7 4 14 2.5-7h5" />}
+      {/* 시계 — "시간"에 심박 파형(activity)을 쓰던 것을 대체. 워치(기록 출처)와
+          헷갈리지 않게 손목줄 없는 원형 시계로 그린다. */}
+      {name === "clock" && (
+        <>
+          <Circle {...s} cx={12} cy={12} r={8.6} />
+          <Path {...s} d="M12 7.2V12l3.2 1.9" />
+        </>
+      )}
       {name === "calendar" && (
         <>
           <Path {...s} d="M3 8a3 3 0 013-3h12a3 3 0 013 3v10a3 3 0 01-3 3H6a3 3 0 01-3-3V8z" />

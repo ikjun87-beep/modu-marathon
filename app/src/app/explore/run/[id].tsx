@@ -109,14 +109,24 @@ export default function RunDetailScreen() {
   const hasPath = !!path && path.length > 1;
 
   // 전역 규칙: 숫자=본문색 + **단위=브랜드 블루**(마이 탭·홈·랭킹과 동일 문법)
+  // 페이스는 "5'46\"/km" 통짜 문자열이라 단위가 본문색으로 남아 있었다(실기기 확인)
+  // → 다른 화면처럼 "/km"을 떼어 단위 색을 입힌다.
+  const pace = paceLabel(km, sec);
+  const hasPaceUnit = pace.endsWith("/km");
   const tiles: { icon: IconName; label: string; value: string; unit?: string }[] = [
-    { icon: "activity", label: "시간", value: fmtDuration(sec) },
-    { icon: "gauge", label: "평균 페이스", value: paceLabel(km, sec) },
+    { icon: "clock", label: "시간", value: fmtDuration(sec) },
+    {
+      icon: "gauge",
+      label: "평균 페이스",
+      value: hasPaceUnit ? pace.slice(0, -3) : pace,
+      unit: hasPaceUnit ? "/km" : undefined,
+    },
   ];
   if (hr) tiles.push({ icon: "heart", label: "평균 심박", value: String(hr), unit: "bpm" });
   // 평지 러닝·워치 기록엔 없다 → 있을 때만 보여준다(0 m 타일은 정보가 아니라 잡음).
   if (gain) tiles.push({ icon: "mountain", label: "상승고도", value: String(gain), unit: "m" });
-  tiles.push({ icon: sourceIcon(run.source), label: "기록 방식", value: sourceLabel(run.source) });
+  // "기록 방식" 타일은 뺀다 — 바로 위 메타줄("TESTM24 · 직접 입력 · 2026.7.27")이 이미
+  // 같은 값을 말하고 있어, 카드 한 칸을 중복 정보에 쓰고 있었다(실기기 확인).
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>

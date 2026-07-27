@@ -77,7 +77,7 @@ export function GallerySection({ myName }: { myName: string }) {
           onPress={pick}
           disabled={busy}
         >
-          {!busy && <Icon name="camera" size={15} color="#fff" />}
+          {!busy && <Icon name="camera" size={15} color={Brand.brandDeep} />}
           <Text style={styles.upText}>{busy ? "업로드 중…" : "사진 올리기"}</Text>
         </Pressable>
       </View>
@@ -112,17 +112,18 @@ const styles = StyleSheet.create({
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   h: { fontFamily: FONT,
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+  // 섹션 헤더의 보조 액션 — 솔리드 블루는 화면의 주 액션([참석]) 하나로 아낀다(전역 규칙).
   up: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: Brand.brand,
+    backgroundColor: Brand.brandSoft,
     borderRadius: Radius.chip,
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
   upBusy: { opacity: 0.6 },
-  upText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
+  upText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 13 },
   empty: { color: Brand.soft, fontFamily: FONT,
     fontSize: 13.5, textAlign: "center", paddingVertical: 16 },

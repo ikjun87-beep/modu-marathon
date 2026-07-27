@@ -20,7 +20,7 @@ import { openBrowserAsync } from "expo-web-browser";
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { getMyName, setMyName } from "@/lib/session";
 
 const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
@@ -148,16 +148,17 @@ const styles = StyleSheet.create({
   sub: { fontFamily: FONT,
     fontSize: 15, color: Brand.soft, marginBottom: 8 },
   perks: { gap: 10, marginTop: 8 },
+  // 첫 화면이 앱의 첫인상이다 — 카드는 그림자로 띄운다(전역 규칙).
+  // 테두리만 두른 카드 3장이 연달아 나오면 와이어프레임처럼 납작해 보인다.
   perk: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     backgroundColor: Brand.card,
-    borderWidth: 1,
-    borderColor: Brand.line,
     borderRadius: Radius.input,
     paddingHorizontal: 16,
     paddingVertical: 13,
+    ...Shadow.soft,
   },
   perkBadge: {
     width: 40,
