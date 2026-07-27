@@ -57,6 +57,14 @@ cd app && bash scripts/build-local-apk.sh   # → android/app/build/outputs/apk/
 # 앱 실제 설치 빌드 — EAS 클라우드 (docs/BUILD.md · 월 무료 한도 소진 시 실패)
 cd app && npx eas-cli build -p android --profile preview
 
+# 실기기 연결 — ⚠️ USB 직결(usbipd→WSL)은 이 PC에서 전송 중 끊긴다(50MB 설치 2회 실패, 2026-07-27).
+# **Wi-Fi adb가 정답**: USB로 한 번만 붙여 TCP를 켜두면 그 뒤엔 케이블 없이 안정적으로 쓴다.
+"/mnt/c/Program Files/usbipd-win/usbipd.exe" attach --wsl --busid 2-2   # (1회) 폰을 WSL에 부착
+adb tcpip 5555 && adb connect <폰IP>:5555                                # → 이후 Wi-Fi로 설치·캡처
+adb shell ip -f inet addr show wlan0                                     # 폰 IP 확인
+# 화면 캡처 = adb exec-out screencap -p > x.png · 탭/스와이프 = adb shell input tap|swipe
+# 입력칸 이동은 좌표 탭보다 keyevent 61(TAB)이 확실하다(키보드가 다음 칸을 가림)
+
 # 실기기 디버깅(앱 즉사·크래시): 무선 adb
 adb connect <폰 무선디버깅 메인화면 IP:포트>
 adb logcat -b crash -c && adb shell monkey -p com.modumarathon.app -c android.intent.category.LAUNCHER 1
