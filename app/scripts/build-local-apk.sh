@@ -103,8 +103,18 @@ ABIS="${ABIS:-arm64-v8a}"
 # 워커 수: 무제한이면 16코어를 전부 물어 과청약되고 오히려 느려진다(터미널도 멈춤).
 MAXW="${MAXW:-6}"
 
-echo "   ABI=$ABIS  최대워커=$MAXW  (빌드캐시 켬)"
-./gradlew assembleRelease --no-daemon \
+# 코어 예약: 빌드가 16코어를 전부 물면 PC 전체(터미널·Windows)가 멈춘 것처럼 느려진다.
+# ❗--max-workers 로는 안 잡힌다 — 그건 Gradle '태스크' 병렬도만 제한하고,
+#   C++를 실제로 컴파일하는 ninja는 별도로 "코어수+2"개를 띄운다(16코어 → 18개, 실측).
+#   ninja 1.10.2는 sched_getaffinity 를 읽으므로 taskset 으로 코어를 가리면
+#   기본 병렬도까지 따라 내려간다(10코어로 가리면 12개, 실측 확인).
+NCPU=$(nproc)
+RESERVE="${RESERVE:-6}"                      # 시스템·터미널용으로 남길 코어 수
+LAST=$(( NCPU - RESERVE - 1 )); [ "$LAST" -lt 0 ] && LAST=$(( NCPU - 1 ))
+CPUSET="${CPUSET:-0-$LAST}"
+
+echo "   ABI=$ABIS  워커=$MAXW  코어=$CPUSET(전체 $NCPU 중 $((LAST+1))개)  빌드캐시 켬"
+nice -n 10 taskset -c "$CPUSET" ./gradlew assembleRelease --no-daemon \
   -PreactNativeArchitectures="$ABIS" \
   --build-cache \
   --max-workers="$MAXW"
