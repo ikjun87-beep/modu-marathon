@@ -54,31 +54,7 @@ export default function RankingScreen() {
           </>
         ) : (
           <>
-            {/* 이달의 챌린지 */}
-            <View style={styles.challenge}>
-              <View style={styles.chHead}>
-                {/* 챌린지 = 성과 신호라 **골드**. 블루 솔리드는 액션(버튼) 전용으로 남긴다.
-                    같은 카드 안 진행바가 이미 골드라 아이콘까지 맞춰야 한 덩어리로 읽힌다. */}
-                <View style={styles.chIcon}>
-                  <Icon name="shield" size={16} color="#fff" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.chTitle}>이달의 챌린지 · 월 100K</Text>
-                  <Text style={styles.chSub}>
-                    {myMonth.toFixed(1)} / {MONTH_GOAL}km · {pct}%
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.barBg}>
-                <View style={[styles.barFill, { width: `${pct}%` }]} />
-              </View>
-            </View>
-
-            {/* 월간 리포트 — 지난달 대비 내 러닝(골프 앱식 성장 서사) */}
-            <MonthReportCard report={report} />
-
             {/* 주간 랭킹 — 카드가 연달아 나오면 어디부터 순위인지 안 보여 섹션 라벨을 둔다. */}
-            {ranking.length > 0 && <Text style={styles.sectionH}>크루 순위</Text>}
             {ranking.length === 0 ? (
               // 마스코트 84를 세로로 쌓았더니 위 카드들과 합쳐져 안내문이 탭바 뒤로 밀렸다
               // — 마스코트만 보이고 정작 할 말이 안 보이는 막다른 화면이었다(실기기 2회 확인).
@@ -191,6 +167,30 @@ export default function RankingScreen() {
                 </View>
               </View>
             )}
+
+            {/* 이달의 챌린지 */}
+            <View style={styles.challenge}>
+              <View style={styles.chHead}>
+                {/* 챌린지 = 성과 신호라 **골드**. 블루 솔리드는 액션(버튼) 전용으로 남긴다.
+                    같은 카드 안 진행바가 이미 골드라 아이콘까지 맞춰야 한 덩어리로 읽힌다. */}
+                <View style={styles.chIcon}>
+                  <Icon name="shield" size={16} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.chTitle}>이달의 챌린지 · 월 100K</Text>
+                  <Text style={styles.chSub}>
+                    {myMonth.toFixed(1)} / {MONTH_GOAL}km · {pct}%
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.barBg}>
+                <View style={[styles.barFill, { width: `${pct}%` }]} />
+              </View>
+            </View>
+
+            {/* 월간 리포트 — 지난달 대비 내 러닝(골프 앱식 성장 서사) */}
+            <MonthReportCard report={report} />
+
           </>
         )}
       </ScrollView>
