@@ -33,6 +33,12 @@ if ! flock -n 9; then
   exit 1
 fi
 # 락은 스크립트(및 자식)가 끝나면 fd 9가 닫히며 자동 해제된다.
+#
+# ⚠️ **락 파일은 지워지지 않는다** — flock은 파일이 아니라 fd에 잠금을 건다.
+#   그래서 `[ -f "$LOCKFILE" ]`로 "빌드 중인가"를 판단하면 **영원히 참**이라 무한 대기한다
+#   (2026-07-29에 이 실수로 14시간을 헛돌았다). 빌드 종료를 기다리려면 이렇게:
+#     flock -w 3600 9 < /tmp/modu-marathon-build.lock   # 잠금이 풀릴 때까지 대기
+#   `pgrep -f "gradlew assembleRelease"`도 위험하다 — 그 문자열을 담은 **자기 자신**이 잡힌다.
 
 export JAVA_HOME="$HOME/android-dev/jdk17"
 export ANDROID_HOME="$HOME/android-dev/sdk"

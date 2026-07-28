@@ -197,7 +197,7 @@ export default function MyScreen() {
           <PressableScale onPress={pickPhoto} disabled={photoBusy} dim={false}>
             {/* 성장 링 — 획득 배지 수에 따라 색·굵기가 오른다. **여기(내 집)에만** 적용한다
                 (전 화면에 깔면 또 하나의 반복 템플릿이 된다 — 디자인 리드 결정). */}
-            <Avatar name={name || "?"} size={88} me tier={ringTier(earnedCount)} />
+            <Avatar name={name || "?"} size={72} me tier={ringTier(earnedCount)} />
             <View style={styles.heroCam}>
               <Icon name="camera" size={13} color="#fff" />
             </View>
@@ -215,12 +215,10 @@ export default function MyScreen() {
 
         {/* 프로필 */}
         <View style={styles.profile}>
-          <View style={styles.profileHead}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.pLabel}>러너 네임</Text>
-              <Text style={styles.pHint}>크루에서 이렇게 보여요</Text>
-            </View>
-          </View>
+          {/* 히어로가 이름을 이미 크게 보여준다 — 여기서 또 "러너 네임 / 크루에서 이렇게
+              보여요"를 반복하면 같은 이름이 한 화면에 두 번 커진다(실기기 확인).
+              여기는 **바꾸는 곳**이라는 것만 짧게 알린다. */}
+          <Text style={styles.pLabel}>러너 네임 바꾸기</Text>
           <View style={styles.nameRow}>
             <TextInput
               style={styles.nameInput}
@@ -457,7 +455,7 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: Brand.tint,
     borderRadius: Radius.hero,
-    paddingVertical: 22,
+    paddingVertical: 16,
     paddingHorizontal: 18,
     marginBottom: 2,
   },
@@ -474,7 +472,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Brand.tint,
   },
-  heroName: { fontFamily: FONT, fontSize: 22, fontWeight: Weight.bold, color: Brand.ink, marginTop: 10 },
+  heroName: { fontFamily: FONT, fontSize: 20, fontWeight: Weight.bold, color: Brand.ink, marginTop: 8 },
   heroSub: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
   heroReset: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep, marginTop: 6 },
 
@@ -485,9 +483,6 @@ const styles = StyleSheet.create({
     padding: 16,
     ...Shadow.soft,
   },
-  profileHead: { flexDirection: "row", alignItems: "center", gap: 14 },
-  pHint: { fontFamily: FONT,
-    fontSize: 12, color: Brand.faint, marginTop: 2 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   saveBtn: {
     backgroundColor: Brand.brand,
