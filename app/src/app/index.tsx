@@ -7,12 +7,14 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Icon, type IconName } from "@/components/icon";
+import { Avatar } from "@/components/avatar";
+import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
+import { buildFeed, feedTime, todayRunnerCount } from "@/lib/feed";
 import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
 import { todayKm } from "@/lib/run";
@@ -43,6 +45,13 @@ export default function HomeScreen() {
   const myWeek = runs ? weekKm(runs, name || undefined) : 0;
   const crewWeek = runs ? weekKm(runs) : 0;
   const newPosts = guests?.length ?? 0;
+
+  // 타임라인 — 러닝·참석·방명록을 시간순으로 합친 홈의 주인공(lib/feed).
+  const feed = useMemo(
+    () => buildFeed(runs ?? [], guests ?? [], attend, events),
+    [runs, guests, attend, events]
+  );
+  const runnersToday = useMemo(() => todayRunnerCount(runs ?? []), [runs]);
 
   const searching = q.trim().length > 0;
   const results = useMemo(
@@ -181,113 +190,97 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                {/* 오늘 뛴 거리 — 히어로 */}
-                {/* 러닝 탭 스탯카드와 **같은 3슬롯 문법**(라벨/큰숫자/우측 보조지표) —
-                    같은 컴포넌트가 화면마다 다르게 생기면 학습비용이 오른다(디자인 감사 지적). */}
-                <View style={styles.hero}>
-              <View style={styles.heroLeft}>
-                <Text style={styles.heroLab}>오늘 뛴 거리</Text>
-                <View style={styles.heroNumRow}>
-                  <Text style={styles.heroNum}>{myToday.toFixed(1)}</Text>
-                  <Text style={styles.heroUnit}>km</Text>
-                </View>
-              </View>
-              <View style={styles.heroDiv} />
-              <View style={styles.heroMeta}>
-                {/* 좌측 주지표와 **같은 단위 문법**: 숫자(흰색) + km(블루). 한 카드 안에서 규칙이 갈리면 안 된다. */}
-                <Text style={styles.heroMetaNum}>
-                  {myWeek.toFixed(1)}
-                  <Text style={styles.heroMetaUnit}> km</Text>
-                </Text>
-                <Text style={styles.heroMetaLab}>이번 주</Text>
-              </View>
-            </View>
-
-            {/* 이번 주 크루 합계 */}
-            <View style={styles.crewCard}>
-              <View style={styles.crewIcon}>
-                <Icon name="users" size={17} color={Brand.brandDeep} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.crewLab}>이번 주 우리 크루</Text>
-                <Text style={styles.crewSub}>다 함께 달린 거리</Text>
-              </View>
-              <Text style={styles.crewNum}>
-                {crewWeek.toFixed(1)}
-                <Text style={styles.crewUnit}> km</Text>
-              </Text>
-            </View>
-
-            {/* 빠른 실행 */}
-            <View style={styles.ctaRow}>
-              <PressableScale
-                style={[styles.cta, styles.ctaPrimary]}
-                onPress={() => router.push("/explore")}>
-                <Icon name="play" size={20} color="#fff" />
-                <Text style={styles.ctaPrimaryText}>러닝 시작</Text>
-              </PressableScale>
-              <PressableScale
-                style={[styles.cta, styles.ctaSecondary]}
-                onPress={() => router.push("/explore")}>
-                <Icon name="watch" size={20} color={Brand.ink} />
-                <Text style={styles.ctaSecondaryText}>워치 불러오기</Text>
-              </PressableScale>
-            </View>
-
-            {/* 다가오는 모임 — 없으면 만들기 유도(지난 모임을 억지로 안 보여준다) */}
-            <Text style={styles.sectionH}>다가오는 모임</Text>
-            {ev ? (
-              <PressableScale style={styles.evCard} onPress={() => router.push("/crew")}>
-                <View style={styles.evDate}>
-                  <Text style={styles.evM}>{ev.m}</Text>
-                  <Text style={styles.evD}>{ev.d}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.evTitle}>{ev.title}</Text>
-                  <Text style={styles.evMeta}>
-                    {evCount > 0 ? `${evCount}명 참석 예정` : "아직 참석자가 없어요"}
-                    {iAmIn ? " · 나 참석 ✓" : ""}
+                {/* 오늘 요약 — 카드가 아니라 **한 줄**. 홈이 카드로 시작하면 다른 탭과
+                    똑같은 템플릿으로 읽힌다(독립 채점 R11). 숫자는 타임라인의 머리말로만 둔다. */}
+                <View style={styles.todayLine}>
+                  <Text style={styles.todayLineText}>
+                    오늘 <Text style={styles.todayLineNum}>{myToday.toFixed(1)}</Text>
+                    <Text style={styles.todayLineUnit}>km</Text>
+                    {"  ·  "}이번 주 <Text style={styles.todayLineNum}>{myWeek.toFixed(1)}</Text>
+                    <Text style={styles.todayLineUnit}>km</Text>
+                    {runnersToday > 0 ? (
+                      <>
+                        {"  ·  "}크루 <Text style={styles.todayLineNum}>{runnersToday}</Text>
+                        <Text style={styles.todayLineUnit}>명</Text>
+                      </>
+                    ) : null}
                   </Text>
                 </View>
-                <Icon name="chevron-right" size={18} color={Brand.faint} />
-              </PressableScale>
-            ) : (
-              <PressableScale style={styles.evCard} onPress={() => router.push("/crew")}>
-                <View style={styles.evDate}>
-                  <Icon name="plus" size={20} color={Brand.brandDeep} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.evTitle}>다가오는 모임이 없어요</Text>
-                  <Text style={styles.evMeta}>크루 탭에서 새 모임을 만들어 보세요</Text>
-                </View>
-                <Icon name="chevron-right" size={18} color={Brand.faint} />
-              </PressableScale>
+
+                {/* 주 액션은 하나 — [러닝 시작]. 워치는 보조라 링크로 낮춘다.
+                    둘이 5:5로 나란하면 신규 유저가 뭘 눌러야 할지 망설인다(경쟁 분석 격차5). */}
+                <PressableScale
+                  style={styles.startBtn}
+                  onPress={() => router.push("/explore")}>
+                  <Icon name="play" size={20} color="#fff" />
+                  <Text style={styles.startBtnText}>러닝 시작</Text>
+                </PressableScale>
+                <PressableScale
+                  style={styles.watchLink}
+                  onPress={() => router.push("/explore")}
+                  dim={false}>
+                  <Icon name="watch" size={16} color={Brand.brandDeep} />
+                  <Text style={styles.watchLinkText}>워치에서 불러오기</Text>
+                </PressableScale>
+
+                {/* 다가오는 모임 — 예정은 "지난 일"의 흐름에 섞으면 시간 축이 뒤엉킨다.
+                    타임라인 위에 따로 한 줄로 둔다. */}
+                {ev && (
+                  <PressableScale style={styles.evRow} onPress={() => router.push("/crew")}>
+                    <View style={styles.evDate}>
+                      <Text style={styles.evM}>{ev.m}</Text>
+                      <Text style={styles.evD}>{ev.d}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.evTitle} numberOfLines={1}>{ev.title}</Text>
+                      <Text style={styles.evMeta}>
+                        {evCount > 0 ? `${evCount}명 참석 예정` : "아직 참석자가 없어요"}
+                        {iAmIn ? " · 나 참석 ✓" : ""}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-right" size={18} color={Brand.faint} />
+                  </PressableScale>
+                )}
+
+                {/* 크루 타임라인 — 홈의 지배적 레이아웃. 카드 스택이 아니라 세로 라인 위 노드라
+                    다른 탭과 확실히 다른 화면으로 읽힌다. */}
+                <Text style={styles.sectionH}>크루 소식</Text>
+                {feed.length === 0 ? (
+                  <View style={styles.feedEmpty}>
+                    <Mascot size={54} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.feedEmptyTitle}>오늘은 아직 조용해요</Text>
+                      <Text style={styles.feedEmptySub}>첫 러닝을 남기면 여기에 올라와요!</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.feed}>
+                    {feed.map((f, i) => (
+                      <PressableScale
+                        key={f.id}
+                        style={styles.feedRow}
+                        onPress={() => f.href && router.push(f.href as never)}
+                        dim={false}>
+                        {/* 세로 라인 + 노드 — 마지막 항목은 아래 선을 그리지 않아야 끝이 맺힌다. */}
+                        <View style={styles.feedRail}>
+                          <View style={styles.feedDot} />
+                          {i < feed.length - 1 && <View style={styles.feedLine} />}
+                        </View>
+                        <View style={styles.feedBody}>
+                          <View style={styles.feedHead}>
+                            <Avatar name={f.name} size={22} me={!!name && f.name === name} />
+                            <Text style={styles.feedName} numberOfLines={1}>{f.name}</Text>
+                            <Text style={styles.feedTime}>{feedTime(f.at)}</Text>
+                          </View>
+                          <Text style={styles.feedText} numberOfLines={2}>{f.text}</Text>
+                        </View>
+                      </PressableScale>
+                    ))}
+                  </View>
+                )}
+              </>
             )}
 
-            {/* 크루 새 글 */}
-            <PressableScale style={styles.linkRow} onPress={() => router.push("/crew")}>
-              <View style={styles.linkIcon}>
-                <Icon name="chat" size={16} color={Brand.brandDeep} />
-              </View>
-              <Text style={styles.linkText}>크루 방명록 {newPosts}개</Text>
-              <Icon name="chevron-right" size={18} color={Brand.faint} />
-            </PressableScale>
-          </>
-        )}
-
-            <View style={styles.quickTiles}>
-              {(
-                [
-                  { icon: "flag", label: "랭킹", to: "/ranking" },
-                  { icon: "user", label: "마이", to: "/my" },
-                ] as const
-              ).map((t) => (
-                <PressableScale key={t.to} style={styles.qTile} onPress={() => router.push(t.to)}>
-                  <Icon name={t.icon} size={18} color={Brand.brandDeep} />
-                  <Text style={styles.qLabel}>{t.label}</Text>
-                </PressableScale>
-              ))}
-            </View>
           </>
         )}
       </ScrollView>
@@ -312,6 +305,74 @@ const styles = StyleSheet.create({
   // LINE Seed는 시스템 폰트보다 자간이 촘촘해 음수 letterSpacing은 쓰지 않는다.
   title: { fontFamily: FONT,
     fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 33 },
+
+  // ── 홈 타임라인(R12) ─────────────────────────────────────────────
+  todayLine: { paddingVertical: 2 },
+  todayLineText: { fontFamily: FONT, fontSize: 14, color: Brand.soft, fontWeight: Weight.regular },
+  todayLineNum: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  todayLineUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
+
+  startBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Brand.brand,
+    borderRadius: Radius.pill,
+    paddingVertical: 15,
+    minHeight: 52,
+    ...Shadow.soft,
+  },
+  startBtnText: { color: "#fff", fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold },
+  watchLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 4,
+    marginTop: -4,
+  },
+  watchLinkText: { color: Brand.brandDeep, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold },
+
+  evRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Brand.card,
+    borderRadius: Radius.card,
+    padding: 12,
+    ...Shadow.soft,
+  },
+
+  // 타임라인 — 세로 레일 위에 노드. 카드 스택이 아니라서 다른 탭과 다르게 읽힌다.
+  feed: { marginTop: -2 },
+  feedRow: { flexDirection: "row", gap: 12 },
+  feedRail: { width: 12, alignItems: "center", paddingTop: 6 },
+  feedDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: Brand.brand,
+    borderWidth: 2,
+    borderColor: Brand.bg,
+  },
+  feedLine: { flex: 1, width: 2, backgroundColor: Brand.line2, marginTop: 2 },
+  feedBody: { flex: 1, paddingBottom: 16, gap: 3 },
+  feedHead: { flexDirection: "row", alignItems: "center", gap: 7 },
+  feedName: { flex: 1, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.ink },
+  feedTime: { fontFamily: FONT, fontSize: 11.5, color: Brand.faint },
+  feedText: { fontFamily: FONT, fontSize: 14, color: Brand.ink2, lineHeight: 20, marginLeft: 29 },
+
+  feedEmpty: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Brand.brandSoft,
+    borderRadius: Radius.card,
+    padding: 14,
+  },
+  feedEmptyTitle: { fontFamily: FONT, fontSize: 14.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+  feedEmptySub: { fontFamily: FONT, fontSize: 12.5, color: Brand.ink2, marginTop: 2 },
 
   searchBar: {
     flexDirection: "row",
@@ -352,92 +413,12 @@ const styles = StyleSheet.create({
   resSub: { fontFamily: FONT,
     fontSize: 12, color: Brand.soft, marginTop: 1 },
 
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Brand.dark,
-    borderRadius: Radius.hero,
-    padding: 20,
-    ...Shadow.card,
-  },
-  heroLeft: { flex: 1 },
-  heroLab: { color: "#aab2bb", fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular },
-  heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 4 },
-  heroNum: { color: "#fff", fontFamily: FONT_DISPLAY,
-    fontSize: 46, fontWeight: Weight.bold, letterSpacing: -1.5, lineHeight: 48 },
-  heroUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 20, fontWeight: Weight.bold, marginLeft: 6, marginBottom: 6 },
-  heroDiv: {
-    width: 1,
-    alignSelf: "stretch",
-    backgroundColor: "rgba(255,255,255,.12)",
-    marginHorizontal: 18,
-  },
-  heroMeta: { alignItems: "flex-end" },
-  heroMetaNum: { color: "#fff", fontFamily: FONT,
-    fontSize: 16, fontWeight: Weight.bold },
-  heroMetaUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold },
-  heroMetaLab: { color: "#8b929b", fontFamily: FONT,
-    fontSize: 11, fontWeight: Weight.regular },
 
-  crewCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Brand.card,
-    borderRadius: Radius.card,
-    padding: 16,
-    ...Shadow.soft,
-  },
-  crewIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: Radius.input,
-    backgroundColor: Brand.brandSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  crewLab: { fontFamily: FONT,
-    fontSize: 14.5, fontWeight: Weight.regular, color: Brand.ink },
-  crewSub: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, marginTop: 1 },
-  crewNum: { fontFamily: FONT,
-    fontSize: 21, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   // 숫자 강조 규칙은 앱 전역 하나: **숫자=본문/흰색 + 단위=브랜드 블루**
-  crewUnit: { fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.brand },
 
-  ctaRow: { flexDirection: "row", gap: 10 },
-  cta: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-    borderRadius: Radius.input,
-    paddingVertical: 13,
-    minHeight: 48,
-  },
-  ctaPrimary: { backgroundColor: Brand.brand, ...Shadow.soft },
-  ctaPrimaryText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 15 },
-  ctaSecondary: { backgroundColor: Brand.brandSoft },
-  ctaSecondaryText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 15 },
 
   sectionH: { fontFamily: FONT,
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 2 },
-  evCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Brand.card,
-    borderRadius: Radius.card,
-    padding: 14,
-    ...Shadow.soft,
-  },
   // 크루 탭 모임카드와 동일 규칙: 날짜=정보(다크 네이비), 블루 솔리드=액션 전용
   evDate: {
     width: 50,
@@ -479,20 +460,7 @@ const styles = StyleSheet.create({
   linkText: { flex: 1, fontFamily: FONT,
     fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
 
-  quickTiles: { flexDirection: "row", gap: 10, marginTop: 2 },
   // 랭킹·마이는 하단 탭바로도 갈 수 있는 **보조** 바로가기다. 흰 카드+1px 테두리로 두면
   // ①규칙 위반(테두리만 쓴 카드는 와이어프레임처럼 납작) ②위 카드들과 같은 무게로 보여
   // 카드가 끝없이 반복되는 인상을 키웠다(실기기 확인) → 톤온톤 칩으로 한 단계 낮춘다.
-  qTile: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-    backgroundColor: Brand.brandSoft,
-    borderRadius: Radius.input,
-    paddingVertical: 13,
-  },
-  qLabel: { fontFamily: FONT,
-    fontSize: 13.5, fontWeight: Weight.bold, color: Brand.brandDeep },
 });
