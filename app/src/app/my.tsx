@@ -437,7 +437,7 @@ export default function MyScreen() {
 
         <View style={styles.appInfo}>
           <Text style={styles.appInfoText}>
-            모두의 마라톤 v{Constants.expoConfig?.version ?? "1.0.0"}
+            5키로 v{Constants.expoConfig?.version ?? "1.0.0"}
           </Text>
           <Text style={styles.appInfoSub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
         </View>

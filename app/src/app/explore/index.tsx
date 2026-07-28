@@ -254,7 +254,9 @@ export default function RunScreen() {
 
         {!HAS_FIREBASE && (
           <View style={styles.banner}>
-            <Text style={styles.bannerText}>Firebase 미설정 — 이 기기에만 저장됩니다.</Text>
+            {/* "Firebase"·".env"는 사용자가 알 필요 없는 개발자 용어다 — 『5키로』의 쉬운
+                이름에 어려운 화면은 부조화(토스 UX 라이팅 시사점, R12 기획 격차9). */}
+            <Text style={styles.bannerText}>아직 크루와 연결되지 않았어요. 기록은 이 기기에만 저장돼요.</Text>
           </View>
         )}
 

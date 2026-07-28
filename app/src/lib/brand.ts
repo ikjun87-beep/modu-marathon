@@ -1,4 +1,4 @@
-/** 모두의 마라톤 색 토큰 — docs/DESIGN.md 기준 (웹 index.html의 CSS 변수와 정렬).
+/** 5키로(구 모두의 마라톤) 색 토큰 — docs/DESIGN.md 기준 (웹 index.html의 CSS 변수와 정렬).
  *  웹·앱이 같은 팔레트를 쓰도록 유지(에디토리얼 프리미엄).
  *  메인 = Azure Blue #2563c9 (2026-07-12 확정 · 당근 오렌지와 분리 · 블루+골드 = 프리미엄 메달 감성). */
 export const Brand = {

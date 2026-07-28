@@ -66,7 +66,7 @@ export default function CrewScreen() {
         {!HAS_FIREBASE && (
           <View style={styles.banner}>
             <Text style={styles.bannerText}>
-              Firebase 미설정 — 지금은 이 기기에만 저장됩니다. (.env 입력 시 크루끼리 공유)
+              아직 크루와 연결되지 않았어요. 지금 남긴 글은 이 기기에만 저장돼요.
             </Text>
           </View>
         )}

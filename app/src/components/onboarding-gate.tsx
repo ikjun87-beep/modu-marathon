@@ -76,11 +76,13 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         >
           <View style={styles.body}>
             {/* 앱의 첫인상 — 문구보다 얼굴이 먼저 맞이한다 */}
+            {/* 마스코트가 **엄지척**이라 슬로건의 "오키?"와 그대로 붙는다 — 그림과 말이
+                같은 제스처를 하도록 의도적으로 페어링한다(디자인 리드 권고).
+                영문 eyebrow는 전 탭에서 뺐으므로 여기서도 뺀다 — 쉬운 이름에 어려운 화면은 부조화. */}
             <View style={styles.heroRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.eyebrow}>MODU MARATHON</Text>
                 <Text style={styles.title}>
-                  모두의 <Text style={{ color: Brand.brand }}>마라톤</Text>
+                  오늘 <Text style={{ color: Brand.brand }}>5키로</Text>,{"\n"}오키?
                 </Text>
               </View>
               <Mascot size={96} />
@@ -141,8 +143,6 @@ const styles = StyleSheet.create({
   scrollBody: { flexGrow: 1, justifyContent: "center", paddingVertical: 24 },
   body: { justifyContent: "center", paddingHorizontal: 28, gap: 10 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
     fontSize: 34, fontWeight: Weight.bold, color: Brand.ink },
   sub: { fontFamily: FONT,

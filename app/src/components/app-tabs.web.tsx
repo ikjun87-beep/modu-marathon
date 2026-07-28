@@ -64,7 +64,7 @@ export function CustomTabList(props: TabListProps) {
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
-          모두의 마라톤
+          5키로
         </ThemedText>
 
         {props.children}

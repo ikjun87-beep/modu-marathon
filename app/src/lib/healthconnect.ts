@@ -113,7 +113,9 @@ export async function syncTodayRuns(
         totalKm: 0,
         walks: 0,
         reason:
-          "Health Connect에서 '모두의 마라톤'에 운동·거리 읽기 권한을 허용해 주세요.\n(Health Connect 앱 → 앱 및 기기 권한 → 모두의 마라톤 → 운동·거리 켜기)",
+          // ⚠️ 이 이름은 Health Connect 목록에 뜨는 **앱 라벨**과 같아야 한다(app.json name).
+          // 앱 이름을 바꾸면 여기도 같이 바꿔야 사용자가 목록에서 못 찾는 일이 없다.
+          "Health Connect에서 '5키로'에 운동·거리 읽기 권한을 허용해 주세요.\n(Health Connect 앱 → 앱 및 기기 권한 → 5키로 → 운동·거리 켜기)",
       };
     }
 
