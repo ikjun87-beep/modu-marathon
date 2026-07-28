@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/avatar";
+import { ClapButton } from "@/components/clap-button";
 import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -261,18 +262,26 @@ export default function HomeScreen() {
                         style={styles.feedRow}
                         onPress={() => f.href && router.push(f.href as never)}
                         dim={false}>
-                        {/* 세로 라인 + 노드 — 마지막 항목은 아래 선을 그리지 않아야 끝이 맺힌다. */}
+                        {/* **아바타가 곧 레일의 노드**다. 점을 따로 찍으면 사람 옆에 점이
+                            하나 더 붙어 중복이고, 정작 타임라인의 주인공(사람)이 작아진다.
+                            마지막 항목은 아래 선을 그리지 않아야 흐름이 맺힌다. */}
                         <View style={styles.feedRail}>
-                          <View style={styles.feedDot} />
+                          <Avatar name={f.name} size={30} me={!!name && f.name === name} />
                           {i < feed.length - 1 && <View style={styles.feedLine} />}
                         </View>
                         <View style={styles.feedBody}>
                           <View style={styles.feedHead}>
-                            <Avatar name={f.name} size={22} me={!!name && f.name === name} />
                             <Text style={styles.feedName} numberOfLines={1}>{f.name}</Text>
                             <Text style={styles.feedTime}>{feedTime(f.at)}</Text>
                           </View>
                           <Text style={styles.feedText} numberOfLines={2}>{f.text}</Text>
+                          {/* 박수는 **러닝에만**. 방명록 글은 이미 말이고, 참석은 예정이라
+                              "잘했어요"라고 할 대상이 아니다 — 아무 데나 붙이면 의미가 닳는다. */}
+                          {f.kind === "run" && (
+                            <View style={styles.feedClap}>
+                              <ClapButton targetId={f.id.replace(/^run_/, "")} myName={name} size="sm" />
+                            </View>
+                          )}
                         </View>
                       </PressableScale>
                     ))}
@@ -347,21 +356,14 @@ const styles = StyleSheet.create({
   // 타임라인 — 세로 레일 위에 노드. 카드 스택이 아니라서 다른 탭과 다르게 읽힌다.
   feed: { marginTop: -2 },
   feedRow: { flexDirection: "row", gap: 12 },
-  feedRail: { width: 12, alignItems: "center", paddingTop: 6 },
-  feedDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: Brand.brand,
-    borderWidth: 2,
-    borderColor: Brand.bg,
-  },
-  feedLine: { flex: 1, width: 2, backgroundColor: Brand.line2, marginTop: 2 },
-  feedBody: { flex: 1, paddingBottom: 16, gap: 3 },
-  feedHead: { flexDirection: "row", alignItems: "center", gap: 7 },
-  feedName: { flex: 1, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.ink },
+  feedRail: { width: 30, alignItems: "center" },
+  feedLine: { flex: 1, width: 2, backgroundColor: Brand.line2, marginTop: 4, marginBottom: -4 },
+  feedBody: { flex: 1, paddingBottom: 18, gap: 2 },
+  feedHead: { flexDirection: "row", alignItems: "center", gap: 7, minHeight: 30 },
+  feedName: { flex: 1, fontFamily: FONT, fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
   feedTime: { fontFamily: FONT, fontSize: 11.5, color: Brand.faint },
-  feedText: { fontFamily: FONT, fontSize: 14, color: Brand.ink2, lineHeight: 20, marginLeft: 29 },
+  feedText: { fontFamily: FONT, fontSize: 14, color: Brand.ink2, lineHeight: 20 },
+  feedClap: { flexDirection: "row", marginTop: 6 },
 
   feedEmpty: {
     flexDirection: "row",

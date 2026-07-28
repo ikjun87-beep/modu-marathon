@@ -46,6 +46,19 @@ service cloud.firestore {
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;   // 참석 취소 토글(remove)
     }
+    // 👏 박수 — Strava kudos의 따뜻한 대안(docs/DESIGN.md 기획분, 2026-07-28 구현).
+    // 참석(attendance)과 완전히 같은 토글 구조라 규칙도 같은 모양으로 둔다:
+    // 문서 하나 = "누가 무엇에 박수를 보냈다", 취소는 delete.
+    // targetId는 러닝·갤러리 등 대상 문서의 id — 어디에나 붙을 수 있게 컬렉션을 하나로 둔다.
+    match /claps/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.name.size() <= 40
+                    && request.resource.data.targetId is string
+                    && request.resource.data.targetId.size() <= 200;
+      allow update: if isRenameOnly();   // 러너 네임 변경 전파만
+      allow delete: if true;   // 박수 취소 토글
+    }
     // 러닝 기록(웹·앱·워치 공용). 결정적 id로 멱등 upsert(create+update=merge).
     // distanceKm 범위 검증으로 today 합산·리더보드 통계 오염 방지(천도윤 #4).
     match /runs/{id} {

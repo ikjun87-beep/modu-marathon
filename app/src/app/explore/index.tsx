@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LiveRunModal } from "@/components/live-run";
+import { Mascot } from "@/components/mascot";
 import { RouteThumb } from "@/components/route-thumb";
 import { useMyName } from "@/lib/session";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -203,9 +204,10 @@ export default function RunScreen() {
             (독립 채점 R11). 다크 카드는 랭킹 1위에만 남기고, 여기는 배경 없이 구분선으로만
             나눈 스트립으로 낮춘다 — 화면이 카드로 시작하지 않으니 리듬도 달라진다. */}
         <View style={styles.strip}>
-          <View style={styles.stripCell}>
+          {/* 3칸이 완전히 동등하면 "오늘이 주지표"라는 위계가 사라진다 → 오늘만 한 단계 크게. */}
+          <View style={[styles.stripCell, { flex: 1.25 }]}>
             <Text style={styles.stripLab}>오늘</Text>
-            <Text style={styles.stripNum}>
+            <Text style={[styles.stripNum, styles.stripNumLead]}>
               {today.toFixed(1)}
               <Text style={styles.stripUnit}> km</Text>
             </Text>
@@ -341,13 +343,19 @@ export default function RunScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            {kind === "walk"
-              ? "최근 1주 걷기 기록이 없어요."
-              : kind === "all"
-                ? "최근 1주 기록이 없어요. 러닝을 시작해 보세요!"
-                : "최근 1주 달리기 기록이 없어요. 러닝을 시작해 보세요!"}
-          </Text>
+          // 텍스트만 가운데 두면 삭막하고, 랭킹 탭 빈 상태(마스코트+가로카드)와 문법이 갈린다
+          // — "화면마다 규칙이 갈리면 신뢰도가 깎인다"(전역 규칙). 같은 카드로 통일.
+          <View style={styles.emptyCard}>
+            <Mascot size={54} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.emptyTitle}>
+                {kind === "walk" ? "최근 1주 걷기가 없어요" : "최근 1주 기록이 없어요"}
+              </Text>
+              <Text style={styles.emptySub}>
+                {kind === "walk" ? "걷기도 기록으로 남아요" : "가볍게 한 번 뛰어볼까요?"}
+              </Text>
+            </View>
+          </View>
         }
         renderItem={({ item }) => {
           const km = Number(item.distanceKm) || 0;
@@ -428,7 +436,8 @@ const styles = StyleSheet.create({
   strip: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
   stripCell: { flex: 1, gap: 2 },
   stripLab: { color: Brand.soft, fontFamily: FONT, fontSize: 12, fontWeight: Weight.regular },
-  stripNum: { color: Brand.ink, fontFamily: FONT_DISPLAY, fontSize: 26, letterSpacing: -0.5 },
+  stripNum: { color: Brand.ink, fontFamily: FONT_DISPLAY, fontSize: 22, letterSpacing: -0.5 },
+  stripNumLead: { fontSize: 30 },
   stripUnit: { color: Brand.brand, fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
   stripDiv: { width: 1, height: 26, backgroundColor: Brand.line2, marginHorizontal: 10 },
 
@@ -535,8 +544,17 @@ const styles = StyleSheet.create({
   segText: { fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular, color: Brand.soft },
   segTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
-  empty: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 14, textAlign: "center", paddingVertical: 24 },
+  emptyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: Brand.brandSoft,
+    borderRadius: Radius.card,
+    padding: 14,
+    marginTop: 4,
+  },
+  emptyTitle: { fontFamily: FONT, fontSize: 14.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+  emptySub: { fontFamily: FONT, fontSize: 12.5, color: Brand.ink2, marginTop: 2 },
 
   item: {
     backgroundColor: Brand.card,

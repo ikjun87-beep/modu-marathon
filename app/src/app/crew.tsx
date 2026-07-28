@@ -73,9 +73,12 @@ export default function CrewScreen() {
 
         <NameField onName={setName} />
 
-        <ScheduleSection myName={name} />
-
+        {/* 사진을 **맨 위로**. 친목 크루 앱의 자산은 기록이 아니라 사진이고,
+            "우리가 함께 뛴 증거"가 먼저 보여야 크루 탭이 살아있게 읽힌다(R12 기획).
+            모임·방명록은 그 아래로 내린다. */}
         <GallerySection myName={name} />
+
+        <ScheduleSection myName={name} />
 
         <View style={styles.formCard}>
           <Text style={styles.formLabel}>방명록 한마디</Text>

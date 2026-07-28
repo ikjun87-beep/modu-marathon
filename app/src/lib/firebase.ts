@@ -46,4 +46,8 @@ export const COLLECTIONS = {
   // 크루 모임 일정. { title, desc, startAt(ms), name, uid?, createdAt }
   // 문서 id는 기존 하드코딩과 동일(ev-0705 등) 유지 → 옛 attendance(eventId) 기록 무손실.
   events: "events",
+  // 👏 박수 — 러닝·사진 등 어디에나 붙는 응원. { targetId, name, createdAt }
+  // 참석(attendance)과 같은 토글 구조(문서 있으면 박수함 / 지우면 취소).
+  // 경쟁이 아니라 응원이라는 우리 방향의 핵심 장치(docs/DESIGN_R12_PLAN.md).
+  claps: "claps",
 } as const;
