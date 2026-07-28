@@ -21,6 +21,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Brand, FONT, Team, Weight } from "@/lib/brand";
 import { mascotSource, useMascot, type MascotKind } from "@/lib/mascot";
+import { useProfilePhoto } from "@/lib/profile-photo";
 
 /** 링 후보 3색. 인덱스는 이름 해시로 고정된다. */
 const RINGS = [Brand.brand, Team.red, Team.green] as const;
@@ -49,6 +50,9 @@ type Props = {
 
 export function Avatar({ name, size = 38, me = false, ring = true }: Props) {
   const mascot = useMascot();
+  // 내 사진을 등록했으면 마스코트 대신 사진. 기기 로컬이라 **내 아바타에만** 적용된다
+  // (남의 사진은 공유 저장이 없어 알 수 없다 — lib/profile-photo.ts 주석 참조).
+  const photo = useProfilePhoto();
   const color = me ? teamColorOf(mascot) : ringColorFor(name || "?");
   // 링 두께는 크기에 비례 — 작은 아바타에 2px은 두껍고 큰 아바타엔 얇다.
   const border = ring ? Math.max(1.5, Math.round(size * 0.055)) : 0;
@@ -65,7 +69,10 @@ export function Avatar({ name, size = 38, me = false, ring = true }: Props) {
           borderColor: ring ? color : "transparent",
         },
       ]}>
-      {me ? (
+      {me && photo ? (
+        // 사진은 원을 꽉 채워야 얼굴이 잘 보인다(마스코트는 여백을 둬야 다리가 안 잘린다).
+        <Image source={{ uri: photo }} style={{ width: size, height: size }} resizeMode="cover" />
+      ) : me ? (
         <Image
           source={mascotSource(mascot)}
           style={{ width: size * 0.82, height: size * 0.82 }}

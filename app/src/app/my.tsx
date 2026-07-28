@@ -18,7 +18,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
+
 import { AccountSheet } from "@/components/account-sheet";
+import { Avatar } from "@/components/avatar";
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -31,6 +35,7 @@ import { isWatchAutoSync, setWatchAutoSync } from "@/lib/health-consent";
 import { HC_SUPPORTED } from "@/lib/healthconnect";
 import { saveRunnerName } from "@/lib/identity";
 import { MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
+import { setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
 
 /** 캐릭터 선택지 라벨 — 썸네일만으론 남/여·팀색이 구분되지 않는다. */
 const MASCOT_LABEL: Record<MascotKind, string> = {
@@ -54,6 +59,8 @@ export default function MyScreen() {
   const [account, setAccount] = useState<Account | null>(null);
   const [sheet, setSheet] = useState(false);
   const [pickingMascot, setPickingMascot] = useState(false); // 캐릭터 4종은 접어둔다(위 주석 참조)
+  const photo = useProfilePhoto();
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [autoSync, setAutoSync] = useState(false); // 워치 자동 불러오기 — 저장값을 아래에서 읽어온다
 
   // 저장된 이름이 바뀌면 입력칸도 맞춘다. 단 사용자가 고쳐둔 값(dirty)은 덮지 않는다.
@@ -100,6 +107,38 @@ export default function MyScreen() {
     }
   }
 
+  /** 커스텀 프로필 사진 — 갤러리와 같은 경로(선택→축소→base64)지만 **아바타라 256px면 충분**하다.
+   *  사진은 어디까지나 선택 사항이다. 안 넣으면 마스코트가 그대로 얼굴이 된다(회장 확인). */
+  async function pickPhoto() {
+    if (photoBusy) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("사진 접근 권한이 필요해요");
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1], // 아바타는 원형이라 정사각으로 잘라 받는다
+      quality: 1,
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+
+    setPhotoBusy(true);
+    try {
+      const out = await manipulateAsync(
+        res.assets[0].uri,
+        [{ resize: { width: 256 } }],
+        { compress: 0.7, format: SaveFormat.JPEG, base64: true }
+      );
+      await setProfilePhoto(`data:image/jpeg;base64,${out.base64 ?? ""}`);
+    } catch (e: any) {
+      Alert.alert("사진을 넣지 못했어요", String(e?.message ?? e));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
   function logout() {
     Alert.alert("로그아웃", "이 기기에서 계정을 로그아웃할까요? 이름과 기록은 남아 있어요.", [
       { text: "취소", style: "cancel" },
@@ -116,6 +155,14 @@ export default function MyScreen() {
     [runs, name]
   );
   const loading = runs === null || !loadedName;
+
+  // 미획득 배지 5장이 전부 같은 회색이라 어떤 게 가까운지 안 보였다(독립 채점 R11).
+  // 무지개로 칠하는 대신 **다음 목표 하나만** 세워 시선을 모은다.
+  const nextBadgeId = useMemo(() => {
+    const rest = progress.filter((p) => !p.earned);
+    if (!rest.length) return null;
+    return rest.reduce((a, b) => (b.ratio > a.ratio ? b : a)).badge.id;
+  }, [progress]);
 
   // 전역 규칙: **숫자=본문색 + 단위=브랜드 블루**. 여기만 통짜 문자열이라 규칙에서 빠져 있었다
   // (감사 지적) → 단위를 분리해 다른 화면과 같은 문법으로 그린다.
@@ -137,15 +184,30 @@ export default function MyScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>내 프로필</Text>
+        {/* 프로필 히어로 — **카드가 아니다.** 마이 탭까지 카드로 시작하면 5개 탭이 전부
+            같은 템플릿이 된다(독립 채점 R11). 배경 톤 위에 큰 아바타를 세워 "여기는 나의 집"
+            이라는 인상을 만든다. 제목(내 프로필)도 히어로가 대신하므로 생략. */}
+        <View style={styles.hero}>
+          <PressableScale onPress={pickPhoto} disabled={photoBusy} dim={false}>
+            <Avatar name={name || "?"} size={88} me />
+            <View style={styles.heroCam}>
+              <Icon name="camera" size={13} color="#fff" />
+            </View>
+          </PressableScale>
+          <Text style={styles.heroName} numberOfLines={1}>{name || "러너"}</Text>
+          <Text style={styles.heroSub}>
+            {photoBusy ? "사진 넣는 중…" : photo ? "내 사진으로 보여요" : "탭해서 내 사진을 넣어보세요"}
+          </Text>
+          {!!photo && (
+            <PressableScale onPress={() => void setProfilePhoto(null)} dim={false} hitSlop={8}>
+              <Text style={styles.heroReset}>마스코트로 되돌리기</Text>
+            </PressableScale>
+          )}
+        </View>
 
         {/* 프로필 */}
         <View style={styles.profile}>
           <View style={styles.profileHead}>
-            {/* 아바타 = 내가 고른 마스코트. 이름 첫 글자보다 "내 캐릭터"라는 느낌이 산다. */}
-            <View style={styles.avatar}>
-              <Mascot size={50} />
-            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.pLabel}>러너 네임</Text>
               <Text style={styles.pHint}>크루에서 이렇게 보여요</Text>
@@ -294,11 +356,27 @@ export default function MyScreen() {
         <Text style={styles.sectionH}>성과 배지</Text>
         <View style={styles.badges}>
           {progress.map(({ badge: b, earned: got, ratio, hint }) => (
-            <View key={b.id} style={styles.badge}>
-              <View style={[styles.badgeIcon, got ? styles.badgeIconOn : styles.badgeIconOff]}>
-                <Icon name={b.icon as IconName} size={20} color={got ? "#fff" : Brand.faint} />
+            <View key={b.id} style={[styles.badge, b.id === nextBadgeId && styles.badgeNext]}>
+              <View
+                style={[
+                  styles.badgeIcon,
+                  got ? styles.badgeIconOn : styles.badgeIconOff,
+                  b.id === nextBadgeId && styles.badgeIconNext,
+                ]}>
+                <Icon
+                  name={b.icon as IconName}
+                  size={20}
+                  color={got ? "#fff" : b.id === nextBadgeId ? Brand.brandDeep : Brand.faint}
+                />
               </View>
-              <Text style={[styles.badgeLabel, !got && styles.badgeLabelOff]}>{b.label}</Text>
+              <Text
+                style={[
+                  styles.badgeLabel,
+                  !got && styles.badgeLabelOff,
+                  b.id === nextBadgeId && styles.badgeLabelNext,
+                ]}>
+                {b.label}
+              </Text>
               {/* 못 딴 배지엔 "미획득" 대신 **얼마나 왔는지**를 준다 — 채우고 싶게. */}
               {!got && (
                 <View style={styles.barTrack}>
@@ -365,8 +443,32 @@ export default function MyScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
-  title: { fontFamily: FONT,
-    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4, marginBottom: 2 },
+  // 히어로 — 카드가 아니라 배경 톤. 5개 탭이 전부 카드로 시작하지 않게 하는 장치.
+  hero: {
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Brand.tint,
+    borderRadius: Radius.hero,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    marginBottom: 2,
+  },
+  heroCam: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Brand.brand,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Brand.tint,
+  },
+  heroName: { fontFamily: FONT, fontSize: 22, fontWeight: Weight.bold, color: Brand.ink, marginTop: 10 },
+  heroSub: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
+  heroReset: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep, marginTop: 6 },
 
   profile: {
     gap: 12,
@@ -411,16 +513,6 @@ const styles = StyleSheet.create({
   mascotOptOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
   mascotOptText: { fontFamily: FONT, fontSize: 10.5, color: Brand.soft, fontWeight: Weight.regular },
   mascotOptTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
-  avatar: {
-    // 원형(28)이면 마스코트 다리가 잘린다 → 둥근 사각형. 배경도 진한 파랑이면
-    // 파랑 캐릭터가 묻혀서(아이콘 때 겪은 저대비) 연한 파랑으로.
-    width: 58,
-    height: 58,
-    borderRadius: Radius.card,
-    backgroundColor: Brand.brandSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   pLabel: { fontFamily: FONT,
     fontSize: 12, fontWeight: Weight.regular, color: Brand.soft },
   nameInput: {
@@ -521,6 +613,10 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   badgeLocked: { opacity: 0.55 },
+  // "다음 목표" 하나만 브랜드 톤으로 세운다 — 5장이 전부 같은 회색이던 문제(R11).
+  badgeNext: { backgroundColor: Brand.tint },
+  badgeIconNext: { backgroundColor: Brand.brandSoft },
+  badgeLabelNext: { color: Brand.brandDeep },
   badgeIcon: {
     width: 42,
     height: 42,
