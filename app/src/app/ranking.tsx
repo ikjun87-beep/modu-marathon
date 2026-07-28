@@ -255,6 +255,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.hero,
     paddingTop: 18,
     paddingHorizontal: 12,
+    // 단이 컨테이너 바닥에 닿아야 "시상대"인데, overflow가 없으면 라운드 모서리를 뚫고
+    // 나가 직각으로 잘린다(실기기 확인) → 컨테이너가 단을 라운드에 맞춰 깎게 한다.
+    overflow: "hidden",
     ...Shadow.card,
   },
   podCol: { flex: 1, alignItems: "center", gap: 4 },
