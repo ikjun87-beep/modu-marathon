@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Avatar } from "@/components/avatar";
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
@@ -85,8 +86,9 @@ export function ScheduleSection({ myName }: { myName: string }) {
               <>
                 <View style={styles.faces}>
                   {list.slice(0, 4).map((a, i) => (
+                    // 겹쳐 쌓을 땐 링 대신 카드색 테두리로 분리해야 얼굴이 안 뭉갠다.
                     <View key={a.id} style={[styles.face, i > 0 && styles.faceOverlap]}>
-                      <Text style={styles.faceText}>{(a.name.trim()[0] || "?").toUpperCase()}</Text>
+                      <Avatar name={a.name} size={22} me={a.name === myName} ring={false} />
                     </View>
                   ))}
                 </View>
@@ -205,15 +207,17 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: "#14315c", flexShrink: 1 },
   attRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   faces: { flexDirection: "row", alignItems: "center" },
+  // 흰 테두리 = 겹친 얼굴을 분리하는 링. 안쪽 Avatar(22)보다 2px씩 커야 안 잘린다.
   face: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Brand.brandSoft,
-    borderWidth: 1.5,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Brand.card,
+    borderWidth: 2,
     borderColor: Brand.card,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   faceOverlap: { marginLeft: -8 }, // 겹쳐 쌓아 "여럿이 함께" 느낌
   faceText: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold, color: Brand.brandDeep },

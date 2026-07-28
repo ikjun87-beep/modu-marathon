@@ -137,12 +137,6 @@ export default function MyScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* 5탭 중 마이만 페이지 이름표가 없어 카드부터 불쑥 시작됐다(실기기 확인).
-            크루·러닝·랭킹과 같은 EYEBROW+제목 문법을 그대로 따라 위계를 맞춘다. */}
-        <View style={styles.eyebrowRow}>
-          <Icon name="user" size={15} color={Brand.brand} />
-          <Text style={styles.eyebrow}>MY</Text>
-        </View>
         <Text style={styles.title}>내 프로필</Text>
 
         {/* 프로필 */}
@@ -371,11 +365,8 @@ export default function MyScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2, marginBottom: 2 },
+    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4, marginBottom: 2 },
 
   profile: {
     gap: 12,
@@ -550,7 +541,7 @@ const styles = StyleSheet.create({
     width: "78%",
     height: 4,
     borderRadius: 2,
-    backgroundColor: Brand.line,
+    backgroundColor: Brand.line2,
     overflow: "hidden",
     marginTop: 2,
   },

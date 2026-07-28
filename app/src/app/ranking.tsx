@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Avatar } from "@/components/avatar";
 import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { MonthReportCard } from "@/components/month-report";
@@ -42,10 +43,6 @@ export default function RankingScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.eyebrowRow}>
-          <Icon name="flag" size={15} color={Brand.brand} />
-          <Text style={styles.eyebrow}>RANKING</Text>
-        </View>
         <Text style={styles.title}>이번 주 랭킹</Text>
         <Text style={styles.sub}>월요일부터 지금까지 크루가 달린 거리</Text>
 
@@ -140,9 +137,7 @@ export default function RankingScreen() {
                     <View style={[styles.rankBadge, rc ? { backgroundColor: rc } : styles.rankBadgePlain]}>
                       <Text style={[styles.rankBadgeText, !rc && styles.rankBadgeTextPlain]}>{i + 1}</Text>
                     </View>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>{(r.name.trim()[0] || "?").toUpperCase()}</Text>
-                    </View>
+                    <Avatar name={r.name} size={38} me={isMe} />
                     <View style={{ flex: 1, gap: 6 }}>
                       <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={1}>
                         {r.name}
@@ -198,11 +193,8 @@ export default function RankingScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
   sub: { fontFamily: FONT,
     fontSize: 13, color: Brand.soft, marginBottom: 2 },
 
@@ -226,7 +218,9 @@ const styles = StyleSheet.create({
     fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
   chSub: { fontFamily: FONT,
     fontSize: 12.5, color: Brand.soft, marginTop: 2, fontWeight: Weight.regular },
-  barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.warm, overflow: "hidden" },
+  // 트랙이 warm(#eef2f8)이라 카드 흰 배경과 명도차가 거의 없어 "진행바가 있다"는 것 자체가
+  // 안 보였다(독립 채점 R11). 한 단계 진한 line2로 내려 구조를 드러낸다.
+  barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.line2, overflow: "hidden" },
   barFill: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.gold },
 
   row: {
@@ -274,7 +268,10 @@ const styles = StyleSheet.create({
   champName: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: "#fff" },
   champRuns: { fontFamily: FONT, fontSize: 12.5, color: "#8b929b", marginTop: 2 },
   champKm: { fontFamily: FONT_DISPLAY, fontSize: 26, color: "#fff", letterSpacing: -0.5 },
-  champUnit: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.gold },
+  // 단위는 **예외 없이 브랜드 블루**(전역 규칙). 여기만 골드였더니 바로 아래 월간 리포트
+  // 카드(단위=블루)와 규칙이 갈렸다(독립 채점 R11 중대 지적). 이 카드의 골드는
+  // 순위 뱃지와 "내가 이번 주 1등!" 라벨이 이미 충분히 들고 있다.
+  champUnit: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.brand },
 
   sectionH: { fontFamily: FONT,
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 4, marginBottom: -2 },
@@ -314,7 +311,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontFamily: FONT,
     fontSize: 16, fontWeight: Weight.bold, color: Brand.brandDeep },
-  relTrack: { height: 5, borderRadius: 3, backgroundColor: Brand.warm, overflow: "hidden" },
+  relTrack: { height: 5, borderRadius: 3, backgroundColor: Brand.line2, overflow: "hidden" },
   relFill: { height: 5, borderRadius: 3 },
   rowName: { fontFamily: FONT,
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },

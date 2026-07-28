@@ -60,10 +60,6 @@ export default function CrewScreen() {
   const header = useMemo(
     () => (
       <View style={styles.header}>
-        <View style={styles.eyebrowRow}>
-          <Icon name="users" size={15} color={Brand.brand} />
-          <Text style={styles.eyebrow}>CREW</Text>
-        </View>
         <Text style={styles.title}>우리 크루</Text>
         <Text style={styles.sub}>혼자 뛰면 운동, 같이 뛰면 추억.</Text>
 
@@ -175,11 +171,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
   header: { gap: 12, marginBottom: 4 },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
   sub: { fontFamily: FONT,
     fontSize: 14, color: Brand.soft },
   banner: {

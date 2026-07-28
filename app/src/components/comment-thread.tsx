@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { Avatar } from "@/components/avatar";
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
@@ -44,9 +45,7 @@ export function CommentThread({ parentId }: { parentId: string }) {
 
       {comments.map((c) => (
         <View key={c.id} style={styles.item}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(c.name?.trim()?.[0] ?? "·").toUpperCase()}</Text>
-          </View>
+          <Avatar name={c.name ?? "·"} size={30} />
           <View style={{ flex: 1 }}>
             <View style={styles.itemHead}>
               <Text style={styles.who}>{c.name}</Text>

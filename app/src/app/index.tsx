@@ -56,10 +56,6 @@ export default function HomeScreen() {
         {/* 인사말 + 마스코트 — 👋 이모지는 뺐다. 마스코트가 엄지척으로 이미 인사하고 있어 겹친다. */}
         <View style={styles.greetRow}>
           <View style={styles.greetText}>
-            <View style={styles.eyebrowRow}>
-              <Icon name="activity" size={15} color={Brand.brand} />
-              <Text style={styles.eyebrow}>TODAY</Text>
-            </View>
             <Text style={styles.title}>
               {name ? (
                 <>
@@ -302,7 +298,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 16, gap: 12, paddingBottom: 160 },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   greetRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   greetText: { flex: 1 },
   mascotWrap: {
@@ -313,12 +308,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // LINE Seed는 시스템 폰트보다 자간이 촘촘하다 → 음수 letterSpacing(-0.8)·marginTop(-4)은
-  //   시스템 폰트 때 각진 글자를 붙이려던 값이라, 둥근 폰트엔 오히려 빽빽·겹침을 만든다. 뺀다.
-  eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 2, color: Brand.brand },
+  // 영문 라벨(TODAY)을 없앤 만큼 인사말이 이름표 역할을 한다 → 한 단계 키운다.
+  // LINE Seed는 시스템 폰트보다 자간이 촘촘해 음수 letterSpacing은 쓰지 않는다.
   title: { fontFamily: FONT,
-    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 30 },
+    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 33 },
 
   searchBar: {
     flexDirection: "row",

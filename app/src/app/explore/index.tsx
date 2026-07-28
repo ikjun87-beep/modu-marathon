@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon, type IconName } from "@/components/icon";
 import { LiveRunModal } from "@/components/live-run";
+import { RouteThumb } from "@/components/route-thumb";
 import { useMyName } from "@/lib/session";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
@@ -16,7 +17,8 @@ import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 import { hasHealthConsent, setHealthConsent, setWatchAutoSync } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
-import { fmtDuration, isWalk, paceLabel, saveRun, todayKm, toMs } from "@/lib/run";
+import { fmtDuration, isWalk, paceLabel, saveRun, todayKm, toMs, type LatLng } from "@/lib/run";
+import { loadRunPaths } from "@/lib/run-path";
 import { personalStats } from "@/lib/stats";
 
 type KindFilter = "run" | "walk" | "all";
@@ -63,6 +65,8 @@ export default function RunScreen() {
   const [syncing, setSyncing] = useState(false);
   const [submitting, setSubmitting] = useState(false); // 수동 기록 저장 중 — 더블탭 이중저장 방지
   const [kind, setKind] = useState<KindFilter>("run"); // 지난 러닝 목록 필터 — 기본은 달리기
+  // 목록에 그릴 경로 — 온디바이스(AsyncStorage)라 화면에 보이는 기록 id만 한 번에 읽는다.
+  const [paths, setPaths] = useState<Record<string, LatLng[]>>({});
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
 
@@ -87,6 +91,15 @@ export default function RunScreen() {
       return true;
     });
   }, [runs, kind]);
+
+  // 목록이 바뀔 때만 경로를 다시 읽는다(스크롤 중엔 안 읽음).
+  useEffect(() => {
+    let alive = true;
+    void loadRunPaths(listData.map((r) => r.id)).then((m) => alive && setPaths(m));
+    return () => {
+      alive = false;
+    };
+  }, [listData]);
 
   async function submitManual() {
     if (submitting) return; // 이미 저장 중 — 더블탭 시 두 번째 문서 생성 방지(수동 기록엔 sourceId 멱등이 없음)
@@ -183,34 +196,35 @@ export default function RunScreen() {
   const header = useMemo(
     () => (
       <View style={styles.header}>
-        <View style={styles.eyebrowRow}>
-          <Icon name="activity" size={15} color={Brand.brand} />
-          <Text style={styles.eyebrow}>RUNNING</Text>
-        </View>
         <Text style={styles.title}>러닝 기록</Text>
 
-        {/* 오늘 뛴 거리 — 실시간 집계 */}
-        <View style={styles.todayCard}>
-          <View style={styles.todayLeft}>
-            <Text style={styles.todayLab}>오늘 뛴 거리</Text>
-            <View style={styles.todayNumRow}>
-              <Text style={styles.todayNum}>{today.toFixed(1)}</Text>
-              <Text style={styles.todayUnit}>km</Text>
-            </View>
+        {/* 오늘·누적·기록 — **가로 스트립**. 예전엔 다크 네이비 카드였는데, 같은 카드가
+            홈·러닝 두 탭 최상단에 똑같이 반복돼 "시그니처"가 아니라 두 번째 템플릿이 됐다
+            (독립 채점 R11). 다크 카드는 랭킹 1위에만 남기고, 여기는 배경 없이 구분선으로만
+            나눈 스트립으로 낮춘다 — 화면이 카드로 시작하지 않으니 리듬도 달라진다. */}
+        <View style={styles.strip}>
+          <View style={styles.stripCell}>
+            <Text style={styles.stripLab}>오늘</Text>
+            <Text style={styles.stripNum}>
+              {today.toFixed(1)}
+              <Text style={styles.stripUnit}> km</Text>
+            </Text>
           </View>
-          <View style={styles.todayDiv} />
-          <View style={styles.todayMeta}>
-            {/* 좌측 주지표와 같은 단위 문법: 숫자(흰색) + 단위(블루) */}
-            <Text style={styles.todayMetaNum}>
+          <View style={styles.stripDiv} />
+          <View style={styles.stripCell}>
+            <Text style={styles.stripLab}>누적</Text>
+            <Text style={styles.stripNum}>
               {mine.totalKm.toFixed(1)}
-              <Text style={styles.todayMetaUnit}> km</Text>
+              <Text style={styles.stripUnit}> km</Text>
             </Text>
-            <Text style={styles.todayMetaLab}>누적</Text>
-            <Text style={[styles.todayMetaNum, { marginTop: 8 }]}>
+          </View>
+          <View style={styles.stripDiv} />
+          <View style={styles.stripCell}>
+            <Text style={styles.stripLab}>기록</Text>
+            <Text style={styles.stripNum}>
               {mine.totalRuns}
-              <Text style={styles.todayMetaUnit}> 회</Text>
+              <Text style={styles.stripUnit}> 회</Text>
             </Text>
-            <Text style={styles.todayMetaLab}>기록</Text>
           </View>
         </View>
 
@@ -343,9 +357,16 @@ export default function RunScreen() {
               onPress={() => router.push(`/explore/run/${item.id}`)}
               style={styles.item}>
               <View style={styles.itemHead}>
-                <View style={styles.srcBadge}>
-                  <Icon name={sourceIcon(item.source)} size={15} color={Brand.brandDeep} />
-                </View>
+                {/* 경로가 있으면 **내가 그린 그림**을 보여준다 — 같은 아이콘이 행마다
+                    반복되던 것이 "AI스럽다"의 원인 중 하나였다(독립 채점 R11).
+                    직접 입력·워치 기록은 경로가 없으니 기존 출처 아이콘을 그대로 쓴다. */}
+                {paths[item.id] ? (
+                  <RouteThumb path={paths[item.id]} size={40} />
+                ) : (
+                  <View style={styles.srcBadge}>
+                    <Icon name={sourceIcon(item.source)} size={15} color={Brand.brandDeep} />
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
                   <View style={styles.whoRow}>
                     <Text style={styles.who}>{item.name}</Text>
@@ -401,41 +422,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
   header: { gap: 14, marginBottom: 4 },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   title: { fontFamily: FONT,
-    fontSize: 26, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
 
-  todayCard: {
-    flexDirection: "row",
-    backgroundColor: Brand.dark,
-    borderRadius: Radius.card,
-    padding: 18,
-    alignItems: "center",
-    ...Shadow.card,
-  },
-  todayLeft: { flex: 1 },
-  todayLab: { color: "#aab2bb", fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular },
-  todayNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 4 },
-  todayNum: { color: "#fff", fontFamily: FONT_DISPLAY,
-    fontSize: 40, fontWeight: Weight.bold, letterSpacing: -1.2, lineHeight: 42 },
-  todayUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 18, fontWeight: Weight.bold, marginLeft: 5, marginBottom: 5 },
-  todayDiv: {
-    width: 1,
-    alignSelf: "stretch",
-    backgroundColor: "rgba(255,255,255,.12)",
-    marginHorizontal: 18,
-  },
-  todayMeta: { alignItems: "flex-end" },
-  todayMetaNum: { color: "#fff", fontFamily: FONT,
-    fontSize: 16, fontWeight: Weight.bold },
-  todayMetaUnit: { color: Brand.brand, fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold },
-  todayMetaLab: { color: "#8b929b", fontFamily: FONT,
-    fontSize: 11, fontWeight: Weight.regular },
+  strip: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
+  stripCell: { flex: 1, gap: 2 },
+  stripLab: { color: Brand.soft, fontFamily: FONT, fontSize: 12, fontWeight: Weight.regular },
+  stripNum: { color: Brand.ink, fontFamily: FONT_DISPLAY, fontSize: 26, letterSpacing: -0.5 },
+  stripUnit: { color: Brand.brand, fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
+  stripDiv: { width: 1, height: 26, backgroundColor: Brand.line2, marginHorizontal: 10 },
 
   ctaRow: { flexDirection: "row", gap: 10 },
   cta: {
@@ -550,9 +545,10 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   itemHead: { flexDirection: "row", alignItems: "center", gap: 11 },
+  // 경로 썸네일(40)과 같은 크기여야 행 높이가 들쭉날쭉하지 않다.
   srcBadge: {
-    width: 34,
-    height: 34,
+    width: 40,
+    height: 40,
     borderRadius: Radius.chip,
     backgroundColor: Brand.brandSoft,
     alignItems: "center",

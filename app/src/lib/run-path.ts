@@ -39,6 +39,31 @@ export async function loadRunPath(runId: string): Promise<LatLng[] | null> {
   }
 }
 
+/** 여러 러닝의 경로를 한 번에 — 목록 썸네일용. (2026-07-28 R12)
+ *
+ *  행마다 getItem을 부르면 스크롤 중 AsyncStorage 왕복이 행 수만큼 생긴다.
+ *  multiGet 한 번으로 끝내고, 경로가 없는 id는 결과에서 빠진다(직접입력·워치 기록). */
+export async function loadRunPaths(runIds: string[]): Promise<Record<string, LatLng[]>> {
+  const ids = runIds.filter(Boolean);
+  if (!ids.length) return {};
+  try {
+    const pairs = await AsyncStorage.multiGet(ids.map(key));
+    const out: Record<string, LatLng[]> = {};
+    pairs.forEach(([k, raw], i) => {
+      if (!raw) return;
+      try {
+        const path = JSON.parse(raw) as LatLng[];
+        if (path?.length > 1) out[ids[i]] = path;
+      } catch {
+        // 한 건이 깨져도 나머지는 살린다
+      }
+    });
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export async function removeRunPath(runId: string): Promise<void> {
   if (!runId) return;
   try {
