@@ -46,16 +46,46 @@ type Props = {
   me?: boolean;
   /** 링을 끄고 싶을 때(겹쳐 쌓는 참석자 얼굴 등에서 흰 테두리가 필요한 경우). */
   ring?: boolean;
+  /** 성장 링 등급(0~4). 마이 탭 프로필 히어로에서만 쓴다 — 아래 RING_TIER 주석 참조. */
+  tier?: number;
 };
 
-export function Avatar({ name, size = 38, me = false, ring = true }: Props) {
+/** 획득 배지 수 → 링 등급. **마이 탭 히어로에만** 적용한다(2026-07-28 디자인 리드 결정).
+ *
+ *  런데이(레벨 색)·삼성헬스(금속 뱃지)처럼 "성장이 눈에 보이는 물건"이 우리에겐 없었다.
+ *  새 캐릭터를 그리는 대신 **이미 있는 링을 단계화**해 해결한다 — 새 아트도, 새 데이터 모델도
+ *  필요 없다(배지 집계는 stats.ts에 이미 있다).
+ *
+ *  ⚠️ 모든 화면에 뿌리지 말 것. 성장 링은 "내 집"에서만 보여주는 게 정보 위계상 맞고,
+ *  전 화면에 깔면 그 자체가 또 하나의 반복 템플릿이 된다(독립 채점 R11이 지적한 함정).
+ *  골드는 **전부 획득(5개)에만** — 중간 단계에 쓰면 "골드=성과" 규칙이 흐려진다. */
+export function ringTier(earnedCount: number): number {
+  if (earnedCount >= 5) return 4;
+  if (earnedCount >= 3) return 3;
+  if (earnedCount >= 1) return 2;
+  return 1;
+}
+
+export function Avatar({ name, size = 38, me = false, ring = true, tier }: Props) {
   const mascot = useMascot();
   // 내 사진을 등록했으면 마스코트 대신 사진. 기기 로컬이라 **내 아바타에만** 적용된다
   // (남의 사진은 공유 저장이 없어 알 수 없다 — lib/profile-photo.ts 주석 참조).
   const photo = useProfilePhoto();
-  const color = me ? teamColorOf(mascot) : ringColorFor(name || "?");
+  let color = me ? teamColorOf(mascot) : ringColorFor(name || "?");
   // 링 두께는 크기에 비례 — 작은 아바타에 2px은 두껍고 큰 아바타엔 얇다.
-  const border = ring ? Math.max(1.5, Math.round(size * 0.055)) : 0;
+  let border = ring ? Math.max(1.5, Math.round(size * 0.055)) : 0;
+
+  // 성장 링 — 등급이 오르면 색과 굵기가 함께 오른다. 0개(1등급)는 위축시키지 않게 옅게.
+  if (tier != null) {
+    if (tier >= 4) { color = Brand.gold; border = Math.round(size * 0.075); }
+    else if (tier === 3) { color = Brand.brand; border = Math.round(size * 0.065); }
+    else if (tier <= 1) { color = Brand.line2; }
+  }
+
+  // ⚠️ 512px 마스코트를 22~30px로 줄이면 외곽선이 뭉개진다. 게다가 이 컴포넌트가 카드 반복을
+  // 없애려고 만든 "이니셜 + 링" 문법을 나 자신에게만 예외로 깨는 셈이라 일관성도 잃는다.
+  // → 작은 자리에서는 me여도 이니셜로 그린다. 링 색(내 팀색)은 유지해 "이건 나"는 남는다.
+  const drawFace = me && size >= 36;
 
   return (
     <View
@@ -69,10 +99,10 @@ export function Avatar({ name, size = 38, me = false, ring = true }: Props) {
           borderColor: ring ? color : "transparent",
         },
       ]}>
-      {me && photo ? (
+      {drawFace && photo ? (
         // 사진은 원을 꽉 채워야 얼굴이 잘 보인다(마스코트는 여백을 둬야 다리가 안 잘린다).
         <Image source={{ uri: photo }} style={{ width: size, height: size }} resizeMode="cover" />
-      ) : me ? (
+      ) : drawFace ? (
         <Image
           source={mascotSource(mascot)}
           style={{ width: size * 0.82, height: size * 0.82 }}

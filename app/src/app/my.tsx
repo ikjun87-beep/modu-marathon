@@ -22,7 +22,7 @@ import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
 import { AccountSheet } from "@/components/account-sheet";
-import { Avatar } from "@/components/avatar";
+import { Avatar, ringTier } from "@/components/avatar";
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -37,12 +37,17 @@ import { saveRunnerName } from "@/lib/identity";
 import { MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
 import { setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
 
-/** 캐릭터 선택지 라벨 — 썸네일만으론 남/여·팀색이 구분되지 않는다. */
+/** 캐릭터 선택지 라벨 — 썸네일만으론 형태·팀색이 구분되지 않는다.
+ *
+ *  ⚠️ 예전엔 "남 · 레드"처럼 **성별로** 불렀다. 캐릭터 취향 선택인데 굳이 "성별 신고"로
+ *  포장할 이유가 없고, 『5키로』의 친숙어 톤과도 어긋난다(2026-07-28 디자인 리드 결정).
+ *  4종을 실제로 가르는 건 성별이 아니라 **포니테일 유무(형태) + 레드/그린(색)**이다.
+ *  내부 타입명(m-red 등)·파일명은 그대로 둔다 — 노출 카피만 바꾸면 되는 일이라 전면 개명은 낭비. */
 const MASCOT_LABEL: Record<MascotKind, string> = {
-  "m-red": "남 · 레드",
-  "m-green": "남 · 그린",
-  "f-red": "여 · 레드",
-  "f-green": "여 · 그린",
+  "m-red": "숏컷 · 레드",
+  "m-green": "숏컷 · 그린",
+  "f-red": "포니테일 · 레드",
+  "f-green": "포니테일 · 그린",
 };
 import { useMyName } from "@/lib/session";
 import { badgeProgress, personalStats } from "@/lib/stats";
@@ -158,6 +163,7 @@ export default function MyScreen() {
 
   // 미획득 배지 5장이 전부 같은 회색이라 어떤 게 가까운지 안 보였다(독립 채점 R11).
   // 무지개로 칠하는 대신 **다음 목표 하나만** 세워 시선을 모은다.
+  const earnedCount = useMemo(() => progress.filter((p) => p.earned).length, [progress]);
   const nextBadgeId = useMemo(() => {
     const rest = progress.filter((p) => !p.earned);
     if (!rest.length) return null;
@@ -189,7 +195,9 @@ export default function MyScreen() {
             이라는 인상을 만든다. 제목(내 프로필)도 히어로가 대신하므로 생략. */}
         <View style={styles.hero}>
           <PressableScale onPress={pickPhoto} disabled={photoBusy} dim={false}>
-            <Avatar name={name || "?"} size={88} me />
+            {/* 성장 링 — 획득 배지 수에 따라 색·굵기가 오른다. **여기(내 집)에만** 적용한다
+                (전 화면에 깔면 또 하나의 반복 템플릿이 된다 — 디자인 리드 결정). */}
+            <Avatar name={name || "?"} size={88} me tier={ringTier(earnedCount)} />
             <View style={styles.heroCam}>
               <Icon name="camera" size={13} color="#fff" />
             </View>
