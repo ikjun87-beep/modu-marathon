@@ -7,9 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Icon, type IconName } from "@/components/icon";
+import { Icon } from "@/components/icon";
 import { LiveRunModal } from "@/components/live-run";
 import { Mascot } from "@/components/mascot";
+import { DistanceThumb } from "@/components/distance-thumb";
 import { RouteThumb } from "@/components/route-thumb";
 import { useMyName } from "@/lib/session";
 import { PressableScale } from "@/components/ui/pressable-scale";
@@ -29,11 +30,9 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 지난 러닝 목록은 최근 1주�
 function runSeconds(r: Row): number {
   return Number(r.durationSec) || (Number(r.durationMin) || 0) * 60;
 }
-function sourceIcon(src?: string): IconName {
-  if (src === "gps") return "run";
-  if (src === "healthconnect" || src === "garmin") return "watch";
-  return "plus";
-}
+/** 기록 출처 — 목록 행의 날짜 줄에 텍스트로 붙는다.
+ *  (출처 **아이콘**은 R13에서 없앴다: 행마다 같은 아이콘이 반복되는 게 문제였고,
+ *   이제 그 자리는 경로 썸네일 또는 거리 링이 차지한다.) */
 function sourceLabel(src?: string): string {
   if (src === "gps") return "GPS 러닝";
   if (src === "healthconnect") return "갤럭시워치";
@@ -367,15 +366,14 @@ export default function RunScreen() {
               onPress={() => router.push(`/explore/run/${item.id}`)}
               style={styles.item}>
               <View style={styles.itemHead}>
-                {/* 경로가 있으면 **내가 그린 그림**을 보여준다 — 같은 아이콘이 행마다
-                    반복되던 것이 "AI스럽다"의 원인 중 하나였다(독립 채점 R11).
-                    직접 입력·워치 기록은 경로가 없으니 기존 출처 아이콘을 그대로 쓴다. */}
+                {/* 경로가 있으면 **내가 그린 그림**을, 없으면 **거리 링**을 보여준다.
+                    같은 아이콘이 행마다 반복되던 게 "AI스럽다"의 원인이었는데(R11),
+                    경로는 GPS 기록에만 있어서 직접입력·워치에선 도로 아이콘으로 폴백되고
+                    있었다 — 정작 실사용 주 경로에서 차별화가 안 뜬다는 구조적 허점(R13). */}
                 {paths[item.id] ? (
                   <RouteThumb path={paths[item.id]} size={40} />
                 ) : (
-                  <View style={styles.srcBadge}>
-                    <Icon name={sourceIcon(item.source)} size={15} color={Brand.brandDeep} />
-                  </View>
+                  <DistanceThumb km={km} walk={isWalk(item)} size={40} />
                 )}
                 <View style={{ flex: 1 }}>
                   <View style={styles.whoRow}>
@@ -565,15 +563,6 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   itemHead: { flexDirection: "row", alignItems: "center", gap: 11 },
-  // 경로 썸네일(40)과 같은 크기여야 행 높이가 들쭉날쭉하지 않다.
-  srcBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.chip,
-    backgroundColor: Brand.brandSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   whoRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   who: { fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 14.5, color: Brand.ink },

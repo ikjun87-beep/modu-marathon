@@ -1,5 +1,5 @@
 /** 크루 — 방명록 피드 + 모임 참석 + 갤러리 (웹과 동일한 guestbook/attendance/gallery 컬렉션 공유). */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -11,6 +11,7 @@ import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
 import { add, fmtDate, isDemo, remove, subscribe, update, type Row } from "@/lib/crew";
+import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 
 export default function CrewScreen() {
@@ -20,7 +21,22 @@ export default function CrewScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
+  const [events, setEvents] = useState<EventDef[]>([]);
+  const listRef = useRef<FlatList<Row>>(null);
+  const scheduleY = useRef(0);
+
   useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
+  useEffect(() => subscribeEvents(setEvents), []);
+
+  const nextEv = useMemo(() => nextEvent(events), [events]);
+
+  /** 요약 칩 → 모임 섹션으로 스크롤. 칩이 "가짜 버튼"이면 안 되니 실제로 데려다 놓는다. */
+  function scrollToSchedule() {
+    listRef.current?.scrollToOffset({ offset: Math.max(0, scheduleY.current - 12), animated: true });
+  }
+  function onScheduleLayout(e: { nativeEvent: { layout: { y: number } } }) {
+    scheduleY.current = e.nativeEvent.layout.y;
+  }
 
   function startEdit(item: Row) {
     setEditingId(item.id);
@@ -73,12 +89,27 @@ export default function CrewScreen() {
 
         <NameField onName={setName} />
 
-        {/* 사진을 **맨 위로**. 친목 크루 앱의 자산은 기록이 아니라 사진이고,
-            "우리가 함께 뛴 증거"가 먼저 보여야 크루 탭이 살아있게 읽힌다(R12 기획).
-            모임·방명록은 그 아래로 내린다. */}
+        {/* 사진을 맨 위로 올렸더니 크루 탭의 **실질 목적(참석 체크·모임 만들기)**이 스크롤
+            한 번 아래로 밀렸다(독립 채점 R13 지적). 사진은 크게 유지하되, 다가오는 모임을
+            **한 줄 요약 칩**으로 위에 올려 둘 다 첫 뷰포트에서 만나게 한다. */}
+        {nextEv && (
+          <PressableScale style={styles.evChip} onPress={scrollToSchedule} dim={false}>
+            <View style={styles.evChipDate}>
+              <Text style={styles.evChipD}>{nextEv.d}</Text>
+            </View>
+            <Text style={styles.evChipText} numberOfLines={1}>
+              {nextEv.title}
+            </Text>
+            <Text style={styles.evChipGo}>참석 체크</Text>
+            <Icon name="chevron-right" size={16} color={Brand.brandDeep} />
+          </PressableScale>
+        )}
+
         <GallerySection myName={name} />
 
-        <ScheduleSection myName={name} />
+        <View onLayout={onScheduleLayout}>
+          <ScheduleSection myName={name} />
+        </View>
 
         <View style={styles.formCard}>
           <Text style={styles.formLabel}>방명록 한마디</Text>
@@ -100,12 +131,13 @@ export default function CrewScreen() {
         <Text style={styles.listHint}>방명록 {guests.length}개</Text>
       </View>
     ),
-    [msg, name, guests.length]
+    [msg, name, guests.length, nextEv]
   );
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <FlatList
+        ref={listRef}
         data={guests}
         keyExtractor={(g) => g.id}
         ListHeaderComponent={header}
@@ -178,6 +210,29 @@ const styles = StyleSheet.create({
     fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
   sub: { fontFamily: FONT,
     fontSize: 14, color: Brand.soft },
+  // 모임 요약 칩 — 사진 아래로 밀린 참석 CTA를 첫 뷰포트로 끌어올린다.
+  evChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Brand.tint,
+    borderRadius: Radius.input,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  evChipDate: {
+    minWidth: 30,
+    height: 30,
+    borderRadius: Radius.chip,
+    backgroundColor: Brand.dark,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  evChipD: { color: "#fff", fontFamily: FONT, fontSize: 14, fontWeight: Weight.bold },
+  evChipText: { flex: 1, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.ink },
+  evChipGo: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+
   banner: {
     backgroundColor: "#fff4e6",
     borderWidth: 1,

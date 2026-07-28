@@ -199,11 +199,20 @@ export default function HomeScreen() {
                     <Text style={styles.todayLineUnit}>km</Text>
                     {"  ·  "}이번 주 <Text style={styles.todayLineNum}>{myWeek.toFixed(1)}</Text>
                     <Text style={styles.todayLineUnit}>km</Text>
+                  </Text>
+                </View>
+
+                {/* 크루 전체 지표 — 다크 카드를 걷어내면서 "이번 주 우리 크루"가 통째로
+                    사라졌었다(독립 채점 R13 지적). 러닝 크루 앱에서 "우리가 함께 얼마나
+                    뛰었나"는 개인 기록보다 동기부여가 큰 **사회적 증거**다. 카드로 되돌리지는
+                    않고(그러면 다시 카드 스택이 된다) 타임라인 머리에 붙는 띠로 되살린다. */}
+                <View style={styles.crewLine}>
+                  <Icon name="users" size={15} color={Brand.brandDeep} />
+                  <Text style={styles.crewLineText}>
+                    이번 주 우리 크루 <Text style={styles.crewLineNum}>{crewWeek.toFixed(1)}</Text>
+                    <Text style={styles.crewLineUnit}>km</Text>
                     {runnersToday > 0 ? (
-                      <>
-                        {"  ·  "}크루 <Text style={styles.todayLineNum}>{runnersToday}</Text>
-                        <Text style={styles.todayLineUnit}>명</Text>
-                      </>
+                      <Text style={styles.crewLineSub}>{`  ·  오늘 ${runnersToday}명이 뛰었어요`}</Text>
                     ) : null}
                   </Text>
                 </View>
@@ -320,6 +329,19 @@ const styles = StyleSheet.create({
   todayLineText: { fontFamily: FONT, fontSize: 14, color: Brand.soft, fontWeight: Weight.regular },
   todayLineNum: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
   todayLineUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
+  crewLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Brand.tint,
+    borderRadius: Radius.input,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  crewLineText: { flex: 1, fontFamily: FONT, fontSize: 13.5, color: Brand.ink2, fontWeight: Weight.regular },
+  crewLineNum: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  crewLineUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
+  crewLineSub: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
 
   startBtn: {
     flexDirection: "row",

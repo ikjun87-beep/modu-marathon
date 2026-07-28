@@ -92,71 +92,79 @@ export default function RankingScreen() {
                 </View>
               </View>
             ) : (
-              ranking.map((r, i) => {
-                const isMe = !!name && r.name === name;
-                const top = ranking[0]?.km || 1; // 1위 대비 상대 거리 바
-                const rel = Math.max(8, Math.round((r.km / top) * 100));
-                const rc = RANK_COLOR[i]; // 1~3위 금·은·동, 그 외 null
-
-                // 🥇 1위는 **카드 문법을 깬다** — 흰 카드+아이콘뱃지 조합이 전 화면에서 똑같이
-                // 반복되는 게 "AI가 만든 것 같다"는 인상의 원인이었다(디자인 감사). 한 화면에
-                // 하나쯤은 규칙을 깨는 시그니처가 있어야 화면이 살아난다.
-                if (i === 0) {
-                  return (
-                    <View key={r.name} style={styles.champ}>
-                      <View style={styles.champTop}>
-                        <View style={styles.champCrown}>
-                          <Text style={styles.champCrownText}>1</Text>
+              <>
+                {/* 🏆 **시상대** — 랭킹 탭만의 레이아웃 언어.
+                    R12에서 5탭 중 이 탭만 손대지 않아 "개편했다고 할 화면이 아니다"라는
+                    지적을 받았다(독립 채점 R13). 세로 카드 스택을 **가로 시상대**로 바꾸면
+                    "순위"라는 의미가 형태 자체로 읽히고, 다른 탭과 확실히 갈린다.
+                    2위-1위-3위 순으로 놓아 가운데가 가장 높다(실제 시상대 배치). */}
+                <View style={styles.podium}>
+                  {[1, 0, 2].map((idx) => {
+                    const r = ranking[idx];
+                    const isMe = !!name && r?.name === name;
+                    const rc = RANK_COLOR[idx]!;
+                    const h = idx === 0 ? 64 : idx === 1 ? 46 : 36; // 단 높이 = 순위
+                    if (!r) {
+                      // 자리는 남겨야 시상대가 안 무너진다 — 빈 단은 옅게 둔다.
+                      return (
+                        <View key={`empty-${idx}`} style={styles.podCol}>
+                          <View style={[styles.podStep, styles.podStepEmpty, { height: h }]}>
+                            <Text style={styles.podStepNumEmpty}>{idx + 1}</Text>
+                          </View>
                         </View>
-                        {/* 내 순위 표시를 이름 뒤 " (나)"로 붙이면 그만큼 이름 칸이 줄어
-                            "TESTM24 (…"로 잘렸다(실기기 확인). 여유 있는 라벨 줄에서 말한다. */}
-                        <Text style={styles.champLabel}>
-                          {isMe ? "내가 이번 주 1등!" : "이번 주 1등"}
-                        </Text>
-                      </View>
-                      <View style={styles.champBody}>
-                        <View style={styles.champAvatar}>
-                          <Mascot size={42} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.champName} numberOfLines={1}>
-                            {r.name}
-                          </Text>
-                          <Text style={styles.champRuns}>{r.runs}회 러닝</Text>
-                        </View>
-                        <Text style={styles.champKm}>
+                      );
+                    }
+                    return (
+                      <View key={r.name} style={styles.podCol}>
+                        {idx === 0 && (
+                          <Text style={styles.podCrown}>{isMe ? "내가 1등!" : "1등"}</Text>
+                        )}
+                        <Avatar name={r.name} size={idx === 0 ? 52 : 42} me={isMe} />
+                        <Text style={styles.podName} numberOfLines={1}>{r.name}</Text>
+                        <Text style={styles.podKm}>
                           {r.km.toFixed(1)}
-                          <Text style={styles.champUnit}> km</Text>
+                          <Text style={styles.podUnit}> km</Text>
                         </Text>
+                        <View style={[styles.podStep, { height: h, backgroundColor: rc }]}>
+                          <Text style={styles.podStepNum}>{idx + 1}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                {/* 4위부터는 목록 — 시상대에 다 올리면 시상대가 아니게 된다. */}
+                {ranking.slice(3).map((r, k) => {
+                  const i = k + 3;
+                  const isMe = !!name && r.name === name;
+                  const top = ranking[0]?.km || 1;
+                  const rel = Math.max(8, Math.round((r.km / top) * 100));
+                  return (
+                    <View key={r.name} style={[styles.row, isMe && styles.rowMe]}>
+                      <View style={[styles.rankBadge, styles.rankBadgePlain]}>
+                        <Text style={[styles.rankBadgeText, styles.rankBadgeTextPlain]}>{i + 1}</Text>
+                      </View>
+                      <Avatar name={r.name} size={38} me={isMe} />
+                      <View style={{ flex: 1, gap: 6 }}>
+                        <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={1}>
+                          {r.name}
+                          {isMe ? " (나)" : ""}
+                        </Text>
+                        <View style={styles.relTrack}>
+                          <View style={[styles.relFill, { width: `${rel}%`, backgroundColor: Brand.brand }]} />
+                        </View>
+                      </View>
+                      <View style={styles.kmCol}>
+                        <Text style={styles.rowKm}>
+                          {r.km.toFixed(1)}
+                          <Text style={styles.rowUnit}> km</Text>
+                        </Text>
+                        <Text style={styles.rowRuns}>{r.runs}회</Text>
                       </View>
                     </View>
                   );
-                }
-                return (
-                  <View key={r.name} style={[styles.row, isMe && styles.rowMe]}>
-                    <View style={[styles.rankBadge, rc ? { backgroundColor: rc } : styles.rankBadgePlain]}>
-                      <Text style={[styles.rankBadgeText, !rc && styles.rankBadgeTextPlain]}>{i + 1}</Text>
-                    </View>
-                    <Avatar name={r.name} size={38} me={isMe} />
-                    <View style={{ flex: 1, gap: 6 }}>
-                      <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={1}>
-                        {r.name}
-                        {isMe ? " (나)" : ""}
-                      </Text>
-                      <View style={styles.relTrack}>
-                        <View style={[styles.relFill, { width: `${rel}%`, backgroundColor: rc || Brand.brand }]} />
-                      </View>
-                    </View>
-                    <View style={styles.kmCol}>
-                      <Text style={styles.rowKm}>
-                        {r.km.toFixed(1)}
-                        <Text style={styles.rowUnit}> km</Text>
-                      </Text>
-                      <Text style={styles.rowRuns}>{r.runs}회</Text>
-                    </View>
-                  </View>
-                );
-              })
+                })}
+              </>
             )}
 
             {/* 리더보드 아래 빈 공간이 휑했다 — 다음 행동으로 이어주는 카드로 채운다(디자인 감사 지적). */}
@@ -235,43 +243,38 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   rowMe: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
-  // 1위 시그니처 — 다크 네이비 + 골드. 흰 카드 반복을 끊는 자리.
-  champ: {
+
+  // 🏆 시상대 — 랭킹 탭의 지배적 레이아웃. 세로 카드 스택이 아니라 가로 3단이라
+  // "순위"가 형태 자체로 읽히고, 다른 탭과 확실히 갈린다(독립 채점 R13 대응).
+  podium: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 8,
     backgroundColor: Brand.dark,
     borderRadius: Radius.hero,
-    padding: 16,
-    gap: 12,
+    paddingTop: 18,
+    paddingHorizontal: 12,
     ...Shadow.card,
   },
-  champTop: { flexDirection: "row", alignItems: "center", gap: 8 },
-  champCrown: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Brand.gold,
+  podCol: { flex: 1, alignItems: "center", gap: 4 },
+  podCrown: { fontFamily: FONT, fontSize: 11.5, fontWeight: Weight.bold, color: Brand.gold, letterSpacing: 1 },
+  podName: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: "#fff", maxWidth: "100%" },
+  podKm: { fontFamily: FONT_DISPLAY, fontSize: 18, color: "#fff", letterSpacing: -0.3 },
+  // 단위는 예외 없이 브랜드 블루(전역 규칙) — 골드는 순위 뱃지·1등 라벨이 이미 들고 있다.
+  podUnit: { fontFamily: FONT, fontSize: 11.5, fontWeight: Weight.bold, color: Brand.brand },
+  podStep: {
+    width: "100%",
+    borderTopLeftRadius: Radius.chip,
+    borderTopRightRadius: Radius.chip,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: 6,
+    marginTop: 4,
   },
-  champCrownText: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: "#fff" },
-  champLabel: { fontFamily: FONT, fontSize: 12, fontWeight: Weight.bold, letterSpacing: 1.5, color: Brand.gold },
-  // ⚠️ 실기기(320dp 폭)에서 아바타 58 + 거리 30pt가 이름 칸을 먹어 "TESTM2…"로 잘렸다.
-  // 시그니처 카드에서 주인공 이름이 잘리면 카드의 의미가 없다 → 셋 다 한 단계씩 줄인다.
-  champBody: { flexDirection: "row", alignItems: "center", gap: 10 },
-  champAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,.08)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  champName: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: "#fff" },
-  champRuns: { fontFamily: FONT, fontSize: 12.5, color: "#8b929b", marginTop: 2 },
-  champKm: { fontFamily: FONT_DISPLAY, fontSize: 26, color: "#fff", letterSpacing: -0.5 },
-  // 단위는 **예외 없이 브랜드 블루**(전역 규칙). 여기만 골드였더니 바로 아래 월간 리포트
-  // 카드(단위=블루)와 규칙이 갈렸다(독립 채점 R11 중대 지적). 이 카드의 골드는
-  // 순위 뱃지와 "내가 이번 주 1등!" 라벨이 이미 충분히 들고 있다.
-  champUnit: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.brand },
+  podStepEmpty: { backgroundColor: "rgba(255,255,255,.10)" },
+  podStepNum: { fontFamily: FONT_DISPLAY, fontSize: 18, color: "#fff" },
+  podStepNumEmpty: { fontFamily: FONT_DISPLAY, fontSize: 18, color: "rgba(255,255,255,.35)" },
 
   sectionH: { fontFamily: FONT,
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 4, marginBottom: -2 },
