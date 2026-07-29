@@ -381,7 +381,10 @@ export default function RunScreen() {
                   <View style={styles.whoRow}>
                     <Text style={styles.who}>{item.name}</Text>
                     {/* 걷기는 러닝과 페이스 성격이 달라 한눈에 구분돼야 한다(랭킹·배지에서도 제외됨). */}
-                    {isWalk(item) ? (
+                    {/* "걷기" 필터를 이미 고른 목록에서는 행마다 또 "걷기"라고 할 필요가 없다
+                        — 세그먼트가 이미 말하고 있어 중복이다(독립 채점 R16).
+                        섞여 나오는 [전체]에서만 태그를 단다. 상세에서도 같은 이유로 뺐다. */}
+                    {kind === "all" && isWalk(item) ? (
                       <View style={styles.walkTag}>
                         <Text style={styles.walkTagText}>걷기</Text>
                       </View>
