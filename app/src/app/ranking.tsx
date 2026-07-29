@@ -96,10 +96,19 @@ export default function RankingScreen() {
                           <Text style={styles.podCrown}>{isMe ? "내가 1등!" : "1등"}</Text>
                         )}
                         <Avatar name={r.name} size={idx === 0 ? 52 : 42} me={isMe} />
-                        {/* 시상대 한 칸은 320dp에서 ~81dp뿐이라 4자만 넘어도 잘린다.
-                            **시그니처 카드에서 주인공 이름이 잘리면 카드의 의미가 없다**
-                            → 두 줄까지 허용(4위 이하 행과 같은 처방). */}
-                        <Text style={styles.podName} numberOfLines={2}>{r.name}</Text>
+                        {/* ⚠️ 시상대는 목록 행과 **다른 규칙**이어야 한다.
+                            두 줄을 허용했더니 1위 칸만 길어져 2·3위와 세로 정렬이 무너졌다
+                            (실기기 확인) — 시상대는 정렬이 생명이라 이건 개선이 아니라 후퇴다.
+                            → **한 줄 고정 + 글자만 줄여 담는다**(최소 75%). 그래도 아주 긴
+                            이름은 말줄임이 남지만, 시상대의 목적은 "누가 1등인지 한눈에"이지
+                            이름 전체 표시가 아니다. **풀네임은 4위 이하 목록(3줄)이 책임진다.** */}
+                        <Text
+                          style={styles.podName}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.75}>
+                          {r.name}
+                        </Text>
                         <Text style={styles.podKm}>
                           {r.km.toFixed(1)}
                           <Text style={styles.podUnit}> km</Text>
