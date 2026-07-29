@@ -259,17 +259,12 @@ export default function RunScreen() {
           </View>
         )}
 
-        {!!name && (
-          <View style={styles.whoBar}>
-            <Icon name="users" size={14} color={Brand.soft} />
-            <Text style={styles.whoBarText}>
-              <Text style={styles.whoBarName}>{name}</Text>님의 기록
-            </Text>
-          </View>
-        )}
-
         <View style={styles.listHead}>
-          <Text style={styles.listTitle}>지난 러닝</Text>
+          {/* ⚠️ 이 목록은 **크루 전체**다(내 기록만이 아니다). 예전엔 바로 위에
+              "OOO님의 기록" 라벨이 있어 내 기록처럼 읽혔는데, 그 라벨은 원래 아래
+              [직접 입력] 폼을 가리키던 것이었다. 폼을 목록 아래로 옮기면서 라벨만 남아
+              거짓말이 됐다(독립 채점 R14가 실데이터에서 잡아냄) → 제목에서 분명히 한다. */}
+          <Text style={styles.listTitle}>크루의 지난 러닝</Text>
           <Text style={styles.listHint}>최근 1주</Text>
         </View>
         <View style={styles.segRow}>
@@ -294,7 +289,14 @@ export default function RunScreen() {
   const footer = useMemo(
     () => (
       <View style={styles.formCard}>
-        <Text style={styles.formTitle}>직접 입력</Text>
+        <View style={styles.formHead}>
+          <Text style={styles.formTitle}>직접 입력</Text>
+          {!!name && (
+            <Text style={styles.formWho} numberOfLines={1}>
+              <Text style={styles.formWhoName}>{name}</Text>님으로 저장돼요
+            </Text>
+          )}
+        </View>
         <View style={styles.formRow}>
           <View style={styles.field}>
             <Text style={styles.formLabel}>거리 (km)</Text>
@@ -511,10 +513,10 @@ const styles = StyleSheet.create({
   addBtnText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
 
-  whoBar: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: -4 },
-  whoBarText: { fontFamily: FONT,
-    fontSize: 13, color: Brand.soft, fontWeight: Weight.regular },
-  whoBarName: { fontWeight: Weight.bold, color: Brand.ink },
+  formHead: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  formWho: { flex: 1, textAlign: "right", fontFamily: FONT,
+    fontSize: 12, color: Brand.soft, fontWeight: Weight.regular },
+  formWhoName: { fontWeight: Weight.bold, color: Brand.ink2 },
 
   listHead: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 },
   listTitle: { fontFamily: FONT,

@@ -120,7 +120,7 @@ export default function RankingScreen() {
                       <View style={[styles.rankBadge, styles.rankBadgePlain]}>
                         <Text style={[styles.rankBadgeText, styles.rankBadgeTextPlain]}>{i + 1}</Text>
                       </View>
-                      <Avatar name={r.name} size={38} me={isMe} />
+                      <Avatar name={r.name} size={34} me={isMe} />
                       <View style={{ flex: 1, gap: 6 }}>
                         <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={1}>
                           {r.name}
@@ -231,10 +231,12 @@ const styles = StyleSheet.create({
   barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.line2, overflow: "hidden" },
   barFill: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.gold },
 
+  // 320dp에서 뱃지(26)+아바타+거리칸이 이름 자리를 좁혀 "하늘(테스…"처럼 잘렸다(R14).
+  // 아바타를 34로, 간격을 10으로 줄여 이름에 폭을 돌려준다.
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     backgroundColor: Brand.card,
     borderWidth: 1,
     borderColor: "transparent",
@@ -264,8 +266,9 @@ const styles = StyleSheet.create({
   podCrown: { fontFamily: FONT, fontSize: 11.5, fontWeight: Weight.bold, color: Brand.gold, letterSpacing: 1 },
   podName: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: "#fff", maxWidth: "100%" },
   podKm: { fontFamily: FONT_DISPLAY, fontSize: 18, color: "#fff", letterSpacing: -0.3 },
-  // 단위는 예외 없이 브랜드 블루(전역 규칙) — 골드는 순위 뱃지·1등 라벨이 이미 들고 있다.
-  podUnit: { fontFamily: FONT, fontSize: 11.5, fontWeight: Weight.bold, color: Brand.brand },
+  // 단위는 예외 없이 브랜드 블루(전역 규칙). 단 **다크 면이라 brandOnDark**를 쓴다 —
+  // 라이트용 블루를 그대로 얹으면 대비 3.06:1로 AA 미달이다(R14 실측).
+  podUnit: { fontFamily: FONT, fontSize: 11.5, fontWeight: Weight.bold, color: Brand.brandOnDark },
   podStep: {
     width: "100%",
     borderTopLeftRadius: Radius.chip,
