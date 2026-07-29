@@ -133,7 +133,7 @@ export default function RunDetailScreen() {
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <View style={styles.topBar}>
         {back}
-        <Text style={styles.topTitle}>러닝 상세</Text>
+        <Text style={styles.topTitle}>{walk ? "걷기 상세" : "러닝 상세"}</Text>
         <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
           <Icon name="trash" size={19} color={Brand.faint} />
         </PressableScale>
@@ -148,11 +148,6 @@ export default function RunDetailScreen() {
           <Text style={styles.metaText} numberOfLines={1}>
             {run.name} · {sourceLabel(run.source)} · {fmtDate(run.startedAt ?? run.createdAt)}
           </Text>
-          {walk && (
-            <View style={styles.walkTag}>
-              <Text style={styles.walkTagText}>걷기</Text>
-            </View>
-          )}
         </View>
 
         {/* 히어로 — 거리 */}
@@ -237,13 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 13, color: Brand.soft, fontWeight: Weight.regular },
 
   hero: { backgroundColor: Brand.dark, borderRadius: Radius.hero, padding: 24 },
-  walkTag: {
-    backgroundColor: Brand.brandSoft,
-    borderRadius: Radius.chip,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  walkTagText: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold, color: Brand.brandDeep },
   heroLab: { color: "#aab2bb", fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular },
   heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
