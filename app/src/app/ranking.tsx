@@ -96,7 +96,10 @@ export default function RankingScreen() {
                           <Text style={styles.podCrown}>{isMe ? "내가 1등!" : "1등"}</Text>
                         )}
                         <Avatar name={r.name} size={idx === 0 ? 52 : 42} me={isMe} />
-                        <Text style={styles.podName} numberOfLines={1}>{r.name}</Text>
+                        {/* 시상대 한 칸은 320dp에서 ~81dp뿐이라 4자만 넘어도 잘린다.
+                            **시그니처 카드에서 주인공 이름이 잘리면 카드의 의미가 없다**
+                            → 두 줄까지 허용(4위 이하 행과 같은 처방). */}
+                        <Text style={styles.podName} numberOfLines={2}>{r.name}</Text>
                         <Text style={styles.podKm}>
                           {r.km.toFixed(1)}
                           <Text style={styles.podUnit}> km</Text>
@@ -126,7 +129,11 @@ export default function RankingScreen() {
                           있던 "N회"를 진행바 옆으로 내려 거리 칸을 숫자만 남기고,
                           그만큼 이름이 가져간다. */}
                       <View style={{ flex: 1, gap: 5 }}>
-                        <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={1}>
+                        {/* 이름은 **신원**이라 잘리면 누군지 모른다. 19자(한계 20자)를 320dp
+                            한 줄에 넣을 방법은 없으므로 **두 줄까지 허용**한다 — 짧은 이름은
+                            그대로 한 줄이라 대부분의 행은 영향이 없고, 긴 이름만 펼쳐진다.
+                            (구조 변경으로 이름 칸을 넓혔지만 그것만으론 5자밖에 안 보였다) */}
+                        <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={2}>
                           {r.name}
                           {isMe ? " (나)" : ""}
                         </Text>
@@ -269,7 +276,8 @@ const styles = StyleSheet.create({
   },
   podCol: { flex: 1, alignItems: "center", gap: 4 },
   podCrown: { fontFamily: FONT, fontSize: 11.5, fontWeight: Weight.bold, color: Brand.gold, letterSpacing: 1 },
-  podName: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: "#fff", maxWidth: "100%" },
+  podName: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: "#fff", maxWidth: "100%",
+    textAlign: "center", lineHeight: 16 },
   podKm: { fontFamily: FONT_DISPLAY, fontSize: 18, color: "#fff", letterSpacing: -0.3 },
   // 단위는 예외 없이 브랜드 블루(전역 규칙). 단 **다크 면이라 brandOnDark**를 쓴다 —
   // 라이트용 블루를 그대로 얹으면 대비 3.06:1로 AA 미달이다(R14 실측).
@@ -328,7 +336,7 @@ const styles = StyleSheet.create({
   relTrack: { flex: 1, height: 5, borderRadius: 3, backgroundColor: Brand.line2, overflow: "hidden" },
   relFill: { height: 5, borderRadius: 3 },
   rowName: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 19 },
   rowNameMe: { color: Brand.brandDeep },
   rowBarRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   rowRuns: { fontFamily: FONT, fontSize: 11, color: Brand.soft },
