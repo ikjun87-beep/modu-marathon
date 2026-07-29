@@ -133,7 +133,7 @@ export default function RankingScreen() {
                             한 줄에 넣을 방법은 없으므로 **두 줄까지 허용**한다 — 짧은 이름은
                             그대로 한 줄이라 대부분의 행은 영향이 없고, 긴 이름만 펼쳐진다.
                             (구조 변경으로 이름 칸을 넓혔지만 그것만으론 5자밖에 안 보였다) */}
-                        <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={2}>
+                        <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={3}>
                           {r.name}
                           {isMe ? " (나)" : ""}
                         </Text>
