@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius } from "@/lib/brand";
 import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
-import { fmtDuration, paceLabel, type LatLng } from "@/lib/run";
+import { fmtDuration, isWalk, paceLabel, type LatLng } from "@/lib/run";
 import { loadRunPath, removeRunPath } from "@/lib/run-path";
 
 function sourceIcon(src?: string): IconName {
@@ -107,6 +107,7 @@ export default function RunDetailScreen() {
   const hr = run.avgHr ? Math.round(Number(run.avgHr)) : null;
   const gain = run.elevationGainM ? Math.round(Number(run.elevationGainM)) : null;
   const hasPath = !!path && path.length > 1;
+  const walk = isWalk(run);
 
   // 전역 규칙: 숫자=본문색 + **단위=브랜드 블루**(마이 탭·홈·랭킹과 동일 문법)
   // 페이스는 "5'46\"/km" 통짜 문자열이라 단위가 본문색으로 남아 있었다(실기기 확인)
@@ -144,14 +145,21 @@ export default function RunDetailScreen() {
           <View style={styles.srcBadge}>
             <Icon name={sourceIcon(run.source)} size={15} color={Brand.brandDeep} />
           </View>
-          <Text style={styles.metaText}>
+          <Text style={styles.metaText} numberOfLines={1}>
             {run.name} · {sourceLabel(run.source)} · {fmtDate(run.startedAt ?? run.createdAt)}
           </Text>
+          {walk && (
+            <View style={styles.walkTag}>
+              <Text style={styles.walkTagText}>걷기</Text>
+            </View>
+          )}
         </View>
 
         {/* 히어로 — 거리 */}
         <View style={styles.hero}>
-          <Text style={styles.heroLab}>이번 러닝 거리</Text>
+          {/* 목록에선 회색 링·"걷기" 태그로 구분해놓고 상세로 넘어오면 그 구분이 끊겨,
+              걷기 기록을 열어도 "이번 러닝 거리"라고 했다(독립 채점 R15가 새로 발견). */}
+          <Text style={styles.heroLab}>{walk ? "이번 걷기 거리" : "이번 러닝 거리"}</Text>
           <View style={styles.heroNumRow}>
             <Text style={styles.heroNum}>{km.toFixed(2)}</Text>
             <Text style={styles.heroUnit}>km</Text>
@@ -229,12 +237,22 @@ const styles = StyleSheet.create({
     fontSize: 13, color: Brand.soft, fontWeight: Weight.regular },
 
   hero: { backgroundColor: Brand.dark, borderRadius: Radius.hero, padding: 24 },
+  walkTag: {
+    backgroundColor: Brand.brandSoft,
+    borderRadius: Radius.chip,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  walkTagText: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold, color: Brand.brandDeep },
   heroLab: { color: "#aab2bb", fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.regular },
   heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
   heroNum: { color: "#fff", fontFamily: FONT_DISPLAY,
     fontSize: 50, fontWeight: Weight.bold, letterSpacing: -1.5, lineHeight: 52 },
-  heroUnit: { color: Brand.brand, fontFamily: FONT,
+  // ⚠️ **다크 면 위라 brandOnDark**. 라이트용 블루(#2563c9)를 그대로 얹으면 3.06:1로
+  // AA 미달이다. 시상대만 고치고 여기를 빼먹어 R15에서 다시 지적받았다 —
+  // `backgroundColor: Brand.dark`를 쓰는 곳은 텍스트색을 반드시 전수 확인할 것.
+  heroUnit: { color: Brand.brandOnDark, fontFamily: FONT,
     fontSize: 21, fontWeight: Weight.bold, marginLeft: 6, marginBottom: 7 },
 
   mapCard: { height: 240, borderRadius: Radius.card, overflow: "hidden" },

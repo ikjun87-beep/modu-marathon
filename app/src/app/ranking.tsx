@@ -121,22 +121,26 @@ export default function RankingScreen() {
                         <Text style={[styles.rankBadgeText, styles.rankBadgeTextPlain]}>{i + 1}</Text>
                       </View>
                       <Avatar name={r.name} size={34} me={isMe} />
-                      <View style={{ flex: 1, gap: 6 }}>
+                      {/* 아바타·간격만 줄여선(8px) 긴 이름을 못 담는다 — 실제로 R15에서
+                          "여전히 잘린다"고 다시 지적받았다. **구조를 바꾼다**: 오른쪽 칸에
+                          있던 "N회"를 진행바 옆으로 내려 거리 칸을 숫자만 남기고,
+                          그만큼 이름이 가져간다. */}
+                      <View style={{ flex: 1, gap: 5 }}>
                         <Text style={[styles.rowName, isMe && styles.rowNameMe]} numberOfLines={1}>
                           {r.name}
                           {isMe ? " (나)" : ""}
                         </Text>
-                        <View style={styles.relTrack}>
-                          <View style={[styles.relFill, { width: `${rel}%`, backgroundColor: Brand.brand }]} />
+                        <View style={styles.rowBarRow}>
+                          <View style={styles.relTrack}>
+                            <View style={[styles.relFill, { width: `${rel}%`, backgroundColor: Brand.brand }]} />
+                          </View>
+                          <Text style={styles.rowRuns}>{r.runs}회</Text>
                         </View>
                       </View>
-                      <View style={styles.kmCol}>
-                        <Text style={styles.rowKm}>
-                          {r.km.toFixed(1)}
-                          <Text style={styles.rowUnit}> km</Text>
-                        </Text>
-                        <Text style={styles.rowRuns}>{r.runs}회</Text>
-                      </View>
+                      <Text style={styles.rowKm}>
+                        {r.km.toFixed(1)}
+                        <Text style={styles.rowUnit}> km</Text>
+                      </Text>
                     </View>
                   );
                 })}
@@ -231,8 +235,9 @@ const styles = StyleSheet.create({
   barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.line2, overflow: "hidden" },
   barFill: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.gold },
 
-  // 320dp에서 뱃지(26)+아바타+거리칸이 이름 자리를 좁혀 "하늘(테스…"처럼 잘렸다(R14).
-  // 아바타를 34로, 간격을 10으로 줄여 이름에 폭을 돌려준다.
+  // 320dp에서 뱃지(26)+아바타+거리칸이 이름 자리를 좁혀 "하늘(테스…"처럼 잘렸다.
+  // 크기를 조금 줄이는 것(R14, 8px)으론 부족해 R15에서 다시 지적받았고,
+  // "N회"를 진행바 옆으로 내리는 **구조 변경**으로 해결했다(R15).
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -320,14 +325,13 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontFamily: FONT,
     fontSize: 16, fontWeight: Weight.bold, color: Brand.brandDeep },
-  relTrack: { height: 5, borderRadius: 3, backgroundColor: Brand.line2, overflow: "hidden" },
+  relTrack: { flex: 1, height: 5, borderRadius: 3, backgroundColor: Brand.line2, overflow: "hidden" },
   relFill: { height: 5, borderRadius: 3 },
   rowName: { fontFamily: FONT,
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
   rowNameMe: { color: Brand.brandDeep },
-  kmCol: { alignItems: "flex-end" },
-  rowRuns: { fontFamily: FONT,
-    fontSize: 11.5, color: Brand.soft, marginTop: 1 },
+  rowBarRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  rowRuns: { fontFamily: FONT, fontSize: 11, color: Brand.soft },
   rowKm: { fontFamily: FONT,
     fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   // 전역 규칙: 숫자=본문색 + 단위=브랜드 블루
