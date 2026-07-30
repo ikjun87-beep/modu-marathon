@@ -2,6 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // `scripts/*.ts`는 node가 직접 실행한다(`node --experimental-strip-types`) — node의 ESM
+    // 해석기는 확장자를 요구하므로 `.ts`를 붙여 import 한다. 앱 번들은 Metro가 처리하니 무관.
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": [
         "./src/*"

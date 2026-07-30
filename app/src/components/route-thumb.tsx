@@ -16,46 +16,21 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Circle, Polyline } from "react-native-svg";
 
 import { Brand, Radius } from "@/lib/brand";
+import { fitPath } from "@/lib/path-fit";
 import type { LatLng } from "@/lib/run";
 
 type Props = { path: LatLng[]; size?: number };
 
 export function RouteThumb({ path, size = 44 }: Props) {
-  const pad = size * 0.16; // 선이 모서리에 붙지 않게
-  const box = size - pad * 2;
-
-  // 위경도를 정사각 박스에 맞춘다. 위도/경도 스케일이 달라 그대로 쓰면 경로가 찌그러지므로
-  // **가로세로 중 큰 쪽에 맞춰 등비 축소**하고 남는 축은 가운데 정렬한다.
-  const lats = path.map((p) => p.lat);
-  const lngs = path.map((p) => p.lng);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  // 경도 1도는 위도에 따라 짧아진다 — cos 보정을 넣어야 실제 모양이 나온다.
-  const cos = Math.cos(((minLat + maxLat) / 2) * (Math.PI / 180)) || 1;
-  const spanLat = Math.max(maxLat - minLat, 1e-6);
-  const spanLng = Math.max((maxLng - minLng) * cos, 1e-6);
-  const scale = box / Math.max(spanLat, spanLng);
-  const offX = (box - spanLng * scale) / 2;
-  const offY = (box - spanLat * scale) / 2;
-
-  const pts = path
-    .map((p) => {
-      const x = pad + offX + (p.lng - minLng) * cos * scale;
-      // SVG는 y가 아래로 증가 — 북쪽이 위로 가도록 뒤집는다.
-      const y = pad + offY + (maxLat - p.lat) * scale;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-
-  const start = path[0];
-  const sx = pad + offX + (start.lng - minLng) * cos * scale;
-  const sy = pad + offY + (maxLat - start.lat) * scale;
+  // 좌표 변환은 `lib/path-fit`에 공용화했다 — 공유 카드(1080px)가 같은 러닝을
+  // 같은 모양으로 그려야 하기 때문이다(목록과 공유 이미지의 경로가 다르면 버그로 읽힌다).
+  const { points, start } = fitPath(path, size, size * 0.16);
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
       <Svg width={size} height={size}>
         <Polyline
-          points={pts}
+          points={points}
           fill="none"
           stroke={Brand.brand}
           strokeWidth={2}
@@ -63,7 +38,7 @@ export function RouteThumb({ path, size = 44 }: Props) {
           strokeLinejoin="round"
         />
         {/* 출발점 — 어디서 시작했는지가 경로를 읽는 기준점이 된다 */}
-        <Circle cx={sx} cy={sy} r={2.6} fill={Brand.gold} />
+        <Circle cx={start.x} cy={start.y} r={2.6} fill={Brand.gold} />
       </Svg>
     </View>
   );

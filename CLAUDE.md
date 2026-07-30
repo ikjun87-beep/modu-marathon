@@ -13,11 +13,13 @@ web/                  홈페이지(정적 HTML) — 공개배포 https://modu-ma
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
   src/app/            화면(Expo Router 파일 라우팅, 하단 5탭 NativeTabs): index=홈(Today 큐레이션·통합검색) / crew=크루 / explore/=러닝(explore/_layout=Stack, index=목록, run/[id]=상세 push+댓글, ios_from_right) / ranking=랭킹 / my=마이. 탭아이콘=Material `md=`
-  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·run-path.ts(GPS경로 온디바이스 저장,서버미저장)·map-style.ts(구글맵 커스텀 파스텔)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·session·auth·brand
-  src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·run-map.native/web.tsx(구글맵 경로,플랫폼분리)·name-field·schedule-section·gallery-section 등
+  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·run-path.ts(GPS경로 온디바이스 저장,서버미저장)·path-fit.ts(경로→박스 좌표변환, 썸네일·공유카드 공용)·map-style.ts(구글맵 커스텀 파스텔)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·share-layout.ts(공유카드 좌표표)·text-metrics.ts(폰트 실측 글자폭)·share-image.ts(PNG저장·공유시트)·session·auth·brand
+  src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·run-map.native/web.tsx(구글맵 경로,플랫폼분리)·share-card.tsx(공유카드 1080px SVG)·share-sheet.tsx(공유 미리보기 모달)·name-field·schedule-section·gallery-section 등
   plugins/            커스텀 Expo config 플러그인(withHealthConnectPermissionDelegate=워치 권한런처 등록)
   scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
   scripts/build-local-apk.sh  로컬 APK 빌드(prebuild→릴리스 서명 주입→gradlew assembleRelease)
+  scripts/check-share-card.ts  공유카드 레이아웃 산술 검산(실기기 빌드 없이 넘침·겹침 확인) `node --experimental-strip-types`
+  scripts/font-advance.py  TTF hmtx에서 글자 advance width 실측(공유카드 폭 계산의 근거)
   scripts/strip-mascot-shadow.mjs  마스코트 PNG에서 발밑 그림자 제거(가장 큰 연결 덩어리만 남김)
   scripts/optimize-mascot.mjs  마스코트 여백 잘라 512px 축소·압축
   metro.config.js     package exports 끔 — firebase v10의 dual-package hazard 회피(끄지 않으면 앱 즉사)
@@ -32,7 +34,7 @@ firebase.json·.firebaserc  Firebase 배포 설정(hosting=web/ · firestore rul
 ## 기술 스택
 - 백엔드: **Firebase**(Auth·Firestore·Storage) — 웹·앱·워치 공용 단일 소스
 - 웹: 정적 HTML/CSS/JS (빌드 없음), Firebase JS SDK(CDN)
-- 앱: **Expo SDK 57 · React Native · TypeScript · Expo Router**, firebase npm, AsyncStorage, react-native-svg, expo-location(실시간 GPS), react-native-maps(구글맵 경로표시), react-native-health-connect(갤럭시워치)
+- 앱: **Expo SDK 57 · React Native · TypeScript · Expo Router**, firebase npm, AsyncStorage, react-native-svg, expo-location(실시간 GPS), react-native-maps(구글맵 경로표시), react-native-health-connect(갤럭시워치), expo-file-system·expo-sharing(공유 카드 PNG 저장·공유 시트)
 - 워치: Health Connect(Android/갤럭시) — **minSdk 26 필수**(`expo-build-properties`로 지정, dev/preview build 전용). HealthKit(iOS)은 후행
 
 ## 주요 명령어
@@ -103,6 +105,7 @@ powershell.exe -NoProfile -Command "& '$A' logcat -d -b crash"   # 패키지명=
   - 스크롤은 허용하되 **첫 뷰포트 = 상태요약1 + CTA1 + 최근항목1**. 기준 360×800dp(실사용 550dp), 잘리면 폰트가 아니라 콘텐츠를 줄인다.
     ⚠️ **검증 기준기(테스트 갤럭시S21)는 디스플레이 배율이 올라가 있어 실제 320×711dp**(density 480→540). 기준보다 12.5% 좁으니 여기서 안 잘리면 대부분의 폰에서 안전하다 — 긴 한글 카피는 13자 안쪽으로
   - 보조 기능이 첫 뷰포트를 먹지 않게 한다: 러닝 탭 '직접 입력'은 목록 **아래**(FlatList footer), 마이 탭 캐릭터 4종은 **접어두고** [바꾸기]로 펼친다
+- **공유 카드는 SVG 절대좌표**(`components/share-card.tsx` · 1080px 기준). RN과 달리 **레이아웃 엔진이 없어 넘친 글자가 조용히 잘린다** — 좌표·폰트크기를 만졌으면 반드시 `cd app && node --experimental-strip-types scripts/check-share-card.ts`로 최악 케이스(마라톤 거리·20자 이름·6시간 러닝)를 먼저 검산할 것. 글자 폭은 눈대중이 아니라 폰트 `hmtx` 실측값(`lib/text-metrics.ts`).
 - **마스코트 = 양『오키』** 4종(`assets/images/mascot-{m,f}-{red,green}.png`, 2026-07-30 사람→양 전면교체). 4종 = **동글 울 / 땋은 울**(형태) × 레드 / 그린(조끼). 파일명·내부 타입(`m-`/`f-`)은 유지 — 바꾸면 저장된 선택이 끊긴다.
   - **이름은 남용 금지.** `MASCOT_NAME` 상수 하나로 정의하고 **마스코트가 실제로 그려진 자리 중 이름이 정보가 되는 곳**에만(마이 탭 캐릭터 섹션 · 배지 축하). 빈 상태·온보딩엔 넣지 않는다 — 반복 노출 지점에 1인칭을 쓰면 3050 남성에게 유치함이 누적된다.
   - **재생성 시 통과 조건**(시안 5컷을 버리며 얻은 것): **늘어진 귀 + 곱슬 울 + 짧고 뭉툭한 주둥이**(길면 말·당나귀로 읽힘) + **정면 3/4 상반신 중심**(측면 전신은 36px 아바타에서 얼굴이 사라진다) + **프레임 여백 명시**(안 하면 머리가 잘림). 얼굴을 살구색 사람 피부로 두면 "곱슬머리 아기"가 된다.

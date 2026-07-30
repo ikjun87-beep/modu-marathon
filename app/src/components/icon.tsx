@@ -33,6 +33,7 @@ export type IconName =
   | "stop"
   | "user"
   | "search"
+  | "share"
   | "chevron-right"
   | "chevron-left";
 
@@ -170,6 +171,16 @@ export function Icon({ name, size = 24, color = Brand.ink, strokeWidth = 1.75 }:
         <>
           <Circle {...s} cx={10.5} cy={10.5} r={6.5} />
           <Path {...s} d="M20 20l-4.9-4.9" />
+        </>
+      )}
+      {/* share — 노드 3개를 잇는 형태. iOS식 "상자 위 화살표"는 안드로이드에서 낯설고,
+          안드로이드 기본 아이콘은 점이 채워져 있어 우리 라인 톤과 어긋난다 → 라인으로 통일. */}
+      {name === "share" && (
+        <>
+          <Path {...s} d="M8.6 10.8l6.8-4.1M8.6 13.2l6.8 4.1" />
+          <Circle {...s} cx={18} cy={5.4} r={2.6} />
+          <Circle {...s} cx={6} cy={12} r={2.6} />
+          <Circle {...s} cx={18} cy={18.6} r={2.6} />
         </>
       )}
       {name === "chevron-right" && <Path {...s} d="M9 6l6 6-6 6" />}

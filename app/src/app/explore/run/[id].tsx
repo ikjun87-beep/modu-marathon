@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CommentThread } from "@/components/comment-thread";
 import { Icon, type IconName } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
+import { ShareSheet } from "@/components/share-sheet";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius, leading } from "@/lib/brand";
@@ -38,6 +39,7 @@ export default function RunDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [path, setPath] = useState<LatLng[] | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => {
@@ -134,9 +136,16 @@ export default function RunDetailScreen() {
       <View style={styles.topBar}>
         {back}
         <Text style={styles.topTitle}>{walk ? "걷기 상세" : "러닝 상세"}</Text>
-        <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
-          <Icon name="trash" size={19} color={Brand.faint} />
-        </PressableScale>
+        {/* 공유는 이 화면의 주 액션이라 브랜드 톤 칩으로 띄우고, 되돌릴 수 없는 삭제는
+            일부러 무배경 faint로 눌러둔다(위험한 쪽을 더 눈에 띄게 두지 않는다). */}
+        <View style={styles.topActions}>
+          <PressableScale style={styles.shareBtn} onPress={() => setSharing(true)} hitSlop={8}>
+            <Icon name="share" size={18} color={Brand.brandDeep} />
+          </PressableScale>
+          <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
+            <Icon name="trash" size={19} color={Brand.faint} />
+          </PressableScale>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -196,6 +205,8 @@ export default function RunDetailScreen() {
         {/* 댓글 */}
         <CommentThread parentId={run.id} />
       </ScrollView>
+
+      <ShareSheet visible={sharing} onClose={() => setSharing(false)} run={run} path={path} />
     </SafeAreaView>
   );
 }
@@ -210,6 +221,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: Radius.input },
+  topActions: { flexDirection: "row", alignItems: "center", gap: 4 },
+  shareBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: Radius.input,
+    backgroundColor: Brand.brandSoft,
+  },
   topTitle: { fontFamily: FONT,
     fontSize: 16, lineHeight: leading(16), fontWeight: Weight.bold, color: Brand.ink },
 
