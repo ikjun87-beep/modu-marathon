@@ -13,7 +13,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand, FONT, FONT_DISPLAY, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, leading } from "@/lib/brand";
 import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { fmtDuration, isWalk, paceLabel, type LatLng } from "@/lib/run";
@@ -211,13 +211,13 @@ const styles = StyleSheet.create({
   },
   iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: Radius.input },
   topTitle: { fontFamily: FONT,
-    fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 16, lineHeight: leading(16), fontWeight: Weight.bold, color: Brand.ink },
 
   body: { padding: 18, gap: 14, paddingBottom: 48 },
 
   missing: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   missingText: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.regular },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.regular },
 
   metaRow: { flexDirection: "row", alignItems: "center", gap: 9 },
   srcBadge: {
@@ -229,11 +229,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   metaText: { flex: 1, fontFamily: FONT,
-    fontSize: 13, color: Brand.soft, fontWeight: Weight.regular },
+    fontSize: 13, lineHeight: leading(13), color: Brand.soft, fontWeight: Weight.regular },
 
   hero: { backgroundColor: Brand.dark, borderRadius: Radius.hero, padding: 24 },
   heroLab: { color: "#aab2bb", fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.regular },
   heroNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 6 },
   heroNum: { color: "#fff", fontFamily: FONT_DISPLAY,
     fontSize: 50, fontWeight: Weight.bold, letterSpacing: -1.5, lineHeight: 52 },
@@ -270,9 +270,9 @@ const styles = StyleSheet.create({
   },
   tileHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   tileLab: { fontFamily: FONT,
-    fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
+    fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft, fontWeight: Weight.regular },
   tileVal: { fontFamily: FONT,
-    fontSize: 18, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 18, lineHeight: leading(18), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   tileUnit: { fontFamily: FONT,
     fontSize: 13, fontWeight: Weight.bold, color: Brand.brand },
 });

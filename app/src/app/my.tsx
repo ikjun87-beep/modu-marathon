@@ -28,7 +28,7 @@ import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HAS_AUTH, signOutUser, watchAccount, type Account } from "@/lib/auth";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { isWatchAutoSync, setWatchAutoSync } from "@/lib/health-consent";
@@ -326,7 +326,8 @@ export default function MyScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.acctTitle}>로그인하고 기록 지키기</Text>
-                  <Text style={styles.acctSub}>기기를 바꿔도 러닝 기록이 따라와요</Text>
+                  {/* 320dp에서 "러닝 기록이 / 따라와요"로 갈렸다 → 끊기는 자리를 고정한다. */}
+                  <Text style={styles.acctSub}>기기를 바꿔도{"\n"}러닝 기록이 따라와요</Text>
                 </View>
                 <Icon name="chevron-right" size={18} color={Brand.faint} />
               </PressableScale>
@@ -408,7 +409,7 @@ export default function MyScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.switchLabel}>워치 자동 불러오기</Text>
-                <Text style={styles.switchSub}>앱을 열면 오늘 기록을 가져와요</Text>
+                <Text style={styles.switchSub}>앱을 열면{"\n"}오늘 기록을 가져와요</Text>
               </View>
               <Switch
                 value={autoSync}
@@ -472,9 +473,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Brand.tint,
   },
-  heroName: { fontFamily: FONT, fontSize: 20, fontWeight: Weight.bold, color: Brand.ink, marginTop: 8 },
-  heroSub: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
-  heroReset: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep, marginTop: 6 },
+  heroName: { fontFamily: FONT, fontSize: 20, lineHeight: leading(20), fontWeight: Weight.bold, color: Brand.ink, marginTop: 8 },
+  heroSub: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
+  heroReset: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.bold, color: Brand.brandDeep, marginTop: 6 },
 
   profile: {
     gap: 12,
@@ -499,8 +500,8 @@ const styles = StyleSheet.create({
     fontSize: 12, color: Brand.soft, lineHeight: 17 },
   mascotBlock: { marginTop: 12, gap: 8 },
   mascotToggle: { flexDirection: "row", alignItems: "center", gap: 4 },
-  mascotLabel: { flex: 1, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.soft },
-  mascotToggleText: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.brandDeep },
+  mascotLabel: { flex: 1, fontFamily: FONT, fontSize: 13.5, lineHeight: leading(13.5), fontWeight: Weight.bold, color: Brand.soft },
+  mascotToggleText: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), fontWeight: Weight.bold, color: Brand.brandDeep },
   mascotGrid: { flexDirection: "row", gap: 8 },
   mascotOpt: {
     flex: 1,
@@ -514,10 +515,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mascotOptOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
-  mascotOptText: { fontFamily: FONT, fontSize: 10.5, color: Brand.soft, fontWeight: Weight.regular },
+  mascotOptText: { fontFamily: FONT, fontSize: 10.5, lineHeight: leading(10.5), color: Brand.soft, fontWeight: Weight.regular },
   mascotOptTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
   pLabel: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.regular, color: Brand.soft },
+    fontSize: 12, lineHeight: leading(12), fontWeight: Weight.regular, color: Brand.soft },
   nameInput: {
     flex: 1,
     borderWidth: 1,
@@ -532,7 +533,7 @@ const styles = StyleSheet.create({
   },
 
   sectionH: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 6 },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.ink, marginTop: 6 },
 
   acct: {
     flexDirection: "row",
@@ -562,9 +563,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   acctTitle: { fontFamily: FONT,
-    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.ink },
   acctSub: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, marginTop: 2 },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, marginTop: 2 },
   acctBtn: {
     backgroundColor: Brand.brand,
     borderRadius: Radius.chip,
@@ -581,7 +582,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   acctBtnGhostText: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.bold },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.bold },
 
   tiles: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   skelTile: { flexGrow: 1, flexBasis: "47%" },
@@ -596,9 +597,9 @@ const styles = StyleSheet.create({
   },
   tileHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   tileLab: { fontFamily: FONT,
-    fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular },
+    fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft, fontWeight: Weight.regular },
   tileVal: { fontFamily: FONT,
-    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 19, lineHeight: leading(19), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   tileUnit: { fontFamily: FONT,
     fontSize: 14, fontWeight: Weight.bold, color: Brand.brand },
 
@@ -665,16 +666,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   linkText: { flex: 1, fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.bold, color: Brand.ink },
   // 스위치 행은 제목+설명 2줄이라 linkText(flex:1)를 못 쓴다 — 감싼 View가 flex를 갖는다.
   switchLabel: { fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.bold, color: Brand.ink },
   switchSub: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, marginTop: 2 },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, marginTop: 2 },
 
   appInfo: { alignItems: "center", paddingVertical: 18, gap: 3 },
   appInfoText: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular, color: Brand.soft },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.regular, color: Brand.soft },
   appInfoSub: { fontFamily: FONT,
-    fontSize: 12, color: Brand.faint },
+    fontSize: 12, lineHeight: leading(12), color: Brand.faint },
 });

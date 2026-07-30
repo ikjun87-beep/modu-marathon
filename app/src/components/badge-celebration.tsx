@@ -20,7 +20,7 @@ import Animated, {
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
 import { loadSeenBadges, saveSeenBadges } from "@/lib/badge-seen";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -216,11 +216,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   eyebrow: { fontFamily: FONT,
-    fontSize: 11.5, fontWeight: Weight.bold, letterSpacing: 2, color: Brand.accent },
+    fontSize: 11.5, lineHeight: leading(11.5), fontWeight: Weight.bold, letterSpacing: 2, color: Brand.accent },
   title: { fontFamily: FONT,
-    fontSize: 24, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 24, lineHeight: leading(24), fontWeight: Weight.bold, color: Brand.ink },
   desc: { fontFamily: FONT,
-    fontSize: 13.5, color: Brand.soft, textAlign: "center" },
+    fontSize: 13.5, lineHeight: leading(13.5), color: Brand.soft, textAlign: "center" },
   btn: {
     marginTop: 14,
     backgroundColor: Brand.brand,

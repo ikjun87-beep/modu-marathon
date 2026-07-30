@@ -13,7 +13,7 @@ import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { buildFeed, feedTime, todayRunnerCount } from "@/lib/feed";
 import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
@@ -326,8 +326,8 @@ const styles = StyleSheet.create({
 
   // ── 홈 타임라인(R12) ─────────────────────────────────────────────
   todayLine: { paddingVertical: 2 },
-  todayLineText: { fontFamily: FONT, fontSize: 14, color: Brand.soft, fontWeight: Weight.regular },
-  todayLineNum: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  todayLineText: { fontFamily: FONT, fontSize: 14, lineHeight: leading(14), color: Brand.soft, fontWeight: Weight.regular },
+  todayLineNum: { fontFamily: FONT, fontSize: 16, lineHeight: leading(16), fontWeight: Weight.bold, color: Brand.ink },
   todayLineUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
   crewLine: {
     flexDirection: "row",
@@ -338,10 +338,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  crewLineText: { flex: 1, fontFamily: FONT, fontSize: 13.5, color: Brand.ink2, fontWeight: Weight.regular },
-  crewLineNum: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  crewLineText: { flex: 1, fontFamily: FONT, fontSize: 13.5, lineHeight: leading(13.5), color: Brand.ink2, fontWeight: Weight.regular },
+  crewLineNum: { fontFamily: FONT, fontSize: 16, lineHeight: leading(16), fontWeight: Weight.bold, color: Brand.ink },
   crewLineUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
-  crewLineSub: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
+  crewLineSub: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
 
   startBtn: {
     flexDirection: "row",
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginTop: -4,
   },
-  watchLinkText: { color: Brand.brandDeep, fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold },
+  watchLinkText: { color: Brand.brandDeep, fontFamily: FONT, fontSize: 13.5, lineHeight: leading(13.5), fontWeight: Weight.bold },
 
   evRow: {
     flexDirection: "row",
@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
   feedLine: { flex: 1, width: 2, backgroundColor: Brand.line2, marginTop: 4, marginBottom: -4 },
   feedBody: { flex: 1, paddingBottom: 18, gap: 2 },
   feedHead: { flexDirection: "row", alignItems: "center", gap: 7, minHeight: 30 },
-  feedName: { flex: 1, fontFamily: FONT, fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
-  feedTime: { fontFamily: FONT, fontSize: 11.5, color: Brand.faint },
+  feedName: { flex: 1, fontFamily: FONT, fontSize: 14, lineHeight: leading(14), fontWeight: Weight.bold, color: Brand.ink },
+  feedTime: { fontFamily: FONT, fontSize: 11.5, lineHeight: leading(11.5), color: Brand.faint },
   feedText: { fontFamily: FONT, fontSize: 14, color: Brand.ink2, lineHeight: 20 },
   feedClap: { flexDirection: "row", marginTop: 6 },
 
@@ -395,8 +395,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     padding: 14,
   },
-  feedEmptyTitle: { fontFamily: FONT, fontSize: 14.5, fontWeight: Weight.bold, color: Brand.brandDeep },
-  feedEmptySub: { fontFamily: FONT, fontSize: 12.5, color: Brand.ink2, marginTop: 2 },
+  feedEmptyTitle: { fontFamily: FONT, fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.brandDeep },
+  feedEmptySub: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.ink2, marginTop: 2 },
 
   searchBar: {
     flexDirection: "row",
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 15, color: Brand.ink, paddingVertical: 10 },
   searchEmpty: { alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 40 },
   searchEmptyText: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.regular },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.regular },
   resRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -433,16 +433,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   resTitle: { fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.bold, color: Brand.ink },
   resSub: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, marginTop: 1 },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, marginTop: 1 },
 
 
   // 숫자 강조 규칙은 앱 전역 하나: **숫자=본문/흰색 + 단위=브랜드 블루**
 
 
   sectionH: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 2 },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.ink, marginTop: 2 },
   // 크루 탭 모임카드와 동일 규칙: 날짜=정보(다크 네이비), 블루 솔리드=액션 전용
   evDate: {
     width: 50,
@@ -453,13 +453,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   evM: { color: "#fff", fontFamily: FONT,
-    fontSize: 10, fontWeight: Weight.regular },
+    fontSize: 10, lineHeight: leading(10), fontWeight: Weight.regular },
   evD: { color: "#fff", fontFamily: FONT,
     fontSize: 19, fontWeight: Weight.bold, lineHeight: 21 },
   evTitle: { fontFamily: FONT,
-    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.ink },
   evMeta: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, marginTop: 3 },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, marginTop: 3 },
 
   linkRow: {
     flexDirection: "row",
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   linkText: { flex: 1, fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.bold, color: Brand.ink },
 
   // 랭킹·마이는 하단 탭바로도 갈 수 있는 **보조** 바로가기다. 흰 카드+1px 테두리로 두면
   // ①규칙 위반(테두리만 쓴 카드는 와이어프레임처럼 납작) ②위 카드들과 같은 무게로 보여

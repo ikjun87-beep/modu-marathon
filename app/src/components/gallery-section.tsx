@@ -7,7 +7,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ClapButton } from "@/components/clap-button";
 import { Icon } from "@/components/icon";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 
@@ -84,7 +84,7 @@ export function GallerySection({ myName }: { myName: string }) {
       </View>
 
       {rows.length === 0 ? (
-        <Text style={styles.empty}>아직 사진이 없어요. 첫 인증샷을 올려보세요!</Text>
+        <Text style={styles.empty}>아직 사진이 없어요{"\n"}첫 인증샷을 올려보세요!</Text>
       ) : (
         // 2열 — 3열은 썸네일이 너무 작아 "누가 어디서 뛰었는지"가 안 읽혔다.
         // 친목 크루 앱의 자산은 사진이므로 크게 보여주고 이름·박수를 얹는다(R12 기획).
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   h: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.ink },
   // 섹션 헤더의 보조 액션 — 솔리드 블루는 화면의 주 액션([참석]) 하나로 아낀다(전역 규칙).
   up: {
     flexDirection: "row",
@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
   },
   upBusy: { opacity: 0.6 },
   upText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 13 },
+    fontSize: 13, lineHeight: leading(13) },
   empty: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 13.5, textAlign: "center", paddingVertical: 16 },
+    fontSize: 13.5, lineHeight: leading(13.5), textAlign: "center", paddingVertical: 16 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   cell: {
     width: "48.5%",
@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
-  cap: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: "#fff" },
-  capSub: { fontFamily: FONT, fontSize: 11, color: "rgba(255,255,255,.82)", marginTop: 1 },
+  cap: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.bold, color: "#fff" },
+  capSub: { fontFamily: FONT, fontSize: 11, lineHeight: leading(11), color: "rgba(255,255,255,.82)", marginTop: 1 },
   clapPos: { position: "absolute", right: 6, top: 6 },
   hint: { fontFamily: FONT,
-    fontSize: 11.5, color: Brand.soft },
+    fontSize: 11.5, lineHeight: leading(11.5), color: Brand.soft },
 });

@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Radius, Weight } from "@/lib/brand";
+import { Brand, FONT, Radius, Weight, leading } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 
@@ -95,9 +95,9 @@ const styles = StyleSheet.create({
   },
   btnSm: { paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
   btnOn: { backgroundColor: Brand.brandSoft },
-  emoji: { fontSize: 14 },
-  emojiSm: { fontSize: 12 },
-  count: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.soft },
-  countSm: { fontSize: 11.5 },
+  emoji: { fontSize: 14, lineHeight: leading(14) },
+  emojiSm: { fontSize: 12, lineHeight: leading(12) },
+  count: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.bold, color: Brand.soft },
+  countSm: { fontSize: 11.5, lineHeight: leading(11.5) },
   countOn: { color: Brand.brandDeep },
 });

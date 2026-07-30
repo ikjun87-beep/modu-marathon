@@ -20,7 +20,7 @@ import { openBrowserAsync } from "expo-web-browser";
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { getMyName, setMyName } from "@/lib/session";
 
 const PRIVACY_URL = "https://modu-marathon.web.app/privacy";
@@ -103,6 +103,13 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
 
           <View style={styles.form}>
             <Text style={styles.label}>러너 네임을 정해주세요</Text>
+            {/* ⚠️ autoFocus 를 쓰지 말 것 — 이 화면은 앱의 **첫인상**이다.
+                자동 포커스로 키보드가 곧바로 올라오면 320×711dp(검증 기준기)에서 화면 절반이
+                키보드에 먹혀, 마스코트와 "오늘 5키로, 오키?" 타이틀이 위로 밀려 **잘리고**
+                정작 눌러야 하는 [시작하기]와 처리방침 고지가 가려진다. 즉 공들여 만든 첫
+                화면을 아무도 못 보게 된다(2026-07-30 클린 설치 검증에서 발견).
+                입력 편의는 잃지 않는다 — returnKeyType="done" 의 완료 키가
+                onSubmitEditing 으로 그대로 시작에 연결돼 있다. */}
             <TextInput
               style={styles.input}
               value={name}
@@ -110,7 +117,6 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
               placeholder="예: 홍길동"
               placeholderTextColor={Brand.placeholder}
               maxLength={20}
-              autoFocus
               returnKeyType="done"
               onSubmitEditing={() => void start()}
             />
@@ -121,13 +127,17 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
             >
               <Text style={styles.btnText}>시작하기</Text>
             </Pressable>
-            <Text style={styles.note}>크루에서 이렇게 보여요. 언제든 바꿀 수 있어요.</Text>
+            {/* 두 문장을 한 줄에 두면 320dp에서 "바꿀 수 / 있어요"처럼 **구 중간에서** 끊긴다.
+                문장이 둘이면 줄도 둘로 나눈다(2026-07-30 회장 지적). */}
+            <Text style={styles.note}>크루에서 이렇게 보여요{"\n"}언제든 바꿀 수 있어요</Text>
+            {/* 한 문장이라 나눌 수 없으니, 끊기는 **자리를 고정**한다.
+                그냥 두면 "동의하는 것으로 / 봅니다"로 어절이 갈린다. */}
             <Text style={styles.consent}>
               시작하면{" "}
               <Text style={styles.consentLink} onPress={() => void openBrowserAsync(PRIVACY_URL)}>
                 개인정보 처리방침
               </Text>
-              에 동의하는 것으로 봅니다.
+              에{"\n"}동의하는 것으로 봅니다.
             </Text>
           </View>
         </ScrollView>
@@ -144,9 +154,9 @@ const styles = StyleSheet.create({
   body: { justifyContent: "center", paddingHorizontal: 28, gap: 10 },
   heroRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   title: { fontFamily: FONT,
-    fontSize: 34, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 34, lineHeight: leading(34), fontWeight: Weight.bold, color: Brand.ink },
   sub: { fontFamily: FONT,
-    fontSize: 15, color: Brand.soft, marginBottom: 8 },
+    fontSize: 15, lineHeight: leading(15), color: Brand.soft, marginBottom: 8 },
   perks: { gap: 10, marginTop: 8 },
   // 첫 화면이 앱의 첫인상이다 — 카드는 그림자로 띄운다(전역 규칙).
   // 테두리만 두른 카드 3장이 연달아 나오면 와이어프레임처럼 납작해 보인다.
@@ -169,10 +179,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   perkLabel: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.regular, color: Brand.ink },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.regular, color: Brand.ink },
   form: { paddingHorizontal: 28, paddingBottom: 12, gap: 10 },
   label: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.regular, color: Brand.ink },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.regular, color: Brand.ink },
   input: {
     borderWidth: 1,
     borderColor: Brand.line,
@@ -195,7 +205,7 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 16 },
   note: { fontFamily: FONT,
-    fontSize: 12.5, color: Brand.soft, textAlign: "center", marginTop: 2 },
+    fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft, textAlign: "center", marginTop: 2 },
   consent: { fontFamily: FONT,
     fontSize: 11.5, color: Brand.soft, textAlign: "center", marginTop: 6, lineHeight: 17 },
   consentLink: { color: Brand.brand, fontWeight: Weight.bold, textDecorationLine: "underline" },

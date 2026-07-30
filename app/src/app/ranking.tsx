@@ -11,7 +11,7 @@ import { Icon } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
 import { MonthReportCard } from "@/components/month-report";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
@@ -223,9 +223,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   content: { padding: 18, gap: 12, paddingBottom: 160 },
   title: { fontFamily: FONT,
-    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
+    fontSize: 28, lineHeight: leading(28), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
   sub: { fontFamily: FONT,
-    fontSize: 13, color: Brand.soft, marginBottom: 2 },
+    fontSize: 13, lineHeight: leading(13), color: Brand.soft, marginBottom: 2 },
 
   challenge: {
     backgroundColor: Brand.card,
@@ -244,9 +244,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chTitle: { fontFamily: FONT,
-    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.ink },
   chSub: { fontFamily: FONT,
-    fontSize: 12.5, color: Brand.soft, marginTop: 2, fontWeight: Weight.regular },
+    fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft, marginTop: 2, fontWeight: Weight.regular },
   // 트랙이 warm(#eef2f8)이라 카드 흰 배경과 명도차가 거의 없어 "진행바가 있다"는 것 자체가
   // 안 보였다(독립 채점 R11). 한 단계 진한 line2로 내려 구조를 드러낸다.
   barBg: { height: 10, borderRadius: Radius.chip, backgroundColor: Brand.line2, overflow: "hidden" },
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   podStepNumEmpty: { fontFamily: FONT_DISPLAY, fontSize: 18, color: "rgba(255,255,255,.35)" },
 
   sectionH: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, marginTop: 4, marginBottom: -2 },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.ink, marginTop: 4, marginBottom: -2 },
 
   inviteCard: {
     flexDirection: "row",
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   inviteTitle: { fontFamily: FONT,
-    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+    fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.brandDeep },
   inviteSub: { fontFamily: FONT,
     fontSize: 12.5, color: Brand.ink2, marginTop: 2, lineHeight: 17 },
 
@@ -349,9 +349,9 @@ const styles = StyleSheet.create({
     fontSize: 15, fontWeight: Weight.bold, color: Brand.ink, lineHeight: 19 },
   rowNameMe: { color: Brand.brandDeep },
   rowBarRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  rowRuns: { fontFamily: FONT, fontSize: 11, color: Brand.soft },
+  rowRuns: { fontFamily: FONT, fontSize: 11, lineHeight: leading(11), color: Brand.soft },
   rowKm: { fontFamily: FONT,
-    fontSize: 19, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
+    fontSize: 19, lineHeight: leading(19), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.2 },
   // 전역 규칙: 숫자=본문색 + 단위=브랜드 블루
   rowUnit: { fontFamily: FONT,
     fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },

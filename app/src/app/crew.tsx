@@ -9,7 +9,7 @@ import { Mascot } from "@/components/mascot";
 import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { add, fmtDate, isDemo, remove, subscribe, update, type Row } from "@/lib/crew";
 import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
@@ -146,7 +146,7 @@ export default function CrewScreen() {
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Mascot size={76} />
-            <Text style={styles.empty}>아직 방명록이 없어요. 첫 글을 남겨보세요!</Text>
+            <Text style={styles.empty}>아직 방명록이 없어요{"\n"}첫 글을 남겨보세요!</Text>
           </View>
         }
         renderItem={({ item }) => {
@@ -207,9 +207,9 @@ const styles = StyleSheet.create({
   content: { padding: 18, gap: 12, paddingBottom: 160 },
   header: { gap: 12, marginBottom: 4 },
   title: { fontFamily: FONT,
-    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
+    fontSize: 28, lineHeight: leading(28), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
   sub: { fontFamily: FONT,
-    fontSize: 14, color: Brand.soft },
+    fontSize: 14, lineHeight: leading(14), color: Brand.soft },
   // 모임 요약 칩 — 사진 아래로 밀린 참석 CTA를 첫 뷰포트로 끌어올린다.
   evChip: {
     flexDirection: "row",
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   bannerText: { color: "#7a4a0a", fontFamily: FONT,
-    fontSize: 12.5, fontWeight: Weight.regular },
+    fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.regular },
   formCard: {
     backgroundColor: Brand.card,
     borderRadius: Radius.card,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   formLabel: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular, color: Brand.ink },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.regular, color: Brand.ink },
   msgInput: {
     borderWidth: 1,
     borderColor: Brand.line,
@@ -276,10 +276,10 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
   listHint: { fontFamily: FONT,
-    fontSize: 12.5, color: Brand.soft, fontWeight: Weight.regular, marginTop: 4 },
+    fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft, fontWeight: Weight.regular, marginTop: 4 },
   emptyBox: { alignItems: "center", paddingVertical: 8 },
   empty: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 14, textAlign: "center", paddingVertical: 8 },
+    fontSize: 14, lineHeight: leading(14), textAlign: "center", paddingVertical: 8 },
   item: {
     backgroundColor: Brand.card,
     borderRadius: Radius.input,
@@ -293,11 +293,11 @@ const styles = StyleSheet.create({
     paddingRight: 64, // 우상단 수정·삭제 버튼과 날짜가 겹치지 않도록 여백 확보
   },
   who: { fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 14, color: Brand.ink },
+    fontSize: 14, lineHeight: leading(14), color: Brand.ink },
   date: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft },
   msg: { fontFamily: FONT,
-    fontSize: 14, color: Brand.ink2, marginTop: 5, paddingRight: 20 },
+    fontSize: 14, lineHeight: leading(14), color: Brand.ink2, marginTop: 5, paddingRight: 20 },
   del: { position: "absolute", top: 10, right: 12, padding: 6 },
   editBtn: { position: "absolute", top: 12, right: 40, padding: 4 },
   editBtnText: { fontFamily: FONT,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.warm,
   },
   editCancelText: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.bold, color: Brand.soft },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.bold, color: Brand.soft },
   editSave: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -331,5 +331,5 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.brand,
   },
   editSaveText: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.bold, color: "#fff" },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.bold, color: "#fff" },
 });

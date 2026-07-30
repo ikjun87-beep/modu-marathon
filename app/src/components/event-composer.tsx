@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
 import { createEvent } from "@/lib/events";
 
 function atMidnight(d: Date): number {
@@ -135,10 +135,10 @@ export function EventComposer({ visible, myName, onClose }: Props) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.bg },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 },
-  topTitle: { fontFamily: FONT, fontSize: 18, fontWeight: Weight.bold, color: Brand.ink },
+  topTitle: { fontFamily: FONT, fontSize: 18, lineHeight: leading(18), fontWeight: Weight.bold, color: Brand.ink },
   close: { padding: 4 },
   body: { padding: 18, gap: 8, paddingBottom: 40 },
-  label: { fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold, color: Brand.soft, marginTop: 10 },
+  label: { fontFamily: FONT, fontSize: 13.5, lineHeight: leading(13.5), fontWeight: Weight.bold, color: Brand.soft, marginTop: 10 },
   input: {
     borderWidth: 1,
     borderColor: Brand.line,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   stepBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: Radius.chip },
-  dateText: { fontFamily: FONT, fontSize: 15.5, fontWeight: Weight.bold, color: Brand.ink },
+  dateText: { fontFamily: FONT, fontSize: 15.5, lineHeight: leading(15.5), fontWeight: Weight.bold, color: Brand.ink },
   quickRow: { flexDirection: "row", gap: 8, marginTop: 8 },
   quick: {
     flex: 1,
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.card,
   },
   quickOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
-  quickText: { fontFamily: FONT, fontSize: 13, color: Brand.soft, fontWeight: Weight.bold },
+  quickText: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), color: Brand.soft, fontWeight: Weight.bold },
   quickTextOn: { color: Brand.brandDeep },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: Brand.line },
   saveBtn: { backgroundColor: Brand.brand, borderRadius: Radius.input, paddingVertical: 15, alignItems: "center" },

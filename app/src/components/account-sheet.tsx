@@ -20,7 +20,7 @@ import {
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { AuthError, signInEmail, signInGuest, signUpEmail } from "@/lib/auth";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
 
 type Mode = "signin" | "signup";
 
@@ -87,8 +87,9 @@ export function AccountSheet({
                   <Icon name="close" size={18} color={Brand.soft} />
                 </PressableScale>
               </View>
+              {/* 두 문장이면 줄도 둘로 — 한 줄에 두면 구 중간에서 끊긴다(2026-07-30 회장 지적). */}
               <Text style={styles.sub}>
-                기기를 바꿔도 러닝 기록이 따라옵니다. 지금은 러너 네임만으로도 쓸 수 있어요.
+                기기를 바꿔도 러닝 기록이 따라옵니다.{"\n"}지금은 러너 네임만으로도 쓸 수 있어요.
               </Text>
 
               {/* 로그인 / 가입 전환 */}
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontFamily: FONT,
-    fontSize: 22, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 22, lineHeight: leading(22), fontWeight: Weight.bold, color: Brand.ink },
   iconBtn: {
     width: 34,
     height: 34,
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.warm,
   },
   sub: { fontFamily: FONT,
-    fontSize: 13, color: Brand.soft, marginTop: 4, marginBottom: 16 },
+    fontSize: 13, lineHeight: leading(13), color: Brand.soft, marginTop: 4, marginBottom: 16 },
 
   seg: {
     flexDirection: "row",
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   segTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
 
   label: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular, color: Brand.ink, marginTop: 8, marginBottom: 6 },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.regular, color: Brand.ink, marginTop: 8, marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: Brand.line,
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     fontFamily: FONT,
-    fontSize: 16,
+    fontSize: 16, lineHeight: leading(16),
     color: Brand.ink,
     backgroundColor: Brand.bg,
   },
@@ -247,13 +248,13 @@ const styles = StyleSheet.create({
   // "지금은 못 누른다"는 것도, 무슨 버튼인지도 둘 다 읽히게 한다.
   primaryOff: { backgroundColor: Brand.warm },
   primaryText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 16 },
+    fontSize: 16, lineHeight: leading(16) },
   primaryTextOff: { color: Brand.soft },
 
   divider: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 16 },
   rule: { flex: 1, height: 1, backgroundColor: Brand.line },
   dividerText: { fontFamily: FONT,
-    fontSize: 12, color: Brand.faint, fontWeight: Weight.regular },
+    fontSize: 12, lineHeight: leading(12), color: Brand.faint, fontWeight: Weight.regular },
 
   ghost: {
     flexDirection: "row",
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   ghostText: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.brandDeep },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.brandDeep },
   note: { fontFamily: FONT,
     fontSize: 12, color: Brand.faint, textAlign: "center", marginTop: 10, lineHeight: 18 },
 });

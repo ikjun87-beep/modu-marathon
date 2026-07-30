@@ -5,7 +5,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { Brand, FONT, Weight, Radius } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
 import type { LatLng } from "@/lib/run";
 
 type Props = { path: LatLng[]; follow?: boolean };
@@ -31,5 +31,5 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   t: { color: Brand.soft, fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.regular },
 });

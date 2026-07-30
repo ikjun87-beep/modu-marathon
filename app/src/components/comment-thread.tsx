@@ -8,7 +8,7 @@ import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import { Avatar } from "@/components/avatar";
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { add, fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   h: { fontFamily: FONT,
-    fontSize: 14.5, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.ink },
   item: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
   avatar: {
     width: 30,
@@ -102,13 +102,13 @@ const styles = StyleSheet.create({
     fontSize: 13, fontWeight: Weight.regular },
   itemHead: { flexDirection: "row", alignItems: "center", gap: 8 },
   who: { fontFamily: FONT,
-    fontSize: 13.5, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 13.5, lineHeight: leading(13.5), fontWeight: Weight.bold, color: Brand.ink },
   date: { fontFamily: FONT,
-    fontSize: 11.5, color: Brand.faint },
+    fontSize: 11.5, lineHeight: leading(11.5), color: Brand.faint },
   msg: { fontFamily: FONT,
     fontSize: 13.5, color: Brand.ink2, marginTop: 2, lineHeight: 19 },
   empty: { fontFamily: FONT,
-    fontSize: 13, color: Brand.soft, paddingVertical: 4 },
+    fontSize: 13, lineHeight: leading(13), color: Brand.soft, paddingVertical: 4 },
   inputRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   input: {
     flex: 1,

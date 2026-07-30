@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { RunMap } from "@/components/run-map";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { saveRunPath } from "@/lib/run-path";
 import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/run";
 
@@ -330,9 +330,9 @@ const styles = StyleSheet.create({
   closeBtn: { position: "absolute", left: 0, top: 4, padding: 8 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
   eyebrow: { fontFamily: FONT,
-    fontSize: 12, fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
+    fontSize: 12, lineHeight: leading(12), fontWeight: Weight.bold, letterSpacing: 3, color: Brand.brand },
   who: { fontFamily: FONT,
-    fontSize: 15, color: Brand.soft, fontWeight: Weight.regular },
+    fontSize: 15, lineHeight: leading(15), color: Brand.soft, fontWeight: Weight.regular },
   mapArea: { flex: 1, marginVertical: 12, position: "relative" },
   kmOverlay: {
     position: "absolute",
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  bigNum: { fontSize: 48, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -1.5, fontFamily: mono },
+  bigNum: { fontSize: 48, lineHeight: leading(48), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -1.5, fontFamily: mono },
   // 전역 규칙: 숫자=본문색 + 단위=브랜드 블루. 트래킹 화면의 주인공 숫자 옆 단위가
   // 회색이라 다른 화면(홈·러닝·랭킹·상세)과 갈려 있었다.
   bigUnit: { fontFamily: FONT,
@@ -366,13 +366,13 @@ const styles = StyleSheet.create({
   },
   stat: { flex: 1, alignItems: "center", gap: 4 },
   statDiv: { width: 1, alignSelf: "stretch", backgroundColor: Brand.line2, marginVertical: 6 },
-  statNum: { fontSize: 21, fontWeight: Weight.bold, color: Brand.ink, fontFamily: mono },
+  statNum: { fontSize: 21, lineHeight: leading(21), fontWeight: Weight.bold, color: Brand.ink, fontFamily: mono },
   statLab: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, fontWeight: Weight.regular },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, fontWeight: Weight.regular },
   err: { color: Brand.brandDeep, fontFamily: FONT,
-    fontSize: 13, textAlign: "center", marginTop: 14, fontWeight: Weight.regular },
+    fontSize: 13, lineHeight: leading(13), textAlign: "center", marginTop: 14, fontWeight: Weight.regular },
   hint: { color: Brand.faint, fontFamily: FONT,
-    fontSize: 12, textAlign: "center", marginTop: 14 },
+    fontSize: 12, lineHeight: leading(12), textAlign: "center", marginTop: 14 },
   controls: { paddingVertical: 26 },
   ctrl: {
     flexDirection: "row",
@@ -385,13 +385,13 @@ const styles = StyleSheet.create({
   },
   ctrlStart: { backgroundColor: Brand.brand },
   ctrlStartText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 17 },
+    fontSize: 17, lineHeight: leading(17) },
   ctrlPause: { backgroundColor: Brand.warm, borderWidth: 1, borderColor: Brand.line2 },
   ctrlPauseText: { color: Brand.ink, fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 17 },
+    fontSize: 17, lineHeight: leading(17) },
   pausedRow: { flexDirection: "row", gap: 12 },
   ctrlResume: { flex: 1.4, backgroundColor: Brand.brand },
   ctrlStop: { flex: 1, backgroundColor: Brand.brandSoft },
   ctrlStopText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 17 },
+    fontSize: 17, lineHeight: leading(17) },
 });

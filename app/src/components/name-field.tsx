@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { saveRunnerName } from "@/lib/identity";
 import { useMyName } from "@/lib/session";
 
@@ -69,7 +69,7 @@ export function NameField({ onName }: { onName?: (name: string) => void }) {
         )}
       </View>
       {dirty && (
-        <Text style={styles.note}>이미 남긴 글·참석·러닝 기록의 이름도 함께 바뀝니다.</Text>
+        <Text style={styles.note}>이미 남긴 글·참석·러닝 기록의{"\n"}이름도 함께 바뀝니다.</Text>
       )}
     </View>
   );
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     ...Shadow.soft,
   },
-  label: { fontWeight: Weight.regular, fontFamily: FONT, fontSize: 14, color: Brand.ink },
+  label: { fontWeight: Weight.regular, fontFamily: FONT, fontSize: 14, lineHeight: leading(14), color: Brand.ink },
   input: {
     flex: 1,
     borderWidth: 1,
@@ -107,5 +107,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveBtnText: { color: "#fff", fontFamily: FONT, fontSize: 13.5, fontWeight: Weight.bold },
-  note: { fontFamily: FONT, fontSize: 12, color: Brand.soft, marginTop: 6, marginLeft: 2 },
+  note: { fontFamily: FONT, fontSize: 12, lineHeight: leading(12), color: Brand.soft, marginTop: 6, marginLeft: 2 },
 });

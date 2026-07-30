@@ -4,7 +4,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { Brand, FONT, Weight, Radius, Shadow, Semantic, Hairline } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, Semantic, Hairline, leading } from "@/lib/brand";
 import type { MonthMetric, MonthReport } from "@/lib/stats";
 
 /** 지난달 대비 좋아졌나 → 색·화살표. 지난달 0이면 신규(중립). */
@@ -152,9 +152,9 @@ const styles = StyleSheet.create({
   },
   head: { gap: 2 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  eyebrow: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold, letterSpacing: 1.5, color: Brand.brand },
-  title: { fontFamily: FONT, fontSize: 18, fontWeight: Weight.bold, color: Brand.ink },
-  sub: { fontFamily: FONT, fontSize: 13, color: Brand.soft },
+  eyebrow: { fontFamily: FONT, fontSize: 11, lineHeight: leading(11), fontWeight: Weight.bold, letterSpacing: 1.5, color: Brand.brand },
+  title: { fontFamily: FONT, fontSize: 18, lineHeight: leading(18), fontWeight: Weight.bold, color: Brand.ink },
+  sub: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), color: Brand.soft },
   emptyWrap: { gap: 12 },
   ghostGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   ghostTile: {
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 1,
   },
-  ghostLabel: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
-  ghostDash: { fontFamily: FONT, fontSize: 18, fontWeight: Weight.bold, color: Brand.faint },
+  ghostLabel: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
+  ghostDash: { fontFamily: FONT, fontSize: 18, lineHeight: leading(18), fontWeight: Weight.bold, color: Brand.faint },
   empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, lineHeight: 21, textAlign: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: {
@@ -179,15 +179,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 3,
   },
-  tLabel: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
+  tLabel: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
   tValRow: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
-  tVal: { fontFamily: FONT, fontSize: 21, fontWeight: Weight.bold, color: Brand.ink },
+  tVal: { fontFamily: FONT, fontSize: 21, lineHeight: leading(21), fontWeight: Weight.bold, color: Brand.ink },
   // 전역 규칙: 숫자=본문색 + 단위=브랜드 블루. 이 카드만 단위가 회색이라
   // 홈·러닝·랭킹과 표기가 갈려 있었다(실기기 확인) → 다른 화면과 같은 문법으로.
   tUnit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand, marginBottom: 3 },
-  tDelta: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold },
+  tDelta: { fontFamily: FONT, fontSize: 11, lineHeight: leading(11), fontWeight: Weight.bold },
   trend: { gap: 8, marginTop: 2 },
-  trendH: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.ink },
+  trendH: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), fontWeight: Weight.bold, color: Brand.ink },
   trendBox: { height: 56, position: "relative", marginHorizontal: 4 },
   seg: { position: "absolute", height: 2.5, backgroundColor: Brand.brand, borderRadius: 2 },
   dot: {
@@ -202,5 +202,5 @@ const styles = StyleSheet.create({
     borderColor: Brand.brand,
   },
   trendLabels: { flexDirection: "row", justifyContent: "space-between", marginHorizontal: 4 },
-  trendLabel: { fontFamily: FONT, fontSize: 10.5, color: Brand.faint },
+  trendLabel: { fontFamily: FONT, fontSize: 10.5, lineHeight: leading(10.5), color: Brand.faint },
 });

@@ -14,7 +14,7 @@ import { DistanceThumb } from "@/components/distance-thumb";
 import { RouteThumb } from "@/components/route-thumb";
 import { useMyName } from "@/lib/session";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 import { hasHealthConsent, setHealthConsent, setWatchAutoSync } from "@/lib/health-consent";
@@ -255,7 +255,7 @@ export default function RunScreen() {
           <View style={styles.banner}>
             {/* "Firebase"·".env"는 사용자가 알 필요 없는 개발자 용어다 — 『5키로』의 쉬운
                 이름에 어려운 화면은 부조화(토스 UX 라이팅 시사점, R12 기획 격차9). */}
-            <Text style={styles.bannerText}>아직 크루와 연결되지 않았어요. 기록은 이 기기에만 저장돼요.</Text>
+            <Text style={styles.bannerText}>아직 크루와 연결되지 않았어요{"\n"}기록은 이 기기에만 저장돼요.</Text>
           </View>
         )}
 
@@ -436,13 +436,13 @@ const styles = StyleSheet.create({
   content: { padding: 18, gap: 12, paddingBottom: 160 },
   header: { gap: 14, marginBottom: 4 },
   title: { fontFamily: FONT,
-    fontSize: 28, fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
+    fontSize: 28, lineHeight: leading(28), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
 
   strip: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
   stripCell: { flex: 1, gap: 2 },
-  stripLab: { color: Brand.soft, fontFamily: FONT, fontSize: 12, fontWeight: Weight.regular },
+  stripLab: { color: Brand.soft, fontFamily: FONT, fontSize: 12, lineHeight: leading(12), fontWeight: Weight.regular },
   stripNum: { color: Brand.ink, fontFamily: FONT_DISPLAY, fontSize: 22, letterSpacing: -0.5 },
-  stripNumLead: { fontSize: 30 },
+  stripNumLead: { fontSize: 30, lineHeight: leading(30) },
   stripUnit: { color: Brand.brand, fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
   stripDiv: { width: 1, height: 26, backgroundColor: Brand.line2, marginHorizontal: 10 },
 
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   ctaSecondaryText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },
   watchHint: { color: Brand.faint, fontFamily: FONT,
-    fontSize: 12, marginTop: -6 },
+    fontSize: 12, lineHeight: leading(12), marginTop: -6 },
 
   banner: {
     backgroundColor: "#fff6ec",
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   bannerText: { color: "#7a4a0a", fontFamily: FONT,
-    fontSize: 12.5, fontWeight: Weight.regular },
+    fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.regular },
 
   formCard: {
     backgroundColor: Brand.card,
@@ -485,11 +485,11 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   formTitle: { fontFamily: FONT,
-    fontSize: 14, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 14, lineHeight: leading(14), fontWeight: Weight.bold, color: Brand.ink },
   formRow: { flexDirection: "row", gap: 12 },
   field: { flex: 1, gap: 6 },
   formLabel: { fontFamily: FONT,
-    fontSize: 13, fontWeight: Weight.regular, color: Brand.ink2 },
+    fontSize: 13, lineHeight: leading(13), fontWeight: Weight.regular, color: Brand.ink2 },
   input: {
     borderWidth: 1,
     borderColor: Brand.line2,
@@ -518,14 +518,14 @@ const styles = StyleSheet.create({
 
   formHead: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   formWho: { flex: 1, textAlign: "right", fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, fontWeight: Weight.regular },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, fontWeight: Weight.regular },
   formWhoName: { fontWeight: Weight.bold, color: Brand.ink2 },
 
   listHead: { flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 },
   listTitle: { fontFamily: FONT,
-    fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.ink },
   listHint: { fontFamily: FONT,
-    fontSize: 12, color: Brand.faint, fontWeight: Weight.regular },
+    fontSize: 12, lineHeight: leading(12), color: Brand.faint, fontWeight: Weight.regular },
   // 미선택 탭이 흰 배경+연회색이라 "탭이 3개 있다"는 것 자체가 안 보였다(접근성 결함).
   // 미선택도 톤온톤 배경 + 본문색 텍스트로 올려 WCAG AA 대비를 확보한다.
   //
@@ -558,8 +558,8 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 4,
   },
-  emptyTitle: { fontFamily: FONT, fontSize: 14.5, fontWeight: Weight.bold, color: Brand.brandDeep },
-  emptySub: { fontFamily: FONT, fontSize: 12.5, color: Brand.ink2, marginTop: 2 },
+  emptyTitle: { fontFamily: FONT, fontSize: 14.5, lineHeight: leading(14.5), fontWeight: Weight.bold, color: Brand.brandDeep },
+  emptySub: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.ink2, marginTop: 2 },
 
   item: {
     backgroundColor: Brand.card,
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   itemHead: { flexDirection: "row", alignItems: "center", gap: 11 },
   whoRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   who: { fontWeight: Weight.bold, fontFamily: FONT,
-    fontSize: 14.5, color: Brand.ink },
+    fontSize: 14.5, lineHeight: leading(14.5), color: Brand.ink },
   walkTag: {
     backgroundColor: Brand.brandSoft,
     borderRadius: Radius.chip,
@@ -578,23 +578,23 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   walkTagText: { fontFamily: FONT,
-    fontSize: 10.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+    fontSize: 10.5, lineHeight: leading(10.5), fontWeight: Weight.bold, color: Brand.brandDeep },
   date: { fontFamily: FONT,
-    fontSize: 12, color: Brand.soft, marginTop: 1 },
+    fontSize: 12, lineHeight: leading(12), color: Brand.soft, marginTop: 1 },
   // 거리·시간·페이스·심박 4개가 한 줄에 들어가야 한다. 예전 크기(18/13.5·gap16)로는
   // "6.40km 48:16 7'33\"/km ♥143"이 칸을 넘쳤다(회장 지적) → 값·간격을 한 단계씩 줄인다.
   stats: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 },
   stat: { fontFamily: FONT,
-    fontSize: 12.5, color: Brand.soft },
+    fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
   statNum: { fontFamily: FONT,
-    fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 16, lineHeight: leading(16), fontWeight: Weight.bold, color: Brand.ink },
   statUnit: { fontFamily: FONT,
     fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brand },
   // 페이스는 성과·순위 신호가 아니라 기록값 — 골드는 리더보드 순위·챌린지 전용으로 남긴다.
   pace: { marginLeft: "auto", fontFamily: FONT,
-    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.ink2 },
+    fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.bold, color: Brand.ink2 },
   paceUnit: { color: Brand.brand },
   hr: { fontFamily: FONT,
-    fontSize: 12.5, fontWeight: Weight.bold, color: Brand.ink },
+    fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.bold, color: Brand.ink },
   hrMark: { color: Brand.brand },
 });

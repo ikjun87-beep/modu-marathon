@@ -6,7 +6,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "@/components/avatar";
 import { Icon } from "@/components/icon";
 import { PressableScale } from "@/components/ui/pressable-scale";
-import { Brand, FONT, Weight, Radius, Shadow } from "@/lib/brand";
+import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { add, remove, subscribe, type Row } from "@/lib/crew";
 import { isPast, parseEventInfo, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -119,7 +119,7 @@ export function ScheduleSection({ myName }: { myName: string }) {
       {upcoming.length ? (
         upcoming.map((ev) => renderRow(ev, false))
       ) : (
-        <Text style={styles.empty}>다가오는 모임이 없어요. 첫 모임을 만들어 보세요!</Text>
+        <Text style={styles.empty}>다가오는 모임이 없어요{"\n"}첫 모임을 만들어 보세요!</Text>
       )}
 
       {past.length > 0 && (
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     ...Shadow.soft,
   },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
-  h: { flex: 1, fontFamily: FONT, fontSize: 15, fontWeight: Weight.bold, color: Brand.ink },
+  h: { flex: 1, fontFamily: FONT, fontSize: 15, lineHeight: leading(15), fontWeight: Weight.bold, color: Brand.ink },
   // 크루 화면의 **주 액션은 [참석]** 하나다. 섹션 헤더의 [모임 만들기]까지 솔리드 블루면
   // 한 화면에 솔리드가 3개(모임 만들기·참석·사진 올리기)가 돼 위계가 사라진다(실기기 확인)
   // → 보조 액션은 톤온톤(전역 규칙: 주=솔리드 / 보조=톤온톤).
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   addBtnText: { color: Brand.brandDeep, fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold },
-  empty: { fontFamily: FONT, fontSize: 13.5, color: Brand.soft, textAlign: "center", paddingVertical: 14 },
+  empty: { fontFamily: FONT, fontSize: 13.5, lineHeight: leading(13.5), color: Brand.soft, textAlign: "center", paddingVertical: 14 },
   row: {
     flexDirection: "row",
     gap: 12,
@@ -186,10 +186,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   datePast: { backgroundColor: Brand.faint },
-  dm: { color: "#fff", fontFamily: FONT, fontSize: 10.5, fontWeight: Weight.regular },
+  dm: { color: "#fff", fontFamily: FONT, fontSize: 10.5, lineHeight: leading(10.5), fontWeight: Weight.regular },
   dd: { color: "#fff", fontFamily: FONT, fontSize: 21, fontWeight: Weight.bold, lineHeight: 24 },
   info: { flex: 1, gap: 7 },
-  title: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.ink },
+  title: { fontFamily: FONT, fontSize: 16, lineHeight: leading(16), fontWeight: Weight.bold, color: Brand.ink },
   // 칩은 내용 길이에 따라 자연스럽게 줄바꿈되지만, 높이·좌우 여백은 항상 같게 둔다
   // (위치 칩만 유독 커 보이던 비일관 — 디자인 감사 지적).
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },
@@ -220,8 +220,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   faceOverlap: { marginLeft: -8 }, // 겹쳐 쌓아 "여럿이 함께" 느낌
-  faceText: { fontFamily: FONT, fontSize: 11, fontWeight: Weight.bold, color: Brand.brandDeep },
-  att: { fontFamily: FONT, fontSize: 12.5, color: Brand.soft },
+  faceText: { fontFamily: FONT, fontSize: 11, lineHeight: leading(11), fontWeight: Weight.bold, color: Brand.brandDeep },
+  att: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
   // 골드는 **순위·챌린지·성과** 전용 시그널 — 본문 숫자에까지 쓰면 특별함이 희석된다(디자인 감사 지적).
   cnt: { color: Brand.ink2, fontWeight: Weight.bold },
   // 참석은 **상태·액션**이지 성과가 아니다 → 골드 대신 브랜드 블루(행동 유도).
@@ -246,5 +246,5 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginTop: 2,
   },
-  pastToggleText: { fontFamily: FONT, fontSize: 13, color: Brand.soft, fontWeight: Weight.bold },
+  pastToggleText: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), color: Brand.soft, fontWeight: Weight.bold },
 });
