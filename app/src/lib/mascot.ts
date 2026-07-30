@@ -17,6 +17,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 
+/**
+ * 마스코트 이름 — **『오키』** (2026-07-30 회장 확정)
+ *
+ * 왜 오키인가: 슬로건이 이미 "오늘 5키로, **오키**?"이고 마스코트 포즈가 **엄지척**이다.
+ * 엄지척이 곧 "오키" 제스처라, 이름·슬로건·포즈·앱이름(5키로)이 한 덩어리로 맞물린다.
+ * 새로 지어 붙인 게 아니라 온보딩에 이미 있던 말을 이름으로 승격시킨 것.
+ *
+ * ⚠️ 카피에 **남용하지 말 것.** 마스코트가 실제로 그려진 자리에서만 이름을 부른다 —
+ * 그림 없이 이름만 나오면 사용자는 그게 누군지 모르고, 화면마다 "오키가 …"를 붙이면
+ * 유치해진다. 문자열을 흩뿌리지 않도록 이 상수 하나만 쓴다.
+ */
+export const MASCOT_NAME = "오키";
+
 export type MascotKind = "m-red" | "m-green" | "f-red" | "f-green";
 
 export const MASCOTS: MascotKind[] = ["m-red", "m-green", "f-red", "f-green"];

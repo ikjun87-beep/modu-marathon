@@ -34,7 +34,7 @@ import { COLLECTIONS } from "@/lib/firebase";
 import { isWatchAutoSync, setWatchAutoSync } from "@/lib/health-consent";
 import { HC_SUPPORTED } from "@/lib/healthconnect";
 import { saveRunnerName } from "@/lib/identity";
-import { MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
+import { MASCOT_NAME, MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
 import { setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
 
 /** 캐릭터 선택지 라벨 — 썸네일만으론 형태·팀색이 구분되지 않는다.
@@ -264,7 +264,9 @@ export default function MyScreen() {
               style={styles.mascotToggle}
               onPress={() => setPickingMascot((v) => !v)}
               dim={false}>
-              <Text style={styles.mascotLabel}>내 캐릭터</Text>
+              {/* 마스코트 이름을 알려주는 자리 — 4종을 고르는 화면이라 "이 친구가 오키다"가
+                  자연스럽게 전달된다. 다른 화면에는 이름을 뿌리지 않는다(lib/mascot.ts 주석). */}
+              <Text style={styles.mascotLabel}>내 캐릭터 · {MASCOT_NAME}</Text>
               <Text style={styles.mascotToggleText}>
                 {pickingMascot ? "닫기" : "바꾸기"}
               </Text>

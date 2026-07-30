@@ -23,6 +23,7 @@ import { Mascot } from "@/components/mascot";
 import { Brand, Team, FONT, Weight, Radius, leading } from "@/lib/brand";
 import { loadSeenBadges, saveSeenBadges } from "@/lib/badge-seen";
 import { subscribe, type Row } from "@/lib/crew";
+import { MASCOT_NAME } from "@/lib/mascot";
 import { COLLECTIONS } from "@/lib/firebase";
 import { useMyName } from "@/lib/session";
 import { badgeProgress, type Badge } from "@/lib/stats";
@@ -103,7 +104,10 @@ function Card({ badge, onClose }: { badge: Badge; onClose: () => void }) {
           <Icon name={badge.icon as IconName} size={26} color="#fff" />
         </View>
       </View>
-      <Text style={styles.eyebrow}>배지 획득</Text>
+      {/* 오키가 92px로 크게 나오는 유일한 자리 — 이름이 얼굴에 붙기 좋다.
+          기능 화면(랭킹·러닝 빈 상태)에는 이름을 넣지 않는다: 거기선 "무엇을 하라"가
+          메시지이고 이름을 끼우면 소음이 된다(lib/mascot.ts 주석). */}
+      <Text style={styles.eyebrow}>{MASCOT_NAME}가 축하해요</Text>
       <Text style={styles.title}>{badge.label}</Text>
       <Text style={styles.desc}>{badge.desc}</Text>
       <Pressable style={styles.btn} onPress={onClose} hitSlop={8}>

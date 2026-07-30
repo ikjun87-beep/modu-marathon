@@ -2,9 +2,15 @@ import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Keyframe, Easing } from 'react-native-reanimated';
 
-import classes from './animated-icon.module.css';
 const DURATION = 300;
 
+/** 웹 프리뷰용 스플래시 오버레이. 네이티브(animated-icon.tsx)와 짝 — 자세한 설명은 그쪽 참조.
+ *  실제로 마운트되는 건 이 `AnimatedSplashOverlay`뿐이다(`_layout.tsx` 확인, 웹에서는 no-op).
+ *
+ *  2026-07-30: Expo 기본 로고(expo-logo.png)를 한 번도 안 바꾸고 방치했던 걸 발견 — 이 파일
+ *  전체가 여기서만 쓰던 죽은 코드(`AnimatedIcon`, `glowKeyframe`, `animated-icon.module.css`)를
+ *  정리하고, 혹시 나중에 웹 전용 전환 연출이 필요할 때를 위해 `AnimatedIcon`만 마스코트로
+ *  갱신해 남겨뒀다(어차피 안 쓰이던 Expo 로고를 그대로 두는 것보다는 낫다). */
 export function AnimatedSplashOverlay() {
   return null;
 }
@@ -39,34 +45,13 @@ const logoKeyframe = new Keyframe({
   },
 });
 
-const glowKeyframe = new Keyframe({
-  0: {
-    transform: [{ rotateZ: '-180deg' }, { scale: 0.8 }],
-    opacity: 0,
-  },
-  [DURATION / 1000]: {
-    transform: [{ rotateZ: '0deg' }, { scale: 1 }],
-    opacity: 1,
-    easing: Easing.elastic(0.7),
-  },
-  100: {
-    transform: [{ rotateZ: '7200deg' }],
-  },
-});
-
 export function AnimatedIcon() {
   return (
     <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
-
-      <Animated.View style={styles.background} entering={keyframe.duration(DURATION)}>
-        <div className={classes.expoLogoBackground} />
-      </Animated.View>
+      <Animated.View style={styles.background} entering={keyframe.duration(DURATION)} />
 
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
+        <Image style={styles.image} source={require('@/assets/images/mascot-m-red.png')} />
       </Animated.View>
     </View>
   );
@@ -84,11 +69,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  glow: {
-    width: 201,
-    height: 201,
-    position: 'absolute',
-  },
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -97,10 +77,13 @@ const styles = StyleSheet.create({
   },
   image: {
     position: 'absolute',
-    width: 76,
-    height: 71,
+    width: 108,
+    height: 108,
   },
   background: {
+    borderRadius: 40,
+    // 파일럿 팔레트(안 A, 2026-07-30) — 네이티브(animated-icon.tsx)와 짝 맞춤.
+    backgroundColor: '#2f6e4a',
     width: 128,
     height: 128,
     position: 'absolute',
