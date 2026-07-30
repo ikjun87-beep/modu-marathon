@@ -203,8 +203,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     maxWidth: "100%",
   },
-  // 연하늘 배경 위 brandDeep(#1b4ea3)은 대비가 4.5:1에 아슬아슬했다 → 더 진한 네이비로 AA 확보.
-  chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: "#14315c", flexShrink: 1 },
+  // 파일럿 팔레트(안 A): brandSoft(연그린) 위 brandDeep(#204d34) = 8.28:1 — 토큰 그대로 써도 AA 여유.
+  // (이전 블루판은 brandSoft 위 brandDeep이 4.5:1에 아슬아슬해 하드코딩 네이비 #14315c를 썼었다)
+  chipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep, flexShrink: 1 },
   attRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   faces: { flexDirection: "row", alignItems: "center" },
   // 흰 테두리 = 겹친 얼굴을 분리하는 링. 안쪽 Avatar(22)보다 2px씩 커야 안 잘린다.

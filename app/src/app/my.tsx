@@ -41,13 +41,16 @@ import { setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
  *
  *  ⚠️ 예전엔 "남 · 레드"처럼 **성별로** 불렀다. 캐릭터 취향 선택인데 굳이 "성별 신고"로
  *  포장할 이유가 없고, 『5키로』의 친숙어 톤과도 어긋난다(2026-07-28 디자인 리드 결정).
- *  4종을 실제로 가르는 건 성별이 아니라 **포니테일 유무(형태) + 레드/그린(색)**이다.
- *  내부 타입명(m-red 등)·파일명은 그대로 둔다 — 노출 카피만 바꾸면 되는 일이라 전면 개명은 낭비. */
+ *  4종을 실제로 가르는 건 성별이 아니라 **울 모양(동글/땋은 스타일) + 레드/그린(팀색)**이다.
+ *
+ *  2026-07-30 마스코트 전면교체(양) — 형태 라벨을 "숏컷/포니테일"(사람 머리 은유)에서
+ *  "동글 울/땋은 울"(양 특성)로 갱신. **내부 타입명(m-red 등)·파일명은 그대로 둔다**
+ *  — 노출 카피만 바꾸면 되는 일이라 전면 개명은 낭비(AsyncStorage 마이그레이션도 불필요). */
 const MASCOT_LABEL: Record<MascotKind, string> = {
-  "m-red": "숏컷 · 레드",
-  "m-green": "숏컷 · 그린",
-  "f-red": "포니테일 · 레드",
-  "f-green": "포니테일 · 그린",
+  "m-red": "동글 울 · 레드",
+  "m-green": "동글 울 · 그린",
+  "f-red": "땋은 울 · 레드",
+  "f-green": "땋은 울 · 그린",
 };
 import { useMyName } from "@/lib/session";
 import { badgeProgress, personalStats } from "@/lib/stats";

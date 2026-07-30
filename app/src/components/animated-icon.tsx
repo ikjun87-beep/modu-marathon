@@ -133,14 +133,15 @@ const styles = StyleSheet.create({
   },
   background: {
     borderRadius: 40,
-    experimental_backgroundImage: `linear-gradient(180deg, #2f74e0, #1b4ea3)`,
+    // 파일럿 팔레트(안 A) — 되돌리려면 #2f74e0 → #1b4ea3 그라데이션으로
+    experimental_backgroundImage: `linear-gradient(180deg, #3d8a5d, #204d34)`,
     width: 128,
     height: 128,
     position: 'absolute',
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#2563c9',
+    backgroundColor: '#2f6e4a', // 파일럿 팔레트
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,

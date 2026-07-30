@@ -227,7 +227,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     fontFamily: FONT,
-    fontSize: 16, lineHeight: leading(16),
+    // ⚠️ 입력칸엔 lineHeight를 주지 않는다 — 안드로이드에서 글자가 잘리거나 수직 정렬이 깨진다.
+    fontSize: 16,
     color: Brand.ink,
     backgroundColor: Brand.bg,
   },

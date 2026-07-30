@@ -1,11 +1,17 @@
 /**
  * 마스코트 — 앱의 얼굴. 온보딩·빈 화면·배지 축하·홈 인사말에 등장한다.
  *
- * 4종 = 성별(남/여, 볼터치 유무) × 팀 색(레드/그린 — 운동회 흰 머리띠 + 상의 색).
- * 하나의 원본에서 **코드로 파생**(scripts/build-mascot-variants.mjs) — 형태·비율 100% 동일,
- * 머리띠·볼터치·옷 색만 다르다. AI로 따로 그리면 남매가 아니라 남남처럼 보인다.
+ * 2026-07-30 전면교체: 파란 피부 러너 → **양(sheep)**. 회장 지시("동물 의인화로 아예 새로")
+ * + 팔레트 안 A(크림 러너) 확정에 맞춰 재생성. 자문: docs/MASCOT_PALETTE_DIRECTION.md.
  *
- * 러너 네임으로는 성별을 알 수 없어 **마이 탭에서 고르게** 한다. 취향 설정이라 이 기기(AsyncStorage)에만.
+ * 4종 = 울 모양(동글/땋은 스타일, 예전 라벨 "숏컷/포니테일"의 후속) × 팀 색(레드/그린 조끼).
+ * 울 모양 2종은 gpt-image-1에 **레퍼런스 이미지로 캐릭터를 고정**시켜 따로 생성(같은 얼굴·비율
+ * 유지, 울 모양만 다르게 — `docs/OPENAI_IMAGE_GEN.md` 5절 기법). 팀 색(레드→그린)은 그 위에서
+ * **코드로 파생**(scripts/recolor-mascot-vest.mjs, 조끼 hue만 골라 밝기비 유지한 채 재도색) —
+ * AI로 두 번 그리면 실루엣이 미묘하게 달라져 "같은 양의 다른 팀"이 아니라 다른 양이 된다.
+ * 배경 제거는 scripts/cutout-mascot-bg.mjs(마젠타 크로마키) + strip-mascot-shadow.mjs.
+ *
+ * 러너 네임으로는 취향을 알 수 없어 **마이 탭에서 고르게** 한다. 취향 설정이라 이 기기(AsyncStorage)에만.
  * 부위별 개별 선택(상의만 따로 등)은 후행 큰 과제 — docs/AVATAR_PLAN.md.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";

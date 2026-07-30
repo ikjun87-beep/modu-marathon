@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   linkPrimary: {
     lineHeight: 30,
     fontSize: 14,
-    color: '#2563c9',
+    color: '#2f6e4a', // 파일럿 팔레트
   },
   code: {
     fontFamily: Fonts.mono,

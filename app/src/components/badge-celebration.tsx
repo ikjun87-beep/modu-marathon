@@ -20,7 +20,7 @@ import Animated, {
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
-import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
+import { Brand, Team, FONT, Weight, Radius, leading } from "@/lib/brand";
 import { loadSeenBadges, saveSeenBadges } from "@/lib/badge-seen";
 import { subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
@@ -29,7 +29,9 @@ import { badgeProgress, type Badge } from "@/lib/stats";
 
 const { width: W } = Dimensions.get("window");
 const CONFETTI = 18;
-const COLORS = [Brand.brand, Brand.accent, Brand.brandDeep, "#8ab4f8", "#f5c451"];
+// 파일럿 팔레트(안 A) — 하드코딩 하늘색(#8ab4f8)이 새 크림+그린+골드 팔레트에서 튀는 이물질처럼
+// 보여서 뺐다. 대신 기존 토큰인 Team.red를 넣어 "레드팀 색"도 자연스럽게 섞이게 했다.
+const COLORS = [Brand.brand, Brand.accent, Brand.brandDeep, Team.red, "#f5c451"];
 
 /** 조각 하나 — 위에서 흩뿌려져 떨어지며 회전. 값은 index로 고정(랜덤 재생성 방지). */
 function Confetti({ i }: { i: number }) {
