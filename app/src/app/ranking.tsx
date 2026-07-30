@@ -38,7 +38,14 @@ export default function RankingScreen() {
   // 앞 순위와의 거리 차 — 1위인데 "한 번 더 뛰면 순위가 올라가요"라고 하던 모순을 없앤다.
   // 두루뭉술한 독려보다 "2위와 1.4km 차이"가 실제로 다음 러닝을 부른다(디자인 감사).
   const rival = myRank > 0 ? ranking[myRank === 1 ? 1 : myRank - 2] : undefined;
-  const gapKm = myRank > 0 && rival ? Math.abs((ranking[myRank - 1]?.km ?? 0) - rival.km) : null;
+  // ⚠️ 격차는 **화면에 찍힌 값끼리** 계산한다(2026-07-30 R18 채점 지적).
+  //   원본 km으로 빼고 나서 반올림하면 화면과 안 맞는다: 시상대가 16.4·14.5를 보여주는데
+  //   원본(16.35·14.52) 차이는 1.83 → "1.8km 차이"로 찍혀, 사용자가 16.4−14.5=1.9로
+  //   검산하면 틀린 숫자가 된다. 숫자는 서로 검산될 때 신뢰를 얻는다.
+  //   그래서 표시 자릿수(1자리)로 먼저 맞춘 뒤 뺀다 — 시상대·행·격차가 항상 일관된다.
+  const r1 = (v: number) => Math.round(v * 10) / 10;
+  const gapKm =
+    myRank > 0 && rival ? Math.abs(r1(ranking[myRank - 1]?.km ?? 0) - r1(rival.km)) : null;
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
