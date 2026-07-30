@@ -57,24 +57,37 @@ cd app && bash scripts/build-local-apk.sh   # → android/app/build/outputs/apk/
 # 앱 실제 설치 빌드 — EAS 클라우드 (docs/BUILD.md · 월 무료 한도 소진 시 실패)
 cd app && npx eas-cli build -p android --profile preview
 
-# 실기기 연결 — ⚠️ USB 직결(usbipd→WSL)은 이 PC에서 전송 중 끊긴다(50MB 설치 2회 실패, 2026-07-27).
-# **Wi-Fi adb가 정답**: USB로 한 번만 붙여 TCP를 켜두면 그 뒤엔 케이블 없이 안정적으로 쓴다.
-"/mnt/c/Program Files/usbipd-win/usbipd.exe" attach --wsl --busid 2-2   # (1회) 폰을 WSL에 부착
-adb tcpip 5555 && adb connect <폰IP>:5555                                # → 이후 Wi-Fi로 설치·캡처
-adb shell ip -f inet addr show wlan0                                     # 폰 IP 확인
-# 화면 캡처 = adb exec-out screencap -p > x.png · 탭/스와이프 = adb shell input tap|swipe
-# 입력칸 이동은 좌표 탭보다 keyevent 61(TAB)이 확실하다(키보드가 다음 칸을 가림)
+# 실기기 연결 — ✅ **Windows adb가 정답**(2026-07-30 확정). WSL adb를 쓰지 말 것.
+#   WSL에서 폰에 닿는 두 방법(usbipd 터널 / 무선 adb) 다 **50MB 설치가 깨진다**:
+#     usbipd = 작은 명령은 되는데 대용량 전송에서 6실패/3성공(유휴 타임아웃 + 프로세스 2개 충돌)
+#     무선   = 3~6분마다 끊기고 포트가 매번 바뀜
+#   Windows adb는 USB에 **직접** 붙어 터널 구간이 없다 → **설치 4초**.
+A='C:\adb\platform-tools\adb.exe'                                        # (설치 완료돼 있음)
+cp <apk> /mnt/c/adb/app-release.apk                                      # Windows 쪽으로 복사 후
+powershell.exe -NoProfile -Command "& '$A' install -r 'C:\adb\app-release.apk'"
+# 스크린샷 = shell screencap → pull 로 C:\에 받아 WSL에서 읽는다(exec-out 리다이렉트는 PowerShell에서 깨짐)
+powershell.exe -NoProfile -Command "& '$A' shell screencap -p /sdcard/x.png; & '$A' pull /sdcard/x.png 'C:\adb\shots\a.png'"
+# 탭/스와이프도 같은 방식. 입력칸 이동은 좌표 탭보다 keyevent 61(TAB)이 확실(키보드가 다음 칸을 가림)
+# ⚠️ 폰이 `unauthorized`면 WSL adb와 다른 키라 폰에서 "항상 허용"을 한 번 눌러야 한다.
+# 폴백(권장 안 함): usbipd bind/attach + udev 규칙 `/etc/udev/rules.d/51-android.rules`
+#   (SUBSYSTEM=="usb", ATTR{idVendor}=="04e8", MODE="0664", GROUP="plugdev") — 둘 다 설정돼 있음.
+#   시작폴더 `5키로-폰USB연결.bat`도 남겨둠. attach 후엔 반드시 `adb kill-server`(옛 상태를 붙들고 있다).
 
-# 실기기 디버깅(앱 즉사·크래시): 무선 adb
-adb connect <폰 무선디버깅 메인화면 IP:포트>
-adb logcat -b crash -c && adb shell monkey -p com.modumarathon.app -c android.intent.category.LAUNCHER 1
-adb logcat -d -b crash        # 패키지명=com.modumarathon.app
+# 실기기 디버깅(앱 즉사·크래시)
+powershell.exe -NoProfile -Command "& '$A' logcat -b crash -c"
+powershell.exe -NoProfile -Command "& '$A' shell monkey -p com.modumarathon.app -c android.intent.category.LAUNCHER 1"
+powershell.exe -NoProfile -Command "& '$A' logcat -d -b crash"   # 패키지명=com.modumarathon.app
 ```
 
 ## 지켜야 할 규칙
 - 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`events`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`. (`events`=모임 일정, 2026-07-18 하드코딩→Firestore 이관. **웹은 아직 하드코딩 EVENTS** — 후속 이관 필요.)
 - **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`. **교체 금지**(2026-07-27 디자인 자문): Pretendard는 국내 AI 스캐폴딩 기본값이라 역효과, 스포카 한 산스는 한글 2350자만 커버(러너 네임 깨짐), 나눔스퀘어는 톤 불일치. 큰 **숫자만** `FONT_DISPLAY`(Black Han Sans, OFL) — 웹과 시각 DNA 일치.
-- 색·타이포는 `docs/DESIGN.md` 기준(**Brand = Azure Blue `#2563c9`**, accent 골드 `#c0841a` — 2026-07-12 오렌지→블루 리브랜딩). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스).
+- 색·타이포는 `docs/DESIGN.md` 기준. **Brand = 포레스트 그린 `#2f6e4a` · 배경 = 크림 `#f9f1e4` · 골드 `#c0841a`(불변)** — 2026-07-30 오렌지→블루→**크림+그린** 재리브랜딩(회장 "너무 파란색이 위주, 아예 새로"). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스, 서로 1:1 대응).
+  - **시상대 다크는 `#171c12`**(딥 올리브). 자문안 `#26301f`를 쓰면 **골드가 4.30:1로 AA 미달**이다 — 다크 면을 새로 정할 땐 그 위의 골드·텍스트 대비를 반드시 실측할 것.
+  - **아바타 링에 브랜드색·골드를 쓰지 말 것**(`components/avatar.tsx`). 링 3색 = 레드 `#d9484b` 359° · 플럼 `#9c5b8a` 317° · 슬레이트 `#35526e` 209°. 액션 그린 146°·골드 38°와 멀고, **색상각만 벌리면 색약(적록)에서 붙어 보이므로 명도까지** 벌렸다. 과거 `RINGS`가 브랜드색을 써서 링과 [러닝 시작] 버튼이 **같은 RGB**였고, 6라운드를 통과해 살아남았다(독립 채점이 픽셀 실측으로 잡음).
+- **한글은 `lineHeight`를 반드시 명시**(`brand.ts`의 `leading()`). 안드로이드 기본 1.2배는 라틴엔 충분하지만 한글은 **받침이 내려와** 줄이 붙어 보인다. 본문·라벨(≤17) 1.55 / 제목(18~28) 1.35 / 큰숫자(29+) 1.1.
+  - ⚠️ **`TextInput`엔 주지 말 것** — 안드로이드에서 글자 잘림·수직정렬 깨짐. **단위·배지·칩·버튼라벨**도 제외(단일행이라 효과 없이 박스만 커지고, 단위는 숫자 Text 안의 **중첩 inline Text**라 베이스라인 정렬이 흔들린다).
+  - 두 문장이면 **줄도 둘로**, 한 문장이면 `{"\n"}`으로 끊기는 자리를 **어절 경계에 고정**. 그냥 두면 320dp에서 `바꿀 수 / 있어요`처럼 구 중간에서 갈린다.
 - **디자인 전역 규칙**(2026-07-27 감사로 확립 — 어기면 화면마다 규칙이 갈려 신뢰도가 깎인다):
   - 거리 소수점 = **집계·요약 1자리 / 개별 러닝 기록 2자리**(`lib/run.ts` 주석에 명문화)
   - 숫자 표기 = **숫자(본문색·흰색) + 단위(브랜드 블루)** — 홈·러닝·랭킹·마이·상세 전부.
@@ -90,7 +103,11 @@ adb logcat -d -b crash        # 패키지명=com.modumarathon.app
   - 스크롤은 허용하되 **첫 뷰포트 = 상태요약1 + CTA1 + 최근항목1**. 기준 360×800dp(실사용 550dp), 잘리면 폰트가 아니라 콘텐츠를 줄인다.
     ⚠️ **검증 기준기(테스트 갤럭시S21)는 디스플레이 배율이 올라가 있어 실제 320×711dp**(density 480→540). 기준보다 12.5% 좁으니 여기서 안 잘리면 대부분의 폰에서 안전하다 — 긴 한글 카피는 13자 안쪽으로
   - 보조 기능이 첫 뷰포트를 먹지 않게 한다: 러닝 탭 '직접 입력'은 목록 **아래**(FlatList footer), 마이 탭 캐릭터 4종은 **접어두고** [바꾸기]로 펼친다
-- 마스코트 4종(`assets/images/mascot-{m,f}-{red,green}.png`)은 **여성=포니테일**로 실루엣 구분(볼터치 색만 다르면 썸네일에서 4종이 2종으로 보인다). gpt-image-1 재생성 시 발밑 그림자가 딸려오면 `app/scripts/strip-mascot-shadow.mjs`로 제거(연결 덩어리 분석) → `optimize-mascot.mjs`로 512px 축소.
+- **마스코트 = 양『오키』** 4종(`assets/images/mascot-{m,f}-{red,green}.png`, 2026-07-30 사람→양 전면교체). 4종 = **동글 울 / 땋은 울**(형태) × 레드 / 그린(조끼). 파일명·내부 타입(`m-`/`f-`)은 유지 — 바꾸면 저장된 선택이 끊긴다.
+  - **이름은 남용 금지.** `MASCOT_NAME` 상수 하나로 정의하고 **마스코트가 실제로 그려진 자리 중 이름이 정보가 되는 곳**에만(마이 탭 캐릭터 섹션 · 배지 축하). 빈 상태·온보딩엔 넣지 않는다 — 반복 노출 지점에 1인칭을 쓰면 3050 남성에게 유치함이 누적된다.
+  - **재생성 시 통과 조건**(시안 5컷을 버리며 얻은 것): **늘어진 귀 + 곱슬 울 + 짧고 뭉툭한 주둥이**(길면 말·당나귀로 읽힘) + **정면 3/4 상반신 중심**(측면 전신은 36px 아바타에서 얼굴이 사라진다) + **프레임 여백 명시**(안 하면 머리가 잘림). 얼굴을 살구색 사람 피부로 두면 "곱슬머리 아기"가 된다.
+  - **팀색 변형은 AI 재생성이 아니라 코드로**: `scripts/recolor-mascot-vest.mjs`(조끼 hue만 밝기비 유지 재도색) — AI로 두 번 그리면 실루엣이 미묘하게 달라져 "같은 양의 다른 팀"이 아니라 다른 양이 된다. 배경 제거는 `cutout-mascot-bg.mjs`(마젠타 크로마키)·`strip-mascot-shadow.mjs`(발밑 그림자) → `optimize-mascot.mjs`(512px).
+  - **앱 아이콘은 얼굴 클로즈업, 스플래시만 전신**. 안드로이드 어댑티브는 108dp 중 **가운데 66dp만 보장**돼 전신을 넣으면 발·귀가 잘린다. ⚠️ `adaptiveIcon.backgroundImage`가 있으면 **`backgroundColor`보다 우선**한다(초록으로 바꿔도 소용없던 원인).
 - **큰 의존성 추가·배포·push는 실행 전 확인**. 커밋은 작은 단위, main 직접 커밋 시 브랜치 먼저.
 - **배포 방향(2026-07-18 결정) = 구글 플레이스토어 정식출시.** GitHub/APK 사이드로드는 접음(카톡 .apk 차단·Auto Blocker 마찰). 준비물: 개발자등록 $25(1회)·AAB 빌드·심사(위치/건강 권한). **급하지 않음 → 차분히 준비 트랙, 현재는 앱 기능 집중.** 실기기 테스트는 로컬 APK 빌드 유지. ⚠️ **혼동주의**: Firebase(구글)=데이터DB(회원·글·이미지, 무료로 용량충분) ↔ APK=앱 설치파일. 둘은 별개.
 - 앱 코드 작성 전 Expo v57 문서 확인(`app/AGENTS.md`). 워치·네이티브 모듈은 Expo Go/웹 불가 → dev/preview build 필요.
