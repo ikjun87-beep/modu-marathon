@@ -37,10 +37,13 @@ const WORST = {
   hr: "189",
   name: "가".repeat(20), // 러너 네임 한계 20자
   date: "2026. 12. 31.", // ko-KR toLocaleDateString
+  badgeName: "10K 러너", // BADGES 카탈로그에서 가장 긴 라벨
+  badgeDesc: "이번 달 누적 100km", // 가장 긴 설명
 };
 
-function check(ratio: CardRatio, mode: "path" | "ring") {
-  console.log(`\n[${ratio} · ${mode === "path" ? "경로" : "거리 링"}]`);
+function check(ratio: CardRatio, mode: "path" | "ring" | "badge") {
+  const modeName = mode === "path" ? "경로" : mode === "ring" ? "거리 링" : "배지";
+  console.log(`\n[${ratio} · ${modeName}]`);
   const L = layoutFor(ratio);
   const H = cardHeight(ratio);
   const right = CARD_W - L.pad;
@@ -68,6 +71,19 @@ function check(ratio: CardRatio, mode: "path" | "ring") {
   const visTop = L.visualCy - L.visualR - L.strokeW;
   const visBottom = L.visualCy + L.visualR + L.strokeW;
   boxes.push({ name: "비주얼", x: CARD_W / 2 - L.visualR, right: CARD_W / 2 + L.visualR, top: visTop, bottom: visBottom });
+
+  if (mode === "badge") {
+    // 배지 카드 — 가장 긴 라벨/설명으로 본다(BADGES 카탈로그 기준).
+    boxes.push(box("배지 눈썹", L.pad, textWidth("배지 획득", L.labelSize * 0.78, "bold") + 4 * 4, L.labelY, L.labelSize * 0.78));
+    const bnW = textWidth(WORST.badgeName, L.badgeNameSize, "display");
+    boxes.push(box("배지 이름", L.pad, bnW, L.numY, L.badgeNameSize));
+    if (L.pad + bnW > right) fail(`배지 이름이 우측 여백을 넘는다 (${(L.pad + bnW).toFixed(0)} > ${right})`);
+    const bdW = textWidth(WORST.badgeDesc, L.labelSize, "bold");
+    boxes.push(box("배지 설명", L.pad, bdW, L.statLabelY + L.statLabelSize * 0.4, L.labelSize));
+    if (L.pad + bdW > right) fail(`배지 설명이 우측 여백을 넘는다 (${(L.pad + bdW).toFixed(0)} > ${right})`);
+    finish(boxes, L, H, right, nameText);
+    return;
+  }
 
   // ── 거리 라벨 + 거대 숫자 + 단위
   boxes.push(box("거리 라벨", L.pad, textWidth("이번 걷기 거리", L.labelSize, "bold"), L.labelY, L.labelSize));
@@ -98,19 +114,26 @@ function check(ratio: CardRatio, mode: "path" | "ring") {
     boxes.push(box(`스탯${i}값`, x, valW + unitW2, L.statValY, L.statValSize));
   });
 
-  // ── 슬로건
+  finish(boxes, L, H, right, nameText);
+}
+
+/** 러닝·배지 카드가 공유하는 마무리 검사 — 슬로건, 캔버스 이탈, 세로 겹침. */
+function finish(boxes: Box[], L: any, H: number, right: number, nameText: string) {
+  const box = (name: string, x: number, w: number, baseline: number, size: number): Box => ({
+    name, x, right: x + w, top: baseline - size * CAP, bottom: baseline + size * DESC,
+  });
+
   const slW = textWidth(SLOGAN, L.sloganSize, "bold");
   boxes.push(box("슬로건", L.pad, slW, L.sloganY, L.sloganSize));
   if (L.pad + slW > right) fail("슬로건이 우측 여백을 넘는다");
 
-  // ── 캔버스 밖으로 나가는 것
   for (const b of boxes) {
     if (b.top < 0) fail(`${b.name}이 위로 넘친다 (top ${b.top.toFixed(0)})`);
     if (b.bottom > H) fail(`${b.name}이 아래로 넘친다 (bottom ${b.bottom.toFixed(0)} > ${H})`);
     if (b.x < 0 || b.right > CARD_W) fail(`${b.name}이 좌우로 넘친다 (${b.x.toFixed(0)}~${b.right.toFixed(0)})`);
   }
 
-  // ── 세로 겹침 (같은 행인 스탯끼리는 x가 다르므로 제외)
+  // 같은 행인 스탯끼리는 x가 달라 겹칠 일이 없으므로 제외한다.
   const rows = boxes.filter((b) => !b.name.startsWith("스탯"));
   for (let i = 0; i < rows.length; i++) {
     for (let j = i + 1; j < rows.length; j++) {
@@ -129,7 +152,7 @@ function check(ratio: CardRatio, mode: "path" | "ring") {
 }
 
 for (const ratio of ["1:1", "9:16"] as CardRatio[]) {
-  for (const mode of ["path", "ring"] as const) check(ratio, mode);
+  for (const mode of ["path", "ring", "badge"] as const) check(ratio, mode);
 }
 
 console.log(fails === 0 ? "\n✅ 레이아웃 검산 통과" : `\n❌ ${fails}건 — 좌표 수정 필요`);

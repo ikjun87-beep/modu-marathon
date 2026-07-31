@@ -206,7 +206,11 @@ export default function RunDetailScreen() {
         <CommentThread parentId={run.id} />
       </ScrollView>
 
-      <ShareSheet visible={sharing} onClose={() => setSharing(false)} run={run} path={path} />
+      <ShareSheet
+        visible={sharing}
+        onClose={() => setSharing(false)}
+        subject={{ kind: "run", run, path }}
+      />
     </SafeAreaView>
   );
 }

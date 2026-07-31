@@ -20,6 +20,7 @@ import Animated, {
 
 import { Icon, type IconName } from "@/components/icon";
 import { Mascot } from "@/components/mascot";
+import { ShareSheet } from "@/components/share-sheet";
 import { Brand, Team, FONT, Weight, Radius, leading } from "@/lib/brand";
 import { loadSeenBadges, saveSeenBadges } from "@/lib/badge-seen";
 import { subscribe, type Row } from "@/lib/crew";
@@ -77,7 +78,17 @@ function Confetti({ i }: { i: number }) {
   );
 }
 
-function Card({ badge, onClose }: { badge: Badge; onClose: () => void }) {
+function Card({
+  badge,
+  name,
+  onShare,
+  onClose,
+}: {
+  badge: Badge;
+  name: string;
+  onShare: () => void;
+  onClose: () => void;
+}) {
   const s = useSharedValue(0.6);
   const o = useSharedValue(0);
 
@@ -110,9 +121,18 @@ function Card({ badge, onClose }: { badge: Badge; onClose: () => void }) {
       <Text style={styles.eyebrow}>{MASCOT_NAME}가 축하해요</Text>
       <Text style={styles.title}>{badge.label}</Text>
       <Text style={styles.desc}>{badge.desc}</Text>
-      <Pressable style={styles.btn} onPress={onClose} hitSlop={8}>
-        <Text style={styles.btnText}>좋아요!</Text>
-      </Pressable>
+      {/* 자랑 동기가 가장 큰 순간이 바로 여기다 — 배지를 딴 직후. 러닝 상세까지 찾아 들어가야
+          공유할 수 있으면 그 순간을 놓친다(2026-07-31 공유 카드 2차 착수).
+          단 주 액션은 [좋아요!] 하나로 둔다: 공유는 톤온톤 보조 버튼. */}
+      <View style={styles.actions}>
+        <Pressable style={styles.shareBtn} onPress={onShare} hitSlop={8}>
+          <Icon name="share" size={16} color={Brand.brandDeep} />
+          <Text style={styles.shareText}>자랑하기</Text>
+        </Pressable>
+        <Pressable style={styles.btn} onPress={onClose} hitSlop={8}>
+          <Text style={styles.btnText}>좋아요!</Text>
+        </Pressable>
+      </View>
     </Animated.View>
   );
 }
@@ -121,6 +141,8 @@ export function BadgeCelebration() {
   const [name] = useMyName();
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [queue, setQueue] = useState<Badge[]>([]); // 한 번에 2개 딸 수도 있어 큐로
+  // 공유 시트가 열려 있는 동안 축하 카드는 닫는다 — 겹쳐 두면 배지 카드가 미리보기를 가린다.
+  const [sharing, setSharing] = useState<{ badge: Badge; at: number } | null>(null);
   const seen = useRef<Set<string> | null>(null);
   // ⚠️ ref가 아니라 state여야 한다 — ref는 바뀌어도 리렌더가 안 나서,
   //    저장소 로딩이 배지 계산보다 늦게 끝나면 아래 effect가 다시 안 돌고 축하가 영영 안 뜬다.
@@ -165,16 +187,35 @@ export function BadgeCelebration() {
     void saveSeenBadges(earnedIds);
   }, [earnedIds, seenLoaded, runs, name]);
 
-  if (!queue.length) return null;
+  if (!queue.length && !sharing) return null;
   const current = queue[0];
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      <Pressable style={styles.scrim} onPress={() => setQueue((q) => q.slice(1))} />
-      {Array.from({ length: CONFETTI }, (_, i) => (
-        <Confetti key={`${current.id}-${i}`} i={i} />
-      ))}
-      <Card badge={current} onClose={() => setQueue((q) => q.slice(1))} />
+      {current ? (
+        <>
+          <Pressable style={styles.scrim} onPress={() => setQueue((q) => q.slice(1))} />
+          {Array.from({ length: CONFETTI }, (_, i) => (
+            <Confetti key={`${current.id}-${i}`} i={i} />
+          ))}
+          <Card
+            badge={current}
+            name={name}
+            // 획득 시각은 여기서 한 번 고정한다 — 카드 안에서 Date.now()를 부르면
+            // 리렌더마다 날짜가 새로 계산돼 흔들린다.
+            onShare={() => setSharing({ badge: current, at: Date.now() })}
+            onClose={() => setQueue((q) => q.slice(1))}
+          />
+        </>
+      ) : null}
+
+      {sharing ? (
+        <ShareSheet
+          visible
+          onClose={() => setSharing(null)}
+          subject={{ kind: "badge", badge: sharing.badge, name, earnedAt: sharing.at }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -227,12 +268,23 @@ const styles = StyleSheet.create({
     fontSize: 24, lineHeight: leading(24), fontWeight: Weight.bold, color: Brand.ink },
   desc: { fontFamily: FONT,
     fontSize: 13.5, lineHeight: leading(13.5), color: Brand.soft, textAlign: "center" },
+  actions: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
+  // 보조 액션이라 톤온톤 — 한 화면의 솔리드 브랜드색은 주 액션 하나뿐이다(디자인 전역 규칙).
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Brand.brandSoft,
+    borderRadius: Radius.input,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  shareText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT, fontSize: 14 },
   btn: {
-    marginTop: 14,
     backgroundColor: Brand.brand,
     borderRadius: Radius.input,
     paddingVertical: 12,
-    paddingHorizontal: 34,
+    paddingHorizontal: 28,
   },
   btnText: { color: "#fff", fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 15 },

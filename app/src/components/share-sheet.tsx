@@ -21,21 +21,25 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type Svg from "react-native-svg";
 
 import { Icon } from "@/components/icon";
-import { CARD_W, cardHeight, ShareCard, type CardRatio } from "@/components/share-card";
+import {
+  CARD_W,
+  cardHeight,
+  ShareCard,
+  type CardRatio,
+  type ShareSubject,
+} from "@/components/share-card";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
-import type { Row } from "@/lib/crew";
-import type { LatLng } from "@/lib/run";
 import { sharePng, svgToPngBase64, type SvgShotRef } from "@/lib/share-image";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  run: Row;
-  path?: LatLng[] | null;
+  /** 러닝 기록이든 배지든 — 시트는 무엇을 자랑하는지만 알면 된다. */
+  subject: ShareSubject;
 };
 
-export function ShareSheet({ visible, onClose, run, path }: Props) {
+export function ShareSheet({ visible, onClose, subject }: Props) {
   const [ratio, setRatio] = useState<CardRatio>("1:1");
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState<"photo" | "share" | null>(null);
@@ -84,7 +88,8 @@ export function ShareSheet({ visible, onClose, run, path }: Props) {
       const h = cardHeight(ratio);
       const base64 = await svgToPngBase64(svgRef.current as unknown as SvgShotRef, CARD_W, h);
       const tag = ratio === "1:1" ? "1x1" : "9x16";
-      await sharePng(base64, `5kilo-${run.id}-${tag}.png`);
+      const slug = subject.kind === "run" ? subject.run.id : `badge-${subject.badge.id}`;
+      await sharePng(base64, `5kilo-${slug}-${tag}.png`);
     } catch (e: any) {
       Alert.alert("공유하지 못했어요", String(e?.message ?? e));
     } finally {
@@ -109,8 +114,7 @@ export function ShareSheet({ visible, onClose, run, path }: Props) {
           <View style={[styles.preview, { width: previewW }]}>
             <ShareCard
               ref={svgRef}
-              run={run}
-              path={path}
+              subject={subject}
               photo={photo}
               ratio={ratio}
               previewWidth={previewW}

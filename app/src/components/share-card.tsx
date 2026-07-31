@@ -34,8 +34,10 @@ import Svg, {
   Text as SvgText,
 } from "react-native-svg";
 
+import { Icon, type IconName } from "@/components/icon";
 import { Brand, FONT, FONT_DISPLAY } from "@/lib/brand";
 import { fmtDate, type Row } from "@/lib/crew";
+import type { Badge } from "@/lib/stats";
 import { fitPath } from "@/lib/path-fit";
 import { fmtDuration, isWalk, paceLabel, type LatLng } from "@/lib/run";
 import {
@@ -97,10 +99,29 @@ function paletteFor(hasPhoto: boolean): Palette {
   };
 }
 
+/**
+ * 카드가 무엇을 자랑하는가.
+ *
+ * 러닝만 공유할 수 있으면 자랑 동기가 가장 큰 순간 — **배지를 딴 그 순간** — 을 놓친다.
+ * 두 종류가 프레임(워드마크·이름·날짜·슬로건·사진 배경)을 공유하고 가운데 내용만 갈린다.
+ */
+export type ShareSubject =
+  | {
+      kind: "run";
+      run: Row;
+      /** 이 기기에 저장된 GPS 경로. 있으면 경로를, 없으면 거리 링을 그린다. */
+      path?: LatLng[] | null;
+    }
+  | {
+      kind: "badge";
+      badge: Badge;
+      name: string;
+      /** 획득 시각(epoch ms). 매 렌더 `Date.now()`를 부르면 날짜가 흔들려 호출부에서 고정해 넘긴다. */
+      earnedAt: number;
+    };
+
 export type ShareCardProps = {
-  run: Row;
-  /** 이 기기에 저장된 GPS 경로. 있으면 경로를, 없으면 거리 링을 그린다. */
-  path?: LatLng[] | null;
+  subject: ShareSubject;
   /** 배경 사진 — `data:image/...;base64,...` 형태. 갤러리 업로드와 같은 방식. */
   photo?: string | null;
   ratio: CardRatio;
@@ -109,19 +130,23 @@ export type ShareCardProps = {
 };
 
 export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
-  { run, path, photo, ratio, previewWidth },
+  { subject, photo, ratio, previewWidth },
   ref,
 ) {
   const H = cardHeight(ratio);
   const L = layoutFor(ratio);
   const P = paletteFor(!!photo);
   const right = CARD_W - L.pad;
+  const isBadge = subject.kind === "badge";
 
-  const km = Number(run.distanceKm) || 0;
-  const sec = Number(run.durationSec) || (Number(run.durationMin) || 0) * 60;
-  const hr = run.avgHr ? Math.round(Number(run.avgHr)) : null;
-  const gain = run.elevationGainM ? Math.round(Number(run.elevationGainM)) : null;
-  const walk = isWalk(run);
+  const run = subject.kind === "run" ? subject.run : null;
+  const path = subject.kind === "run" ? subject.path : null;
+
+  const km = Number(run?.distanceKm) || 0;
+  const sec = Number(run?.durationSec) || (Number(run?.durationMin) || 0) * 60;
+  const hr = run?.avgHr ? Math.round(Number(run.avgHr)) : null;
+  const gain = run?.elevationGainM ? Math.round(Number(run.elevationGainM)) : null;
+  const walk = !!run && isWalk(run);
 
   // 개별 러닝 기록이므로 **소수점 2자리**(집계·요약은 1자리) — lib/run.ts의 표기 규칙.
   const kmText = km.toFixed(2);
@@ -142,12 +167,17 @@ export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
 
   // 헤더 우측 = 이름(1줄) + 날짜(2줄). 한 줄에 "이름 · 날짜"로 이어붙였더니 20자 러너 네임이
   // 헤더를 통째로 먹고 워드마크에 붙었다(scripts/check-share-card.ts가 잡음).
-  const dateText = fmtDate(run.startedAt ?? run.createdAt);
+  const dateText = fmtDate(isBadge ? subject.earnedAt : run!.startedAt ?? run!.createdAt);
   const wordW = textWidth("5키로", L.wordSize, "display");
   const nameBudget = CARD_W - L.pad * 2 - wordW - 40;
-  const nameText = ellipsize(String(run.name ?? ""), nameBudget, L.nameSize, "bold");
+  const nameText = ellipsize(
+    String((isBadge ? subject.name : run!.name) ?? ""),
+    nameBudget,
+    L.nameSize,
+    "bold",
+  );
 
-  const hasPath = !!path && path.length > 1;
+  const hasPath = !isBadge && !!path && path.length > 1;
   // 여백 = 선 굵기 + 끝점 원 반지름. 폴리라인은 좌표를 중심으로 그려지므로 0을 주면
   // 코스가 박스에 딱 붙는 러닝에서 선 절반과 출발점 원이 밖으로 삐져나간다.
   const fit = hasPath
@@ -234,6 +264,26 @@ export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
             fill={P.bg} stroke={P.route} strokeWidth={L.strokeW * 0.7}
           />
         </G>
+      ) : isBadge ? (
+        // 배지는 성취라 **골드가 규칙상 허용되는 자리**(골드 = 순위·챌린지·성과 전용).
+        // 거리 링과 달리 진행률이 없으므로 원을 꽉 채워 그린다.
+        <G>
+          <Circle
+            cx={CARD_W / 2} cy={L.visualCy} r={L.visualR}
+            fill="none" stroke={Brand.gold} strokeWidth={L.strokeW * 1.6}
+          />
+          {/* 배지 아이콘 — 앱에서 쓰는 것과 같은 라인 아이콘을 그대로 얹는다(중첩 Svg). */}
+          <G
+            transform={`translate(${CARD_W / 2 - L.visualR * 0.62}, ${L.visualCy - L.visualR * 0.62})`}
+          >
+            <Icon
+              name={subject.badge.icon as IconName}
+              size={L.visualR * 1.24}
+              color={Brand.gold}
+              strokeWidth={1.4}
+            />
+          </G>
+        </G>
       ) : photo ? null : ( // 사진이 있으면 링을 그리지 않는다 — 실기기에서 링이 피사체 얼굴을
         // 가로질렀다. 사진을 넣었다는 건 "이 순간을 보여주겠다"는 뜻이라 그래픽이 주인공을
         // 가리면 안 된다. (경로는 정보 가치가 있어 사진 위에도 그대로 그린다.)
@@ -255,29 +305,56 @@ export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
         </G>
       )}
 
-      {/* 거리 — 카드의 주인공. 목록에서 회색 링·태그로 구분하던 걷기를 여기서도 라벨로 잇는다. */}
-      <SvgText
-        x={L.pad} y={L.labelY}
-        fontFamily={FONT} fontSize={L.labelSize} fill={P.label}
-      >
-        {walk ? "이번 걷기 거리" : "이번 러닝 거리"}
-      </SvgText>
-      <SvgText
-        x={L.pad} y={L.numY}
-        fontFamily={FONT_DISPLAY} fontSize={L.numSize} fill={P.num}
-      >
-        {kmText}
-      </SvgText>
-      <SvgText
-        x={L.pad + textWidth(kmText, L.numSize, "display") + L.numSize * 0.09}
-        y={L.numY}
-        fontFamily={FONT} fontWeight="700" fontSize={L.unitSize} fill={P.unit}
-      >
-        km
-      </SvgText>
+      {isBadge ? (
+        <>
+          {/* 배지 — 주인공은 배지 이름. "무엇을 해냈나"가 한 줄로 읽혀야 공유가 의미를 가진다. */}
+          <SvgText
+            x={L.pad} y={L.labelY}
+            fontFamily={FONT} fontWeight="700" fontSize={L.labelSize * 0.78}
+            letterSpacing={4} fill={Brand.gold}
+          >
+            배지 획득
+          </SvgText>
+          <SvgText
+            x={L.pad} y={L.numY}
+            fontFamily={FONT_DISPLAY} fontSize={L.badgeNameSize} fill={P.num}
+          >
+            {subject.badge.label}
+          </SvgText>
+          <SvgText
+            x={L.pad} y={L.statLabelY + L.statLabelSize * 0.4}
+            fontFamily={FONT} fontSize={L.labelSize} fill={P.label}
+          >
+            {subject.badge.desc}
+          </SvgText>
+        </>
+      ) : (
+        <>
+          {/* 거리 — 카드의 주인공. 목록에서 회색 링·태그로 구분하던 걷기를 여기서도 라벨로 잇는다. */}
+          <SvgText
+            x={L.pad} y={L.labelY}
+            fontFamily={FONT} fontSize={L.labelSize} fill={P.label}
+          >
+            {walk ? "이번 걷기 거리" : "이번 러닝 거리"}
+          </SvgText>
+          <SvgText
+            x={L.pad} y={L.numY}
+            fontFamily={FONT_DISPLAY} fontSize={L.numSize} fill={P.num}
+          >
+            {kmText}
+          </SvgText>
+          <SvgText
+            x={L.pad + textWidth(kmText, L.numSize, "display") + L.numSize * 0.09}
+            y={L.numY}
+            fontFamily={FONT} fontWeight="700" fontSize={L.unitSize} fill={P.unit}
+          >
+            km
+          </SvgText>
+        </>
+      )}
 
-      {/* 스탯 3칸 — 좌측정렬 균등 분할 */}
-      {stats.map((s, i) => {
+      {/* 스탯 3칸 — 좌측정렬 균등 분할 (배지 카드는 설명이 그 자리를 쓴다) */}
+      {!isBadge && stats.map((s, i) => {
         const colW = (CARD_W - L.pad * 2) / stats.length;
         const x = L.pad + colW * i;
         return (

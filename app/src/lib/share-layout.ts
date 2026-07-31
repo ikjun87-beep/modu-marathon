@@ -39,6 +39,9 @@ export type CardLayout = {
   numY: number;
   numSize: number;
   unitSize: number;
+  /** 배지 카드에서 주인공이 되는 배지 이름("10K 러너") — 거리 숫자 자리를 그대로 쓴다.
+   *  한글이라 숫자만큼 크게 뽑으면 답답해서 한 단계 줄인다. */
+  badgeNameSize: number;
   statLabelY: number;
   statValY: number;
   statLabelSize: number;
@@ -56,7 +59,7 @@ export function layoutFor(ratio: CardRatio): CardLayout {
       pad: 88, headY: 104, wordSize: 54, nameSize: 34, dateY: 150, metaSize: 30,
       visualCy: 372, visualR: 150,
       labelY: 610, labelSize: 34,
-      numY: 766, numSize: 160, unitSize: 58,
+      numY: 766, numSize: 160, unitSize: 58, badgeNameSize: 116,
       statLabelY: 856, statValY: 918, statLabelSize: 28, statValSize: 50, statUnitSize: 30,
       sloganY: 1000, sloganSize: 30,
       strokeW: 12,
@@ -66,7 +69,7 @@ export function layoutFor(ratio: CardRatio): CardLayout {
     pad: 96, headY: 172, wordSize: 64, nameSize: 40, dateY: 226, metaSize: 34,
     visualCy: 660, visualR: 250,
     labelY: 1060, labelSize: 40,
-    numY: 1252, numSize: 200, unitSize: 70,
+    numY: 1252, numSize: 200, unitSize: 70, badgeNameSize: 146,
     statLabelY: 1364, statValY: 1440, statLabelSize: 32, statValSize: 60, statUnitSize: 36,
     // 슬로건은 푸터다. 1800에 두니 스탯과 360px이나 벌어져 카드 아래가 텅 비어 보였고
     // (실기기 캡처), 인스타 스토리는 **하단 250px가량이 답장창 UI에 가린다** — 둘 다 피한다.
