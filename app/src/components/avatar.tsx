@@ -29,7 +29,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Brand, FONT, Team, Weight } from "@/lib/brand";
 import { mascotSource, useMascot, type MascotKind } from "@/lib/mascot";
-import { useProfilePhoto } from "@/lib/profile-photo";
+import { usePhotoOf } from "@/lib/profile-photo";
 
 /**
  * 링 후보 3색. 인덱스는 이름 해시로 고정된다.
@@ -86,9 +86,9 @@ export function ringTier(earnedCount: number): number {
 
 export function Avatar({ name, size = 38, me = false, ring = true, tier }: Props) {
   const mascot = useMascot();
-  // 내 사진을 등록했으면 마스코트 대신 사진. 기기 로컬이라 **내 아바타에만** 적용된다
-  // (남의 사진은 공유 저장이 없어 알 수 없다 — lib/profile-photo.ts 주석 참조).
-  const photo = useProfilePhoto();
+  // 사진을 등록한 사람은 마스코트 대신 그 사진. 2026-07-31부터 **크루 공유**라 남의 얼굴도
+  // 보인다(회장 결정 · L3 — lib/profile-photo.ts 주석에 감수한 리스크를 적어 뒀다).
+  const photo = usePhotoOf(name);
   let color = me ? teamColorOf(mascot) : ringColorFor(name || "?");
   // 링 두께는 크기에 비례 — 작은 아바타에 2px은 두껍고 큰 아바타엔 얇다.
   let border = ring ? Math.max(1.5, Math.round(size * 0.055)) : 0;
@@ -115,7 +115,9 @@ export function Avatar({ name, size = 38, me = false, ring = true, tier }: Props
   // ⚠️ 512px 마스코트를 22~30px로 줄이면 외곽선이 뭉개진다. 게다가 이 컴포넌트가 카드 반복을
   // 없애려고 만든 "이니셜 + 링" 문법을 나 자신에게만 예외로 깨는 셈이라 일관성도 잃는다.
   // → 작은 자리에서는 me여도 이니셜로 그린다. 링 색(내 팀색)은 유지해 "이건 나"는 남는다.
-  const drawFace = me && size >= 36;
+  // 사진이 있으면 누구든 얼굴을 그리고, 없으면 나만 마스코트를 그린다.
+  const drawPhoto = !!photo && size >= 36;
+  const drawFace = drawPhoto || (me && size >= 36);
 
   return (
     <View
@@ -129,7 +131,7 @@ export function Avatar({ name, size = 38, me = false, ring = true, tier }: Props
           borderColor: ring ? color : "transparent",
         },
       ]}>
-      {drawFace && photo ? (
+      {drawPhoto ? (
         // 사진은 원을 꽉 채워야 얼굴이 잘 보인다(마스코트는 여백을 둬야 다리가 안 잘린다).
         <Image source={{ uri: photo }} style={{ width: size, height: size }} resizeMode="cover" />
       ) : drawFace ? (

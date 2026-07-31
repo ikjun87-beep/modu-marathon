@@ -50,4 +50,8 @@ export const COLLECTIONS = {
   // 참석(attendance)과 같은 토글 구조(문서 있으면 박수함 / 지우면 취소).
   // 경쟁이 아니라 응원이라는 우리 방향의 핵심 장치(docs/DESIGN_R12_PLAN.md).
   claps: "claps",
+  // 프로필 사진 — { name, photo(data:image base64), createdAt }. 문서 id = encodeURIComponent(러너 네임).
+  // ⚠️ **얼굴 사진이 공개 읽기 컬렉션에 들어간다**(2026-07-31 회장 결정 · L3). 켜기 전에
+  // 처리방침 개정·화면 고지·삭제 경로가 함께 있어야 한다 — lib/profile-photo.ts 주석 참조.
+  profiles: "profiles",
 } as const;

@@ -59,6 +59,24 @@ service cloud.firestore {
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if true;   // 박수 취소 토글
     }
+    // 프로필 사진 — 크루원끼리 서로 얼굴을 보기 위한 컬렉션(2026-07-31 회장 결정 · L3).
+    //
+    // ⚠️ **얼굴 사진이 공개 읽기다.** 링크를 아는 사람은 앱 밖에서도 받아갈 수 있다.
+    //    감수하고 켠 것이며, 처리방침(PRIVACY.md·web/privacy.html)에 수집·공개 항목으로 명시했다.
+    //    소유 기반으로 좁히려면 웹까지 Auth를 붙이고 문서에 uid를 심어야 한다(별도 라운드).
+    //
+    // 크기 제한이 이 규칙의 핵심이다: Firestore 문서 한도는 1MB이고, 아바타는 256px로 줄여
+    // 담으므로 30KB 안팎이면 충분하다. 200KB를 넘기면 누군가 컬렉션을 저장소로 쓰고 있는 것이다.
+    // 갤러리와 같은 data:image 게이트로 스크립트 URI 주입도 막는다(2026-07-15 저장형 XSS 대응).
+    match /profiles/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.name is string
+                    && request.resource.data.name.size() <= 40
+                    && request.resource.data.photo is string
+                    && request.resource.data.photo.size() <= 200000
+                    && request.resource.data.photo.matches('data:image/.*');
+      allow delete: if true;   // 언제든 사진 빼기
+    }
     // 러닝 기록(웹·앱·워치 공용). 결정적 id로 멱등 upsert(create+update=merge).
     // distanceKm 범위 검증으로 today 합산·리더보드 통계 오염 방지(천도윤 #4).
     match /runs/{id} {

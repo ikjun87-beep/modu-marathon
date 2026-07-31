@@ -11,6 +11,7 @@
  */
 import { updateAccountName } from "./auth";
 import { renameAuthor } from "./crew";
+import { movePhotoOnRename } from "./profile-photo";
 import { setMyName } from "./session";
 
 /** @returns 함께 이름이 바뀐 과거 문서 수
@@ -26,5 +27,13 @@ export async function saveRunnerName(prevName: string, nextName: string): Promis
   const changed = await renameAuthor(prevName, next); // 실패하면 여기서 던짐 → 아래 안 실행
   await setMyName(next);
   await updateAccountName(next);
+  // 프로필 사진 문서는 id가 러너 네임이라 **따로 옮겨야** 한다(2026-07-31 공유 저장 전환).
+  // 실패해도 개명 자체는 이미 성공했으므로 되돌리지 않는다 — 사진만 마스코트로 보일 뿐이고,
+  // 사용자가 다시 넣으면 새 이름으로 저장된다. 여기서 던지면 개명이 실패한 것처럼 보인다.
+  try {
+    await movePhotoOnRename(prevName, next);
+  } catch {
+    /* 사진 이동 실패는 개명을 막지 않는다 */
+  }
   return changed;
 }

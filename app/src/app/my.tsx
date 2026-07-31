@@ -35,7 +35,7 @@ import { isWatchAutoSync, setWatchAutoSync } from "@/lib/health-consent";
 import { HC_SUPPORTED } from "@/lib/healthconnect";
 import { saveRunnerName } from "@/lib/identity";
 import { MASCOT_NAME, MASCOTS, setMascot, useMascot, type MascotKind } from "@/lib/mascot";
-import { setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
+import { setPhotoOwner, setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
 
 /** 캐릭터 선택지 라벨 — 썸네일만으론 형태·팀색이 구분되지 않는다.
  *
@@ -211,9 +211,18 @@ export default function MyScreen() {
             </View>
           </PressableScale>
           <Text style={styles.heroName} numberOfLines={1}>{name || "러너"}</Text>
+          {/* ⚠️ 사진은 **크루원에게도 보인다**(2026-07-31 공유 저장 전환). 동의는 약관이 아니라
+              그 행동을 하는 자리에서 이뤄져야 하므로, 여기서 명시적으로 알린다. */}
           <Text style={styles.heroSub}>
-            {photoBusy ? "사진 넣는 중…" : photo ? "내 사진으로 보여요" : "탭해서 내 사진을 넣어보세요"}
+            {photoBusy
+              ? "사진 넣는 중…"
+              : photo
+                ? "크루원에게 이 사진으로 보여요"
+                : "탭해서 내 사진을 넣어보세요"}
           </Text>
+          {!photo && !photoBusy && (
+            <Text style={styles.heroNote}>넣으면 크루원에게도 보여요</Text>
+          )}
           {!!photo && (
             <PressableScale onPress={() => void setProfilePhoto(null)} dim={false} hitSlop={8}>
               <Text style={styles.heroReset}>마스코트로 되돌리기</Text>
@@ -488,6 +497,8 @@ const styles = StyleSheet.create({
   },
   heroName: { fontFamily: FONT, fontSize: 20, lineHeight: leading(20), fontWeight: Weight.bold, color: Brand.ink, marginTop: 8 },
   heroSub: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), color: Brand.soft },
+  // 공개 범위 고지 — 사진을 넣기 **전에** 읽혀야 하므로 안내문 아래 한 줄로만.
+  heroNote: { fontFamily: FONT, fontSize: 11.5, color: Brand.faint, marginTop: 2 },
   heroReset: { fontFamily: FONT, fontSize: 12.5, lineHeight: leading(12.5), fontWeight: Weight.bold, color: Brand.brandDeep, marginTop: 6 },
 
   profile: {
