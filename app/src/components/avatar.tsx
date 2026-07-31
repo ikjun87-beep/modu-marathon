@@ -88,7 +88,7 @@ export function Avatar({ name, size = 38, me = false, ring = true, tier }: Props
   const mascot = useMascot();
   // 사진을 등록한 사람은 마스코트 대신 그 사진. 2026-07-31부터 **크루 공유**라 남의 얼굴도
   // 보인다(회장 결정 · L3 — lib/profile-photo.ts 주석에 감수한 리스크를 적어 뒀다).
-  const photo = usePhotoOf(name);
+  const photo = usePhotoOf(name, me);
   let color = me ? teamColorOf(mascot) : ringColorFor(name || "?");
   // 링 두께는 크기에 비례 — 작은 아바타에 2px은 두껍고 큰 아바타엔 얇다.
   let border = ring ? Math.max(1.5, Math.round(size * 0.055)) : 0;

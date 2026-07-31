@@ -29,7 +29,7 @@ import { useEffect, useState } from "react";
 
 import { put, remove, subscribe, type Row } from "./crew";
 import { COLLECTIONS } from "./firebase";
-import { subscribeMyName } from "./session";
+import { getMyName as getMyNameFromSession, subscribeMyName } from "./session";
 
 /** 로컬 캐시 — 서버가 원본이지만, 앱을 켜자마자 내 얼굴이 보이도록 마지막 값을 들고 있는다. */
 const KEY = "mm_profile_photo_v1";
@@ -75,14 +75,19 @@ export function useCrewPhotos(): Record<string, string> {
   return map;
 }
 
-/** 이 사람의 사진(없으면 null). 아바타가 마스코트/이니셜로 폴백할지 판단하는 데 쓴다. */
-export function usePhotoOf(name: string | undefined): string | null {
+/**
+ * 이 사람의 사진(없으면 null). 아바타가 마스코트/이니셜로 폴백할지 판단하는 데 쓴다.
+ *
+ * @param me 내 아바타인가. **이름 비교 대신 이 플래그를 쓴다** — 모듈이 들고 있는 내 이름은
+ *   세션 로드 타이밍에 따라 잠깐 비어 있을 수 있고, 그러면 등록 직후 내 얼굴이 안 나온다.
+ *   호출부(Avatar)는 자기가 나인지 이미 알고 있으므로 그 정보를 그대로 받는다.
+ */
+export function usePhotoOf(name: string | undefined, me = false): string | null {
   const map = useCrewPhotos();
   const local = useProfilePhoto();
   const key = (name ?? "").trim();
-  if (!key) return null;
   // 내 사진은 서버 반영 전에도 즉시 보여야 한다(등록 직후 한 박자 비는 걸 막는다).
-  return map[key] ?? (myName === key ? local : null) ?? null;
+  return (key ? map[key] : null) ?? (me ? local : null) ?? null;
 }
 
 // ── 내 사진 ───────────────────────────────────────────────────────────
@@ -97,7 +102,19 @@ const listeners = new Set<(v: string | null) => void>();
 export function setPhotoOwner(name: string) {
   myName = (name ?? "").trim();
 }
+// ⚠️ `subscribeMyName`은 **변경될 때만** 부른다. 앱을 재시작하면 이름은 저장소에서 읽히기만 하고
+//    setMyName을 지나가지 않아 콜백이 한 번도 안 온다 → owner가 빈 채로 남는다.
+//    그 상태로 사진을 등록하면 아래 `if (owner)` 가드에 걸려 **서버 쓰기가 조용히 건너뛰어지고**,
+//    로컬만 저장돼 "성공한 것처럼" 보였다(2026-07-31 실기기에서 이 증상으로 발견).
+//    → 구독과 함께 **현재 값도 즉시 읽어온다.**
+void getMyNameFromSession().then((n) => setPhotoOwner(n));
 subscribeMyName((n) => setPhotoOwner(n));
+
+/** 저장 직전에 소유자를 확실히 확보한다 — 위 초기화가 아직 안 끝났을 수도 있다. */
+async function currentOwner(): Promise<string> {
+  if (!myName) myName = (await getMyNameFromSession()).trim();
+  return myName;
+}
 
 export async function getProfilePhoto(): Promise<string | null> {
   if (cached === undefined) {
@@ -117,7 +134,7 @@ export async function getProfilePhoto(): Promise<string | null> {
  * 크루에게 보이는 줄 알았는데 아무도 못 보는 상태가 된다.
  */
 export async function setProfilePhoto(dataUri: string | null): Promise<void> {
-  const owner = myName;
+  const owner = await currentOwner();
   if (owner) {
     const id = photoDocId(owner);
     if (dataUri) await put(COLLECTIONS.profiles, id, { name: owner, photo: dataUri });

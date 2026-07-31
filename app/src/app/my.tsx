@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import * as ImageManipulator from "expo-image-manipulator";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
@@ -120,7 +121,16 @@ export default function MyScreen() {
     }
   }
 
-  /** 커스텀 프로필 사진 — 갤러리와 같은 경로(선택→축소→base64)지만 **아바타라 256px면 충분**하다.
+  /** 커스텀 프로필 사진 — 선택 → **중앙 정사각 크롭** → 256px 축소 → base64.
+   *
+   *  ⚠️ `allowsEditing: true`를 쓰지 않는다. 시스템 크롭 액티비티가 **기기에 따라 완료 버튼을
+   *  못 그린다** — 테스트폰(갤럭시 S21)에서 크롭 화면 하단이 빈 회색으로 나와 사진을 **아예
+   *  등록할 수 없었다**(2026-07-31 실기기 검증에서 발견). 남의 앱 화면에 우리 기능의 성패를
+   *  맡기는 셈이라, 크롭을 우리가 직접 한다.
+   *
+   *  중앙 크롭이라 얼굴이 구석에 있으면 잘릴 수 있지만, 아바타는 원형으로 표시되므로 중앙이
+   *  기본값으로 자연스럽다. 자유 크롭이 필요해지면 그때 자체 크롭 UI를 만든다.
+   *
    *  사진은 어디까지나 선택 사항이다. 안 넣으면 마스코트가 그대로 얼굴이 된다(회장 확인). */
   async function pickPhoto() {
     if (photoBusy) return;
@@ -131,19 +141,33 @@ export default function MyScreen() {
     }
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1], // 아바타는 원형이라 정사각으로 잘라 받는다
       quality: 1,
     });
     if (res.canceled || !res.assets?.[0]) return;
 
     setPhotoBusy(true);
     try {
-      const out = await manipulateAsync(
-        res.assets[0].uri,
-        [{ resize: { width: 256 } }],
-        { compress: 0.7, format: SaveFormat.JPEG, base64: true }
-      );
+      const asset = res.assets[0];
+      const ops: ImageManipulator.Action[] = [];
+      // 원본 크기를 알 때만 자른다 — 모르면(0/undefined) 자르기를 건너뛰고 축소만 한다.
+      if (asset.width && asset.height) {
+        const side = Math.min(asset.width, asset.height);
+        ops.push({
+          crop: {
+            originX: Math.round((asset.width - side) / 2),
+            originY: Math.round((asset.height - side) / 2),
+            width: side,
+            height: side,
+          },
+        });
+      }
+      ops.push({ resize: { width: 256 } });
+
+      const out = await manipulateAsync(asset.uri, ops, {
+        compress: 0.7,
+        format: SaveFormat.JPEG,
+        base64: true,
+      });
       await setProfilePhoto(`data:image/jpeg;base64,${out.base64 ?? ""}`);
     } catch (e: any) {
       Alert.alert("사진을 넣지 못했어요", String(e?.message ?? e));
