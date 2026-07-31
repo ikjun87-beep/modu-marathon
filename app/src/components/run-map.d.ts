@@ -13,5 +13,7 @@ export type RunMapHandle = { snapshot: () => Promise<string | null> };
 export declare function RunMap(props: {
   path: LatLng[];
   follow?: boolean;
+  /** 아직 경로가 없을 때 지도를 놓을 위치(러닝 시작 전 "지금 여기"). */
+  center?: LatLng | null;
   ref?: Ref<RunMapHandle>;
 }): ReactElement;

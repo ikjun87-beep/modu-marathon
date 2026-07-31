@@ -57,6 +57,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
   const [result, setResult] = useState<RunResult | null>(null); // 요약 화면용 확정 결과
   const [sharing, setSharing] = useState(false);
   const [mapShot, setMapShot] = useState<string | null>(null); // 공유 카드에 넣을 지도 스냅샷
+  const [here, setHere] = useState<LatLng | null>(null); // 시작 전 지도를 놓을 현재 위치
   const mapRef = useRef<RunMapHandle>(null);
 
   const sub = useRef<Location.LocationSubscription | null>(null);
@@ -76,6 +77,33 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     return stopAll;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
+
+  /** 모달을 열면 **시작 전에도** 현재 위치를 한 번 잡아 지도를 거기로 옮긴다.
+   *
+   *  이게 없으면 [러닝 시작]을 누르기 전까지 지도가 서울 기본 좌표에 머물러, "내가 어디서
+   *  출발하는지"가 안 보였다(실기기 확인 — 서울시청이 떠 있었다). 티맵·카카오네비가 열자마자
+   *  현재 위치를 보여주는 것과 같은 이유다.
+   *
+   *  ⚠️ 여기서 **권한을 요청하지 않는다.** 이미 허용한 사람에게만 미리보기를 주고, 아직 안 물어본
+   *  사람에게는 [러닝 시작]을 누르는 순간에 묻는다 — 화면을 열자마자 권한 창이 뜨면 놀란다. */
+  useEffect(() => {
+    if (!visible || phase !== "idle") return;
+    let alive = true;
+    void (async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const loc = await Location.getLastKnownPositionAsync();
+        const pos = loc ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+        if (alive && pos) setHere({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      } catch {
+        /* 위치를 못 잡아도 지도는 기본 좌표로 뜬다 — 러닝 시작에 지장 없다 */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [visible, phase]);
 
   function stopAll() {
     sub.current?.remove();
@@ -379,7 +407,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
         </View>
 
         <View style={styles.mapArea}>
-          <RunMap path={path} />
+          <RunMap path={path} center={here} />
           <View style={styles.kmOverlay} pointerEvents="none">
             <Text style={styles.bigNum}>{km.toFixed(2)}</Text>
             <Text style={styles.bigUnit}>km</Text>

@@ -10,7 +10,7 @@ import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
 import type { LatLng } from "@/lib/run";
 import type { RunMapHandle } from "./run-map";
 
-type Props = { path: LatLng[]; follow?: boolean };
+type Props = { path: LatLng[]; follow?: boolean; center?: LatLng | null };
 
 /** 웹은 지도가 없으니 스냅샷도 없다 — 호출부는 null을 받고 벡터 폴리라인으로 폴백한다. */
 export const RunMap = forwardRef<RunMapHandle, Props>(function RunMap(_props, ref) {
