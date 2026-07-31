@@ -24,6 +24,7 @@
 import { forwardRef } from "react";
 import Svg, {
   Circle,
+  ClipPath,
   Defs,
   G,
   Image as SvgImage,
@@ -124,13 +125,16 @@ export type ShareCardProps = {
   subject: ShareSubject;
   /** 배경 사진 — `data:image/...;base64,...` 형태. 갤러리 업로드와 같은 방식. */
   photo?: string | null;
+  /** 지도 스냅샷(정사각). 있으면 비주얼 자리에 **실제 지도 위 경로**가 들어간다.
+   *  없으면 벡터 폴리라인으로 폴백 — 지도 로딩 실패나 웹에서도 카드는 항상 완성된다. */
+  mapImage?: string | null;
   ratio: CardRatio;
   /** 화면 미리보기 폭(px). 파일은 항상 1080으로 뽑히므로 여기 값은 화질과 무관하다. */
   previewWidth: number;
 };
 
 export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
-  { subject, photo, ratio, previewWidth },
+  { subject, photo, mapImage, ratio, previewWidth },
   ref,
 ) {
   const H = cardHeight(ratio);
@@ -246,8 +250,33 @@ export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
         {dateText}
       </SvgText>
 
-      {/* 비주얼 — 경로가 있으면 "내가 그린 그림", 없으면 10km 기준 거리 링 */}
-      {fit ? (
+      {/* 비주얼 — 지도 스냅샷 > 벡터 경로 > 거리 링 순으로 고른다.
+          지도가 있으면 "어디를 뛰었나"까지 한눈에 들어온다(회장 지시: 티맵·카카오네비처럼). */}
+      {mapImage && !isBadge ? (
+        <G>
+          <Defs>
+            <ClipPath id="mapclip">
+              <Circle cx={CARD_W / 2} cy={L.visualCy} r={L.visualR} />
+            </ClipPath>
+          </Defs>
+          <SvgImage
+            x={CARD_W / 2 - L.visualR}
+            y={L.visualCy - L.visualR}
+            width={L.visualR * 2}
+            height={L.visualR * 2}
+            href={{ uri: mapImage }}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#mapclip)"
+          />
+          {/* 지도 가장자리를 링으로 감싼다. 흰 링을 썼더니 **우리 지도 스타일이 크림 톤이라
+              카드 배경과 섞여** 원의 경계가 사라졌다(실기기 확인) → 배경보다 진한 톤으로. */}
+          <Circle
+            cx={CARD_W / 2} cy={L.visualCy} r={L.visualR}
+            fill="none" stroke={photo ? "rgba(255,255,255,0.9)" : Brand.line2}
+            strokeWidth={L.strokeW * 0.9}
+          />
+        </G>
+      ) : fit ? (
         <G>
           <Polyline
             points={fit.points}

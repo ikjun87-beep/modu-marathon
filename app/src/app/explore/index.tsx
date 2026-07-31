@@ -422,10 +422,10 @@ export default function RunScreen() {
       <LiveRunModal
         visible={live}
         name={name}
-        onClose={(saved) => {
-          setLive(false);
-          if (saved) Alert.alert("러닝 완료", "오늘 기록이 저장됐어요! 🎉");
-        }}
+        onClose={() => setLive(false)}
+        // ⚠️ 여기서 "러닝 완료" Alert를 띄우지 않는다 — 모달 안의 **결과 요약 화면이 이미
+        //    같은 말을 하고 지도·기록까지 보여준다.** 둘 다 두면 요약을 닫자마자 시스템
+        //    다이얼로그가 한 번 더 뜬다(실기기에서 확인). 축하는 한 번이면 충분하다.
       />
     </SafeAreaView>
   );

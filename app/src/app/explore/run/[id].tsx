@@ -4,13 +4,13 @@
  * 경로는 이 기기에만 저장(run-path.ts) — 서버 미저장 원칙 유지. 삭제는 여기서 수행.
  */
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CommentThread } from "@/components/comment-thread";
 import { Icon, type IconName } from "@/components/icon";
-import { RunMap } from "@/components/run-map";
+import { RunMap, type RunMapHandle } from "@/components/run-map";
 import { ShareSheet } from "@/components/share-sheet";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +40,8 @@ export default function RunDetailScreen() {
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [path, setPath] = useState<LatLng[] | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [mapShot, setMapShot] = useState<string | null>(null); // 공유 카드에 넣을 지도 스냅샷
+  const mapRef = useRef<RunMapHandle>(null);
 
   useEffect(() => subscribe(COLLECTIONS.runs, setRuns), []);
   useEffect(() => {
@@ -139,7 +141,15 @@ export default function RunDetailScreen() {
         {/* 공유는 이 화면의 주 액션이라 브랜드 톤 칩으로 띄우고, 되돌릴 수 없는 삭제는
             일부러 무배경 faint로 눌러둔다(위험한 쪽을 더 눈에 띄게 두지 않는다). */}
         <View style={styles.topActions}>
-          <PressableScale style={styles.shareBtn} onPress={() => setSharing(true)} hitSlop={8}>
+          <PressableScale
+            style={styles.shareBtn}
+            hitSlop={8}
+            onPress={async () => {
+              // 화면에 지도가 떠 있으면 그대로 찍어 카드에 넣는다(회장 지시: 티맵·카카오네비처럼).
+              // 실패하거나 경로가 없으면 카드가 벡터 경로·거리 링으로 폴백한다.
+              setMapShot(await mapRef.current?.snapshot().catch(() => null) ?? null);
+              setSharing(true);
+            }}>
             <Icon name="share" size={18} color={Brand.brandDeep} />
           </PressableScale>
           <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
@@ -173,7 +183,7 @@ export default function RunDetailScreen() {
         {/* 경로 지도 (GPS · 이 기기에 경로가 있을 때만) */}
         {hasPath ? (
           <View style={styles.mapCard}>
-            <RunMap path={path!} follow={false} />
+            <RunMap ref={mapRef} path={path!} follow={false} />
           </View>
         ) : (
           run.source === "gps" && (
@@ -210,6 +220,7 @@ export default function RunDetailScreen() {
         visible={sharing}
         onClose={() => setSharing(false)}
         subject={{ kind: "run", run, path }}
+        mapImage={mapShot}
       />
     </SafeAreaView>
   );

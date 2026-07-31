@@ -37,9 +37,13 @@ type Props = {
   onClose: () => void;
   /** 러닝 기록이든 배지든 — 시트는 무엇을 자랑하는지만 알면 된다. */
   subject: ShareSubject;
+  /** 호출부가 화면의 지도를 찍어 넘긴 스냅샷. 카드 비주얼 자리에 실제 지도가 들어간다.
+   *  시트가 직접 지도를 띄워 찍지 않는 이유: **화면 밖 MapView는 타일을 안 불러와 빈 지도**가
+   *  나온다. 사용자가 이미 보고 있는 지도를 찍는 게 유일하게 확실한 방법이다. */
+  mapImage?: string | null;
 };
 
-export function ShareSheet({ visible, onClose, subject }: Props) {
+export function ShareSheet({ visible, onClose, subject, mapImage }: Props) {
   const [ratio, setRatio] = useState<CardRatio>("1:1");
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState<"photo" | "share" | null>(null);
@@ -116,6 +120,7 @@ export function ShareSheet({ visible, onClose, subject }: Props) {
               ref={svgRef}
               subject={subject}
               photo={photo}
+              mapImage={mapImage}
               ratio={ratio}
               previewWidth={previewW}
             />

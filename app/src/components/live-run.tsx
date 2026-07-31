@@ -9,13 +9,24 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
-import { RunMap } from "@/components/run-map";
-import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
+import { RunMap, type RunMapHandle } from "@/components/run-map";
+import { ShareSheet } from "@/components/share-sheet";
+import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow, leading } from "@/lib/brand";
+import type { Row } from "@/lib/crew";
 import { saveRunPath } from "@/lib/run-path";
 import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/run";
 
 type Props = { visible: boolean; name: string; onClose: (saved: boolean) => void };
-type Phase = "idle" | "running" | "paused" | "saving";
+/** `done` = 저장까지 끝나고 **결과 요약**을 보여주는 단계.
+ *
+ *  예전엔 [종료·저장] → 모달이 그냥 닫혔다. 방금 뛴 걸 확인하려면 러닝 탭에서 목록을 찾아
+ *  다시 들어가야 했고, 그 사이에 성취감이 식는다. 티맵·카카오네비가 주행 끝에 요약을 띄우고
+ *  삼성헬스가 운동 끝에 결과를 보여주는 이유가 그것이다(회장 지시 2026-07-31).
+ *  자랑 동기도 여기서 가장 크므로 [공유하기]를 같은 화면에 둔다. */
+type Phase = "idle" | "running" | "paused" | "saving" | "done";
+
+/** 요약 화면이 쓰는 확정 결과. `reset()`이 지워버리면 지도가 사라지므로 따로 들고 있는다. */
+type RunResult = { id: string; km: number; sec: number; gain: number; startedAt: number; path: LatLng[] };
 
 // 사람 러닝 속도 상한(m/s). 9m/s≈32km/h — 스프린트도 포함, 이 이상은 GPS 튐으로 간주해 거리 미가산.
 const MAX_SPEED_MS = 9;
@@ -43,6 +54,10 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [path, setPath] = useState<LatLng[]>([]); // 실시간 경로(온디바이스 표시용, 서버 미저장)
+  const [result, setResult] = useState<RunResult | null>(null); // 요약 화면용 확정 결과
+  const [sharing, setSharing] = useState(false);
+  const [mapShot, setMapShot] = useState<string | null>(null); // 공유 카드에 넣을 지도 스냅샷
+  const mapRef = useRef<RunMapHandle>(null);
 
   const sub = useRef<Location.LocationSubscription | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -198,6 +213,8 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     }
     setPhase("saving");
     const sid = String(startedAt.current || Date.now()); // 멱등 upsert 키 = runs 문서 id의 sourceId
+    const startMs = startedAt.current || Date.now();
+    const gain = settleGain();
     try {
       await saveRun({
         source: "gps",
@@ -205,14 +222,15 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
         name: name.trim() || "익명",
         distanceKm: km,
         durationSec: elapsed,
-        startedAt: startedAt.current || Date.now(),
-        elevationGainM: settleGain() || undefined, // 평지면 0 → 저장 안 함(문서 경량·타일 숨김)
+        startedAt: startMs,
+        elevationGainM: gain || undefined, // 평지면 0 → 저장 안 함(문서 경량·타일 숨김)
       });
       // 완주 경로를 이 기기에만 저장(서버 미저장) → 상세 페이지 지도용. 문서 id(gps_<sid>)와 키를 맞춤.
       await saveRunPath(`gps_${sid}`, path);
-      reset();
-      setPhase("idle");
-      onClose(true);
+      // 여기서 닫지 않는다 — 결과 요약을 보여준 뒤 [확인]에서 닫는다(Phase 주석 참조).
+      // 경로는 `reset()`이 지우므로 요약이 쓸 사본을 먼저 떠둔다.
+      setResult({ id: `gps_${sid}`, km, sec: elapsed, gain, startedAt: startMs, path });
+      setPhase("done");
     } catch {
       setErr("저장에 실패했어요. '계속'으로 이어 달리거나, 다시 [종료·저장]으로 재시도할 수 있어요.");
       last.current = null; // 중단된 사이 위치가 크게 변했을 수 있으니 재개 시 재앵커(튐 방지)
@@ -231,7 +249,115 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     onClose(false);
   }
 
+  /** 요약을 닫고 러닝 모달을 끝낸다. 여기서 비로소 상태를 비운다. */
+  function doneAndClose() {
+    reset();
+    setResult(null);
+    setPhase("idle");
+    onClose(true);
+  }
+
   const km = distanceM / 1000;
+
+  // ── 결과 요약 (저장 완료 후) ─────────────────────────────────────────
+  if (phase === "done" && result) {
+    const hasPath = result.path.length > 1;
+    // 공유 카드가 기대하는 Row 모양으로 맞춘다 — 방금 저장한 문서와 같은 값이라
+    // 목록에서 열었을 때와 카드가 정확히 같은 숫자를 보여준다.
+    const runRow = {
+      id: result.id,
+      source: "gps",
+      name: name.trim() || "익명",
+      distanceKm: result.km,
+      durationSec: result.sec,
+      startedAt: result.startedAt,
+      ...(result.gain ? { elevationGainM: result.gain } : {}),
+    } as Row;
+
+    return (
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={doneAndClose}
+        statusBarTranslucent>
+        <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+          <View style={styles.doneTop}>
+            <Text style={styles.doneEyebrow}>러닝 완료</Text>
+            <Text style={styles.doneTitle}>수고했어요!</Text>
+          </View>
+
+          {/* 방금 그린 그림 — 경로가 있으면 지도를, 없으면(실내·신호 불량) 자리를 비운다. */}
+          {hasPath && (
+            <View style={styles.doneMap}>
+              <RunMap ref={mapRef} path={result.path} follow={false} />
+            </View>
+          )}
+
+          <View style={styles.doneHero}>
+            <Text style={styles.doneLabel}>이번 러닝 거리</Text>
+            <View style={styles.doneNumRow}>
+              <Text style={styles.doneNum}>{result.km.toFixed(2)}</Text>
+              <Text style={styles.doneUnit}>km</Text>
+            </View>
+          </View>
+
+          <View style={styles.doneStats}>
+            <View style={styles.doneStat}>
+              <Text style={styles.doneStatLab}>시간</Text>
+              <Text style={styles.doneStatVal}>{fmtDuration(result.sec)}</Text>
+            </View>
+            <View style={styles.doneStat}>
+              <Text style={styles.doneStatLab}>평균 페이스</Text>
+              {/* ⚠️ numberOfLines={1} 필수 — 값과 단위가 중첩 Text라 좁은 칸에서 단위만 다음 줄로
+                  떨어진다(실기기: "77'53" /" + "km"으로 갈렸다). 느린 페이스일수록 길어진다. */}
+              <Text style={styles.doneStatVal} numberOfLines={1}>
+                {paceLabel(result.km, result.sec).replace("/km", "")}
+                <Text style={styles.doneStatUnit}> /km</Text>
+              </Text>
+            </View>
+            {/* 반올림해서 0이면 숨긴다 — "0 m"는 정보가 아니라 잡음이다(러닝 상세와 같은 규칙).
+                gain이 0.3처럼 작은 값이면 `!!gain`은 통과하지만 화면엔 0이 찍힌다. */}
+            {Math.round(result.gain) > 0 && (
+              <View style={styles.doneStat}>
+                <Text style={styles.doneStatLab}>상승고도</Text>
+                <Text style={styles.doneStatVal} numberOfLines={1}>
+                  {Math.round(result.gain)}
+                  <Text style={styles.doneStatUnit}> m</Text>
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* 배지 축하와 같은 문법 — 주 액션은 [확인] 하나, 공유는 톤온톤 보조. */}
+          <View style={styles.doneActions}>
+            <Pressable
+              style={styles.doneShare}
+              hitSlop={8}
+              onPress={async () => {
+                // 화면에 떠 있는 지도를 그대로 찍어 카드에 넣는다. 실패해도 카드는
+                // 벡터 경로로 그려지므로 공유 자체는 막지 않는다.
+                setMapShot(await mapRef.current?.snapshot().catch(() => null) ?? null);
+                setSharing(true);
+              }}>
+              <Icon name="share" size={17} color={Brand.brandDeep} />
+              <Text style={styles.doneShareText}>자랑하기</Text>
+            </Pressable>
+            <Pressable style={styles.donePrimary} onPress={doneAndClose} hitSlop={8}>
+              <Text style={styles.donePrimaryText}>확인</Text>
+            </Pressable>
+          </View>
+
+          <ShareSheet
+            visible={sharing}
+            onClose={() => setSharing(false)}
+            subject={{ kind: "run", run: runRow, path: result.path }}
+            mapImage={mapShot}
+          />
+        </SafeAreaView>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
@@ -394,4 +520,42 @@ const styles = StyleSheet.create({
   ctrlStop: { flex: 1, backgroundColor: Brand.brandSoft },
   ctrlStopText: { color: Brand.brandDeep, fontWeight: Weight.bold, fontFamily: FONT,
     fontSize: 17, lineHeight: leading(17) },
+
+  // ── 결과 요약 ─────────────────────────────────────────────────────
+  doneTop: { paddingTop: 8, paddingBottom: 14, alignItems: "center" },
+  doneEyebrow: { fontFamily: FONT, fontSize: 12, fontWeight: Weight.bold, letterSpacing: 2, color: Brand.accent },
+  doneTitle: { fontFamily: FONT, fontSize: 24, lineHeight: leading(24), fontWeight: Weight.bold, color: Brand.ink, marginTop: 4 },
+  // 지도가 요약의 주인공이다 — 방금 그린 그림을 보러 목록까지 들어가지 않아도 되게.
+  doneMap: { flex: 1, minHeight: 180, borderRadius: Radius.card, overflow: "hidden", marginBottom: 16 },
+  doneHero: { alignItems: "center" },
+  doneLabel: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), color: Brand.soft },
+  doneNumRow: { flexDirection: "row", alignItems: "flex-end", marginTop: 2 },
+  doneNum: { fontFamily: FONT_DISPLAY, fontSize: 54, lineHeight: 58, color: Brand.ink, letterSpacing: -1.5 },
+  doneUnit: { fontFamily: FONT, fontSize: 22, fontWeight: Weight.bold, color: Brand.brand, marginLeft: 6, marginBottom: 8 },
+  doneStats: { flexDirection: "row", marginTop: 16, marginBottom: 20 },
+  doneStat: { flex: 1, alignItems: "center", gap: 3 },
+  doneStatLab: { fontFamily: FONT, fontSize: 12, color: Brand.soft },
+  doneStatVal: { fontFamily: FONT, fontSize: 20, fontWeight: Weight.bold, color: Brand.ink },
+  doneStatUnit: { fontFamily: FONT, fontSize: 13, fontWeight: Weight.bold, color: Brand.brand },
+  doneActions: { flexDirection: "row", gap: 10, paddingBottom: 10 },
+  doneShare: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    flex: 1,
+    minHeight: 54,
+    borderRadius: Radius.card,
+    backgroundColor: Brand.brandSoft,
+  },
+  doneShareText: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: Brand.brandDeep },
+  donePrimary: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    minHeight: 54,
+    borderRadius: Radius.card,
+    backgroundColor: Brand.brand,
+  },
+  donePrimaryText: { fontFamily: FONT, fontSize: 16, fontWeight: Weight.bold, color: "#fff" },
 });

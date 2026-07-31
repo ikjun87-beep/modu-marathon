@@ -4,18 +4,41 @@
  * follow=false: 상세 페이지 — 완주 경로 전체가 보이도록 맞추고 시작·도착 마커 표시.
  * 좌표는 표시용(서버 미저장 — 처리방침의 "좌표 서버 미저장" 유지).
  */
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
 import { Brand, Radius } from "@/lib/brand";
 import { MAP_STYLE } from "@/lib/map-style";
 import type { LatLng } from "@/lib/run";
+import type { RunMapHandle } from "./run-map";
 
 type Props = { path: LatLng[]; follow?: boolean };
 
-export function RunMap({ path, follow = true }: Props) {
+export const RunMap = forwardRef<RunMapHandle, Props>(function RunMap(
+  { path, follow = true },
+  ref,
+) {
   const mapRef = useRef<MapView>(null);
+
+  /** 공유 카드용 스냅샷 — 카드의 비주얼 영역이 정사각이라 1:1로 뜬다.
+   *  실패(권한·렌더 미완·플랫폼)해도 카드는 벡터 폴리라인으로 폴백하므로 null만 돌려준다. */
+  useImperativeHandle(ref, () => ({
+    async snapshot() {
+      try {
+        const base64 = await mapRef.current?.takeSnapshot({
+          width: 720,
+          height: 720,
+          format: "jpg",
+          quality: 0.85,
+          result: "base64",
+        });
+        return base64 ? `data:image/jpeg;base64,${base64}` : null;
+      } catch {
+        return null;
+      }
+    },
+  }));
   const coords = path.map((p) => ({ latitude: p.lat, longitude: p.lng }));
   const cur = coords.length ? coords[coords.length - 1] : null;
   const first = coords.length ? coords[0] : null;
@@ -74,7 +97,7 @@ export function RunMap({ path, follow = true }: Props) {
       </MapView>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, borderRadius: Radius.card, overflow: "hidden", backgroundColor: Brand.warm },

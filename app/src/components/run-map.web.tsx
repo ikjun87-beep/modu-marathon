@@ -2,22 +2,26 @@
  * RunMap (웹) — react-native-maps는 웹 미빌드. 웹 미리보기에선 안내 플레이스홀더만.
  * 실제 지도는 안드로이드 앱에서 표시된다.
  */
+import { forwardRef, useImperativeHandle } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { Brand, FONT, Weight, Radius, leading } from "@/lib/brand";
 import type { LatLng } from "@/lib/run";
+import type { RunMapHandle } from "./run-map";
 
 type Props = { path: LatLng[]; follow?: boolean };
 
-export function RunMap(_props: Props) {
+/** 웹은 지도가 없으니 스냅샷도 없다 — 호출부는 null을 받고 벡터 폴리라인으로 폴백한다. */
+export const RunMap = forwardRef<RunMapHandle, Props>(function RunMap(_props, ref) {
+  useImperativeHandle(ref, () => ({ snapshot: async () => null }));
   return (
     <View style={styles.ph}>
       <Icon name="run" size={28} color={Brand.faint} />
       <Text style={styles.t}>지도는 앱(안드로이드)에서 표시돼요</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   ph: {
