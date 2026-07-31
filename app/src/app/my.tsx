@@ -43,14 +43,19 @@ import { setProfilePhoto, useProfilePhoto } from "@/lib/profile-photo";
  *  포장할 이유가 없고, 『5키로』의 친숙어 톤과도 어긋난다(2026-07-28 디자인 리드 결정).
  *  4종을 실제로 가르는 건 성별이 아니라 **울 모양(동글/땋은 스타일) + 레드/그린(팀색)**이다.
  *
- *  2026-07-30 마스코트 전면교체(양) — 형태 라벨을 "숏컷/포니테일"(사람 머리 은유)에서
- *  "동글 울/땋은 울"(양 특성)로 갱신. **내부 타입명(m-red 등)·파일명은 그대로 둔다**
- *  — 노출 카피만 바꾸면 되는 일이라 전면 개명은 낭비(AsyncStorage 마이그레이션도 불필요). */
+ *  2026-07-31 구분을 **리본**으로 교체(회장 지시 "머리가 있어 너무 어색하다"). 땋은 머리는
+ *  양의 곱슬 울과 겹쳐 형태와 싸웠다 — 양은 머리카락이 아니라 울로 덮인 동물이다.
+ *  **내부 타입명(m-red 등)·파일명은 그대로 둔다** — 노출 카피만 바꾸면 되는 일이고,
+ *  바꾸면 AsyncStorage에 저장된 선택이 끊긴다.
+ *
+ *  ⚠️ 라벨은 **한 줄에 들어가야 한다.** 4칸을 가로로 나누면 320dp 기준기에서 칸 폭이
+ *  66dp뿐이라 "동글 울 · 레드"(8글자)가 두 줄로 갈라졌다(회장 지적). 가운뎃점을 빼고
+ *  4글자로 줄였다 — 넘치면 `numberOfLines={1}`이 말줄임으로 막는다. */
 const MASCOT_LABEL: Record<MascotKind, string> = {
-  "m-red": "동글 울 · 레드",
-  "m-green": "동글 울 · 그린",
-  "f-red": "땋은 울 · 레드",
-  "f-green": "땋은 울 · 그린",
+  "m-red": "기본 레드",
+  "m-green": "기본 그린",
+  "f-red": "리본 레드",
+  "f-green": "리본 그린",
 };
 import { useMyName } from "@/lib/session";
 import { badgeProgress, personalStats } from "@/lib/stats";
@@ -284,8 +289,11 @@ export default function MyScreen() {
                     style={[styles.mascotOpt, mascot === k && styles.mascotOptOn]}
                     onPress={() => void setMascot(k)}>
                     <Mascot size={40} kind={k} />
-                    {/* 44px 썸네일에선 머리띠 리본(남/여) 차이가 안 보여 4개가 같아 보였다 → 라벨로 구분. */}
-                    <Text style={[styles.mascotOptText, mascot === k && styles.mascotOptTextOn]}>
+                    {/* 40px 썸네일에서도 리본이 머리 윤곽 밖으로 나와 실루엣이 갈리지만,
+                        팀색까지 한눈에 읽히진 않아 라벨을 함께 둔다. */}
+                    <Text
+                      style={[styles.mascotOptText, mascot === k && styles.mascotOptTextOn]}
+                      numberOfLines={1}>
                       {MASCOT_LABEL[k]}
                     </Text>
                   </PressableScale>
@@ -520,7 +528,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mascotOptOn: { borderColor: Brand.brand, backgroundColor: Brand.brandSoft },
-  mascotOptText: { fontFamily: FONT, fontSize: 10.5, lineHeight: leading(10.5), color: Brand.soft, fontWeight: Weight.regular },
+  // ⚠️ lineHeight를 주지 않는다 — 한 줄짜리 칩 라벨이라 줄간격 효과는 없이 박스 높이만 커진다.
+  mascotOptText: { fontFamily: FONT, fontSize: 10.5, color: Brand.soft, fontWeight: Weight.regular },
   mascotOptTextOn: { color: Brand.brandDeep, fontWeight: Weight.bold },
   pLabel: { fontFamily: FONT,
     fontSize: 12, lineHeight: leading(12), fontWeight: Weight.regular, color: Brand.soft },
