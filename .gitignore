@@ -4,6 +4,9 @@ Thumbs.db
 
 # Firebase deploy cache
 .firebase/
+# 에뮬레이터 로그(tests/ 실행 시 생김)
+*-debug.log
+firebase-debug.*.log
 
 # 비밀값 — OpenAI 키 등 (절대 커밋 금지)
 .env

@@ -1,0 +1,13 @@
+{
+  "name": "modu-marathon-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "firestore.rules 검증 하네스 — 앱(app/)과 분리된 별도 패키지. 이유는 README.md 참조.",
+  "scripts": {
+    "test": "bash run.sh"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "firebase": "^12.0.0"
+  }
+}
