@@ -26,7 +26,7 @@ app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베�
   scripts/optimize-mascot.mjs  마스코트 여백 잘라 512px 축소·압축
   metro.config.js     package exports 끔 — firebase v10의 dual-package hazard 회피(끄지 않으면 앱 즉사)
   eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production) — env에 Firebase 공개키 주입
-docs/                 PRD·DESIGN(디자인 시스템)·BUILD(설치 빌드)·FIREBASE_SETUP·PRIVACY·QA_M3_DEVICE(실기기 대본)·UX_APP_NAV(P7 다중페이지 제안)·WATCH_SAMSUNG_SDK(워치 삼성헬스 한계·SDK 검토)·OPENAI_IMAGE_GEN(이미지 생성 이식 가이드)
+docs/                 PRD·DESIGN(디자인 시스템)·**TIERS(가시성 3층 = 격리 설계 정본)**·CREW-GATE(초대코드·AppCheck·상한)·BRIEF(2층 전제 적대회의 기록, 결론은 TIERS가 대체)·BUILD(설치 빌드)·FIREBASE_SETUP·PRIVACY·QA_M3_DEVICE(실기기 대본)·UX_APP_NAV(P7 다중페이지 제안)·WATCH_SAMSUNG_SDK(워치 삼성헬스 한계·SDK 검토)·OPENAI_IMAGE_GEN(이미지 생성 이식 가이드)
 generate-image.mjs    OpenAI gpt-image-1 이미지 생성 CLI(배너·아이콘·마스코트). 실행 `node --env-file=.env generate-image.mjs "영어프롬프트" out.png [ref.png]`. 키=루트 `.env`의 `OPENAI_API_KEY`(gitignore). AI엔 글자 금지→글자는 코드 합성.
 tests/                **`firestore.rules` 검증 하네스**(`@firebase/rules-unit-testing`, 33건). `cd tests && npm test`.
                       ⚠️ **앱과 분리된 별도 패키지** — peer가 firebase^12인데 앱은 v10에 묶여 있다(아래 metro 규칙).
@@ -94,10 +94,13 @@ powershell.exe -NoProfile -Command "& '$A' logcat -d -b crash"   # 패키지명=
 
 ## 지켜야 할 규칙
 - 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`events`·`claps`·`profiles`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`. (`events`=모임 일정, 2026-07-18 하드코딩→Firestore 이관. **웹은 아직 하드코딩 EVENTS** — 후속 이관 필요.)
-- ⛔ **크루 격리가 아직 없다 — 출시 블로커**(2026-08-01 적대회의, 결론 `docs/BRIEF.md`). 8개 컬렉션이 전부 `read: if true`이고 문서에 `crewId`가 없어 **앱을 깐 전원이 하나의 크루**다. **비공개 테스트(12명×14일)를 격리 완료 전에 시작하지 말 것** — 지금은 실데이터가 13건이라 전환이 싸지만, 12명이 쓰기 시작하면 그 조건이 사라진다. 채택 후보는 B안(서브컬렉션)이나 **L3 3건이 오너 결정 대기 중**이라 착수 금지.
-  - **⚖️ 이 프로젝트의 "범용성"(웹·앱·워치가 하나의 데이터)과 격리는 정면으로 충돌한다**(2026-08-01 세션11 결론). 지금 다 연결돼 보이는 이유는 **모든 데이터가 전원에게 열려 있어서**이고, 격리는 바로 그 개방성을 닫는 일이다. 따라서 격리하는 순간 연결의 일부가 반드시 끊긴다 — **B안에서 웹은 어느 크루를 봐야 할지 모른다**(랜딩 사회적 증거 상실 = L3 ②의 정체). 워치는 앱을 거쳐 들어오므로 영향 없다.
-    → **범용성을 "전원이 한 덩어리"로 정의하면 격리가 그것을 깬다. "각 크루 안에서 웹·앱·워치가 하나"로 정의하면 양립한다.** 후자로 간다면 웹에 **크루 로그인**이 필요하다(지금 웹엔 신원이 없다). 이 정의를 먼저 못 박고 A/B를 고를 것.
-  - **선행조건 진척**(2026-08-01 세션11): ✅ rules 검증 하네스(`tests/`, 33건) · ✅ 초대 코드·크루 상한 확정(`docs/CREW-GATE.md`) · ✅ `events.ts` SEED 제거 · ⬜ **App Check 콘솔 등록(오너 물리작업)** · ⬜ `run.ts:141~` 우회 차단(**컷오버와 같이** — 지금 막으면 워치 재동기화가 조용히 실패한다).
+- ⛔ **크루 격리가 아직 없다 — 출시 블로커.** 8개 컬렉션이 전부 `read: if true`이고 문서에 소속 표시가 없어 **앱을 깐 전원이 하나의 크루**다. **비공개 테스트(12명×14일)를 격리 완료 전에 시작하지 말 것** — 지금은 실데이터가 13건이라 전환이 싸지만, 12명이 쓰기 시작하면 그 조건이 사라진다.
+  - **설계 정본 = `docs/TIERS.md`(가시성 3층)** — 2026-08-01 세션12 오너 결정. **나만(`users/{uid}/…`) / 크루(`crews/{crewId}/…`) / 전체 공개(현행 루트 재활용)**. 골프존·GDR의 "내 기록 / 우리 매장 / 전국 매장"과 같은 구조다. **층이 곧 경로**라 A안(crewId 필드)/B안(서브컬렉션) 논쟁이 소멸했고(B안이 구조적으로 결정), **웹은 공개 층을 보므로 랜딩의 사회적 증거가 살아남는다.** `docs/BRIEF.md`는 2층 전제의 적대회의 기록으로 **결론은 대체됐다**(기각 사유·13건 측정·리스크 R1/R2는 유효).
+  - **범용성의 정의 = "사용자가 층을 고른다"**(세션12 확정). 세션11이 못 박으라던 ⓪의 답. "전원이 한 덩어리"도 "크루 안에서만"도 아니다.
+  - **친구는 임의 그래프가 아니라 크루(그룹)**로 흡수. 임의 그래프는 무료 플랜에서 규칙으로 못 지킨다 — 규칙은 필터가 아니고, `in`은 30개 상한에 **클라이언트가 목록을 조작하면 아무나 읽히며**, 규칙이 검증하려면 `get()`이 친구 수만큼 필요한데 **10회 상한**이다. 팬아웃은 Spark 쓰기 2만/일을 먹고 Functions는 Spark 불가. **연락처 접근은 쓰지 않는다**(민감 권한·전화번호 수집·심사) — 초대 코드로 대신한다.
+  - **공개 기본값**: 크루 = 공개 / **전체 = opt-in**. GPS는 비거리와 달라 **경로가 집 주소를 드러낸다**(경로는 서버 미저장이라 지금은 안전 — 공유 카드에 실을 때만 판단). 심박은 민감정보. **성별 랭킹은 도입하지 않는다**(새 개인정보 — 마스코트 `m-`/`f-`는 캐릭터 선택이지 성별 신고가 아니다). 대신 연령대·거리 구간.
+  - **2·3층은 이동이 아니라 사본** — 이동은 공개 취소가 delete→create라 **중간 실패 시 기록이 순삭된다**(R2와 같은 모양). 단 **갤러리 사진은 예외**(base64라 한 층에만).
+  - **선행조건**: ✅ rules 검증 하네스(`tests/`, 33건) · ✅ 초대 코드·크루 상한(`docs/CREW-GATE.md`) · ✅ `events.ts` SEED 제거 · ⬜ **App Check 콘솔 등록(오너 물리작업 — 남은 유일한 오너 작업)** · ⬜ `run.ts:141~` 우회 차단(**컷오버와 같이** — 지금 막으면 워치 재동기화가 조용히 실패한다). 컷오버 순서는 `TIERS.md` 10절.
   - `tests/`의 `describe('격리 전 기준선 …')`은 **격리 적용 후 실패해야 정상**이다. 그대로 통과하면 격리가 안 된 것이다.
 - **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`. **교체 금지**(2026-07-27 디자인 자문): Pretendard는 국내 AI 스캐폴딩 기본값이라 역효과, 스포카 한 산스는 한글 2350자만 커버(러너 네임 깨짐), 나눔스퀘어는 톤 불일치. 큰 **숫자만** `FONT_DISPLAY`(Black Han Sans, OFL) — 웹과 시각 DNA 일치.
 - 색·타이포는 `docs/DESIGN.md` 기준. **Brand = 포레스트 그린 `#2f6e4a` · 배경 = 크림 `#f9f1e4` · 골드 `#c0841a`(불변)** — 2026-07-30 오렌지→블루→**크림+그린** 재리브랜딩(회장 "너무 파란색이 위주, 아예 새로"). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스, 서로 1:1 대응).
