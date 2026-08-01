@@ -76,10 +76,13 @@ export default function HomeScreen() {
               )}
             </Text>
           </View>
-          {/* 마스코트가 배경 없이 붕 떠 보였다 — 랭킹 탭처럼 연파랑 원판에 안착시킨다. */}
-          <View style={styles.mascotWrap}>
-            <Mascot size={54} />
-          </View>
+          {/* 인사말 옆 = **내 아바타 자리**다. 여기에 `Mascot`을 직접 박아 뒀더니, 사진을
+              등록하고 홈으로 돌아온 사용자가 **자기 얼굴이 안 바뀐 화면**을 첫 화면에서 보게 됐다
+              (마이 탭에서는 바뀌어 있어 더 어긋나 보인다 — 2026-08-01 실기기 검증).
+              → `Avatar`로 넘긴다. 사진이 있으면 얼굴, 없으면 지금까지와 똑같이 마스코트다.
+              `Avatar`의 wrap이 이미 `Brand.brandSoft` 원판 + overflow:hidden이라
+              "붕 떠 보인다"고 원판을 씌웠던 이유도 그대로 충족된다(스타일 중복 제거). */}
+          <Avatar name={name || "?"} size={68} me ring={false} />
         </View>
 
         {/* 통합 검색 */}
@@ -311,14 +314,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 12, paddingBottom: 160 },
   greetRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   greetText: { flex: 1 },
-  mascotWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: Brand.brandSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  // (mascotWrap 제거 — Avatar가 같은 원판을 자체 wrap으로 그린다)
   // 영문 라벨(TODAY)을 없앤 만큼 인사말이 이름표 역할을 한다 → 한 단계 키운다.
   // LINE Seed는 시스템 폰트보다 자간이 촘촘해 음수 letterSpacing은 쓰지 않는다.
   title: { fontFamily: FONT,
