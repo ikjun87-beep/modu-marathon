@@ -7,16 +7,20 @@
  *
  * 원인: prebuild가 만드는 `AppTheme`에 **colorAccent가 없다.** 그러면 부모 테마
  * (Theme.AppCompat.DayNight.NoActionBar)의 기본값 = 머티리얼 청록(#009688)이 쓰인다.
- * 게다가 colorPrimary도 Expo 기본값 #023c69로, 브랜드 블루(#2563c9)가 아니다.
+ * 게다가 colorPrimary도 Expo 기본값 #023c69로, 브랜드색이 아니다.
  *
  * 왜 플러그인이어야 하나: `scripts/build-local-apk.sh`가 `prebuild --clean`으로 android/를
  * 통째로 재생성한다 → res/values/*.xml을 직접 고쳐도 매 빌드마다 지워진다. 살아남는 건 플러그인뿐.
  *
- * 색 값은 docs/DESIGN.md·src/lib/brand.ts와 같은 Azure Blue를 쓴다(단일 소스 유지).
+ * ⚠️ **이 파일은 팔레트 단일 소스(`src/lib/brand.ts`) 밖에 있다.** 플러그인은 빌드 시각에
+ * node로 실행되므로 TS 토큰을 import 할 수 없어 값을 손으로 복제해 둔다 — 그래서 2026-07-30
+ * 크림+그린 전면교체 때 여기만 **옛 Azure Blue(#2563c9)로 남아** 삭제 다이얼로그 버튼이 계속
+ * 파랗게 나왔다(세션11 발견). 앱 어디에서도 안 쓰이는 색을 우리 손으로 칠하고 있었던 셈이다.
+ * `Brand.brand`를 바꾸면 **여기도 같이 바꿀 것.**
  */
 const { withAndroidColors, withAndroidStyles, AndroidConfig } = require("@expo/config-plugins");
 
-const BRAND = "#2563c9"; // = Brand.brand (src/lib/brand.ts)
+const BRAND = "#2f6e4a"; // = Brand.brand (src/lib/brand.ts) — 포레스트 그린. 위 ⚠️ 참조.
 
 const { assignColorValue } = AndroidConfig.Colors;
 const { assignStylesValue, getAppThemeGroup } = AndroidConfig.Styles;
