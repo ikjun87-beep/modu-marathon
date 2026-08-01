@@ -13,7 +13,7 @@ web/                  홈페이지(정적 HTML) — 공개배포 https://modu-ma
   brand/              로고 자산(mark/mark-white/favicon/logo-horizontal/og .svg)
 app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베이스
   src/app/            화면(Expo Router 파일 라우팅, 하단 5탭 NativeTabs): index=홈(Today 큐레이션·통합검색) / crew=크루 / explore/=러닝(explore/_layout=Stack, index=목록, run/[id]=상세 push+댓글, ios_from_right) / ranking=랭킹 / my=마이. 탭아이콘=Material `md=`
-  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·run-path.ts(GPS경로 온디바이스 저장,서버미저장)·path-fit.ts(경로→박스 좌표변환, 썸네일·공유카드 공용)·map-style.ts(구글맵 커스텀 파스텔)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·share-layout.ts(공유카드 좌표표)·text-metrics.ts(폰트 실측 글자폭)·share-image.ts(PNG저장·공유시트)·session·auth·brand
+  src/lib/            firebase.ts·crew.ts(데이터,put멱등)·run.ts(통합Run·헬퍼)·run-path.ts(GPS경로 온디바이스 저장,서버미저장)·path-fit.ts(경로→박스 좌표변환, 썸네일·공유카드 공용)·map-style.ts(구글맵 스타일 — **파스텔 커스텀은 폐기**, 거의 기본지도. 지명·도로·물길을 지우면 "어디를 달리는지"가 안 보인다)·profile-photo.ts(프로필 사진, **서버 공유**)·healthconnect.ts(갤럭시워치)·health-consent.ts(심박 별도동의)·share-layout.ts(공유카드 좌표표)·text-metrics.ts(폰트 실측 글자폭)·share-image.ts(PNG저장·공유시트)·session·auth·brand
   src/components/      icon.tsx(웹과1:1 SVG아이콘)·live-run.tsx(GPS트래킹모달)·run-map.native/web.tsx(구글맵 경로,플랫폼분리)·share-card.tsx(공유카드 1080px SVG)·share-sheet.tsx(공유 미리보기 모달)·name-field·schedule-section·gallery-section 등
   plugins/            커스텀 Expo config 플러그인(withHealthConnectPermissionDelegate=워치 권한런처 등록)
   scripts/serve-web.py 앱 웹 미리보기 서버(클린 URL 매핑; python http.server는 /explore 404)
@@ -21,6 +21,8 @@ app/                  Expo(React Native) 앱 — iOS+Android+web 한 코드베�
   scripts/check-share-card.ts  공유카드 레이아웃 산술 검산(실기기 빌드 없이 넘침·겹침 확인) `node --experimental-strip-types`
   scripts/font-advance.py  TTF hmtx에서 글자 advance width 실측(공유카드 폭 계산의 근거)
   scripts/strip-mascot-shadow.mjs  마스코트 PNG에서 발밑 그림자 제거(가장 큰 연결 덩어리만 남김)
+  scripts/crop-mascot-face.mjs 앱아이콘용 얼굴만 추출(부위별 씨앗점 flood-fill — 사각 크롭은 엄지척 손이 딸려오고 위로 자르면 턱이 잘린다)
+  scripts/build-local-aab.sh  플레이스토어 제출용 AAB(APK와 달리 **4개 ABI 전부** 포함)
   scripts/optimize-mascot.mjs  마스코트 여백 잘라 512px 축소·압축
   metro.config.js     package exports 끔 — firebase v10의 dual-package hazard 회피(끄지 않으면 앱 즉사)
   eas.json            EAS 빌드 프로필(preview=APK / development=dev client / production) — env에 Firebase 공개키 주입
@@ -82,7 +84,8 @@ powershell.exe -NoProfile -Command "& '$A' logcat -d -b crash"   # 패키지명=
 ```
 
 ## 지켜야 할 규칙
-- 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`events`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`. (`events`=모임 일정, 2026-07-18 하드코딩→Firestore 이관. **웹은 아직 하드코딩 EVENTS** — 후속 이관 필요.)
+- 웹·앱이 **같은 Firebase 프로젝트/스키마**를 쓰도록 유지 — 컬렉션: `guestbook`·`gallery`·`attendance`·`runs`·`comments`·`events`·`claps`·`profiles`·`waitlist`. 스키마 단일 소스는 `app/src/lib/firebase.ts`의 `COLLECTIONS`. (`events`=모임 일정, 2026-07-18 하드코딩→Firestore 이관. **웹은 아직 하드코딩 EVENTS** — 후속 이관 필요.)
+- ⛔ **크루 격리가 아직 없다 — 출시 블로커**(2026-08-01 적대회의, 결론 `docs/BRIEF.md`). 8개 컬렉션이 전부 `read: if true`이고 문서에 `crewId`가 없어 **앱을 깐 전원이 하나의 크루**다. 처리방침은 "크루원에게 공개"라고 적혀 있어 실제와 다르다. **비공개 테스트(12명×14일)를 격리 완료 전에 시작하지 말 것** — 지금은 실데이터가 13건이라 전환이 싸지만, 12명이 쓰기 시작하면 그 조건이 사라진다. 채택 후보는 B안(서브컬렉션)이나 **L3 3건이 오너 결정 대기 중**이라 착수 금지.
 - **앱 폰트 = LINE Seed Sans KR**(SIL OFL, `app/assets/fonts/`). expo-font 플러그인이 Rg(400)·Bd(700)을 `LINESeed` family로 묶어 `fontWeight` 네이티브 동작 — **600/800/900은 반올림**되니 `brand.ts`의 `Weight`(regular/bold)·`Radius` 토큰만 쓸 것. 한글 완전지원 검증 스크립트 `app/scripts/check-font-hangul.py`. **교체 금지**(2026-07-27 디자인 자문): Pretendard는 국내 AI 스캐폴딩 기본값이라 역효과, 스포카 한 산스는 한글 2350자만 커버(러너 네임 깨짐), 나눔스퀘어는 톤 불일치. 큰 **숫자만** `FONT_DISPLAY`(Black Han Sans, OFL) — 웹과 시각 DNA 일치.
 - 색·타이포는 `docs/DESIGN.md` 기준. **Brand = 포레스트 그린 `#2f6e4a` · 배경 = 크림 `#f9f1e4` · 골드 `#c0841a`(불변)** — 2026-07-30 오렌지→블루→**크림+그린** 재리브랜딩(회장 "너무 파란색이 위주, 아예 새로"). 앱은 `src/lib/brand.ts`, 웹은 `index.html` CSS 변수(단일 소스, 서로 1:1 대응).
   - **시상대 다크는 `#171c12`**(딥 올리브). 자문안 `#26301f`를 쓰면 **골드가 4.30:1로 AA 미달**이다 — 다크 면을 새로 정할 땐 그 위의 골드·텍스트 대비를 반드시 실측할 것.
