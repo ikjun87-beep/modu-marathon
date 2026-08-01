@@ -146,6 +146,28 @@ cd android && ./gradlew bundleRelease
   백그라운드 위치보다 심사 문턱이 훨씬 낮다.
 - `health.READ_*`(Health Connect) — 갤럭시워치 러닝 불러오기. Health Connect 정책상 별도 선언 필요.
 
+### ⚠️ 우리가 선언하지 않은 권한이 AAB에 들어간다 (2026-08-01 발견)
+`app.json`의 `permissions` 배열은 **추가**만 한다. 라이브러리들이 자기 매니페스트에 넣은 권한은
+그대로 **병합**되어 최종 AAB에 실린다. 실제로 첫 AAB를 뜯어보니 이런 것들이 있었다:
+
+| 권한 | 출처 | 판정 |
+|---|---|---|
+| **RECORD_AUDIO**(마이크) | 라이브러리 병합 | ❌ 안 쓴다. 민감 권한이라 데이터 안전 양식과 불일치 + 사용자 불신 |
+| **SYSTEM_ALERT_WINDOW** | react-native | ❌ 안 쓴다. 정책상 별도 정당화 요구 |
+| **CAMERA** | expo-image-picker | ❌ 우리는 `launchImageLibraryAsync`(갤러리)만 쓴다 |
+| **RECEIVE_BOOT_COMPLETED** | 라이브러리 병합 | ❌ 부팅 시 실행하지 않는다 |
+| READ/WRITE_EXTERNAL_STORAGE | expo-image-picker (`maxSdkVersion=32`) | ✅ 유지 — 안드로이드 12 이하에서 갤러리 접근에 필요 |
+| WAKE_LOCK · VIBRATE · ACCESS_NETWORK_STATE | 라이브러리 | ✅ 유지 — 무해하고 정당 |
+
+→ `android.blockedPermissions`로 앞의 4개를 차단했다(`tools:node="remove"`가 붙어 병합 단계에서
+빠진다). **소스 매니페스트에는 그대로 보이므로 반드시 병합 결과로 확인할 것**:
+```bash
+cd android && ./gradlew processReleaseManifest
+grep -oE 'android:name="android.permission[^"]*"' \
+  app/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml | sort -u
+```
+새 라이브러리를 넣을 때마다 이 확인을 다시 할 것 — 조용히 권한이 늘어난다.
+
 ## 4-1) 스크린샷은 언제 찍나
 
 지금 앱에는 데이터가 거의 없다(테스트 데이터는 검증 후 매번 지웠다). 빈 화면을 찍어 올리면
