@@ -12,6 +12,9 @@ import {
   CARD_W,
   cardHeight,
   layoutFor,
+  MILESTONES,
+  milestoneFor,
+  RING_FULL_KM,
   SLOGAN,
   type CardRatio,
 } from "../src/lib/share-layout.ts";
@@ -71,6 +74,28 @@ function check(ratio: CardRatio, mode: "path" | "ring" | "badge") {
   const visTop = L.visualCy - L.visualR - L.strokeW;
   const visBottom = L.visualCy + L.visualR + L.strokeW;
   boxes.push({ name: "비주얼", x: CARD_W / 2 - L.visualR, right: CARD_W / 2 + L.visualR, top: visTop, bottom: visBottom });
+
+  if (mode === "ring") {
+    // 마일스톤 라벨은 링 **안쪽**에 들어가므로 아래 겹침 루프(비주얼과 반드시 겹친다)에 넣지
+    // 않고 여기서 따로 본다. 판정 기준 = 링 선 안쪽 폭. 넘치면 원 밖으로 삐져나온다.
+    const inner = L.visualR * 2 - L.strokeW * 1.6 * 2 - 24;
+    for (const m of MILESTONES) {
+      const w = textWidth(m.label, L.milestoneSize, "display");
+      if (w > inner) {
+        fail(`마일스톤 "${m.label}"이 링 안쪽(${inner.toFixed(0)})을 넘는다 (${w.toFixed(0)})`);
+      }
+    }
+    // 눈금이 실제로 갈리는지 — 여기가 무너지면 10km·하프·풀코스가 다시 같은 그림이 된다.
+    const seen = [9.99, 10, 20.99, 21, 42.19].map((km) => `${km}=${milestoneFor(km) ?? "—"}`);
+    console.log(`  마일스톤 ${seen.join(" · ")}`);
+    if (milestoneFor(42.19) === milestoneFor(21) || milestoneFor(21) === milestoneFor(10)) {
+      fail("풀코스·하프·10K가 같은 라벨로 떨어진다");
+    }
+    // 라벨은 **링이 꽉 찬 뒤에만** 나와야 한다 — 채우는 중인 초록 링 안의 라벨은 카드 아래
+    // 거리 숫자와 어긋나 보여 "이 러닝의 거리"로 오독된다.
+    if (milestoneFor(RING_FULL_KM - 0.01) !== null) fail("링이 차기 전에 마일스톤이 나온다");
+    if (milestoneFor(RING_FULL_KM) === null) fail("링이 꽉 찼는데 마일스톤이 없다");
+  }
 
   if (mode === "badge") {
     // 배지 카드 — 가장 긴 라벨/설명으로 본다(BADGES 카탈로그 기준).

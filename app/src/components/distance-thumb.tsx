@@ -25,7 +25,13 @@ export function DistanceThumb({ km, walk = false, size = 40 }: { km: number; wal
   const c = 2 * Math.PI * r;
   const ratio = Math.max(0.04, Math.min(1, (Number(km) || 0) / FULL_KM));
   // 걷기는 러닝과 성격이 달라 색으로 구분한다(랭킹·배지에서도 제외되는 기록이다).
-  const stroke = walk ? Brand.faint : Brand.brand;
+  //
+  // 한 바퀴를 다 채우면 **골드**. 링은 10km에서 포화되므로 그 위로는 그림이 더 안 자라는데,
+  // 색까지 같으면 목록을 훑을 때 "길게 뛴 날"이 9km와 구분되지 않는다. 골드는 규칙상
+  // 순위·챌린지·성과 전용이고 10km 완주가 바로 그 성과다 — 공유 카드의 거리 링과 **같은 어휘**라
+  // (`components/share-card.tsx`) 앱과 밖으로 나가는 이미지가 같은 말을 한다.
+  // ⚠️ 걷기는 제외한다. 랭킹·배지에서 빠지는 기록에 성과색을 주면 골드가 뜻을 잃는다.
+  const stroke = walk ? Brand.faint : ratio >= 1 ? Brand.gold : Brand.brand;
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>

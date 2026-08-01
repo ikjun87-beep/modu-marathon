@@ -45,6 +45,7 @@ import {
   CARD_W,
   cardHeight,
   layoutFor,
+  milestoneFor,
   RING_FULL_KM,
   SLOGAN,
   type CardRatio,
@@ -197,6 +198,11 @@ export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
   // 거리 링 — 경로가 없는 기록(직접 입력·워치)도 카드가 허전하지 않아야 한다.
   const ringFrac = Math.min(km / RING_FULL_KM, 1);
   const circ = 2 * Math.PI * L.visualR;
+  // 링은 10km에서 포화된다 → 그 위쪽은 링이 아니라 **마일스톤 라벨**이 구분한다(share-layout.ts).
+  // ⚠️ 걷기는 제외한다. 이 앱에서 걷기는 랭킹·배지에서 빠지는 기록이라, 12km를 걸었다고
+  // "10K"·골드를 주면 성과 신호가 뜻을 잃는다(목록 썸네일 `distance-thumb.tsx`와 같은 규칙).
+  const milestone = isBadge || walk ? null : milestoneFor(km);
+  const ringFull = !!milestone;
 
   return (
     <Svg
@@ -321,16 +327,37 @@ export const ShareCard = forwardRef<Svg, ShareCardProps>(function ShareCard(
             cx={CARD_W / 2} cy={L.visualCy} r={L.visualR}
             fill="none" stroke={P.routeTrack} strokeWidth={L.strokeW * 1.6}
           />
+          {/* 링이 꽉 차면 **골드**로 바뀐다 — 골드는 규칙상 순위·챌린지·성과 전용이고 10km 완주는
+              성과다. 9km(그린 90%)와 12km(골드 100%)가 한눈에 갈린다. */}
           <Circle
             cx={CARD_W / 2} cy={L.visualCy} r={L.visualR}
-            fill="none" stroke={P.route} strokeWidth={L.strokeW * 1.6}
+            fill="none" stroke={ringFull ? Brand.gold : P.route} strokeWidth={L.strokeW * 1.6}
             strokeLinecap="round"
             strokeDasharray={`${circ * ringFrac} ${circ}`}
             // 12시에서 시작해 시계방향으로 채운다(기본은 3시 시작).
             transform={`rotate(-90 ${CARD_W / 2} ${L.visualCy})`}
           />
-          {/* 아직 안 뛴 거리가 있어도 링이 "비어 보이지" 않도록 출발점을 찍는다 */}
-          <Circle cx={CARD_W / 2} cy={L.visualCy - L.visualR} r={L.strokeW * 1.1} fill={P.dot} />
+          {/* 아직 안 뛴 거리가 있어도 링이 "비어 보이지" 않도록 출발점을 찍는다.
+              꽉 찬 링에서는 골드 위 골드라 보이지도 않고, 이 점이 10km·하프·풀코스를
+              같은 그림으로 만든 요소 중 하나였다 → 미완성일 때만 찍는다. */}
+          {ringFull ? null : (
+            <Circle cx={CARD_W / 2} cy={L.visualCy - L.visualR} r={L.strokeW * 1.1} fill={P.dot} />
+          )}
+          {/* 마일스톤 — 비어 있던 링 안쪽. 색은 골드가 아니라 본문색이다: 크림 배경 위 골드는
+              2.86:1로 큰 텍스트 기준(3:1)에도 미달한다(세션8·9에서 두 번 잡힌 함정). 성과 신호는
+              링이 이미 골드로 내고, 글자는 읽히는 게 먼저다. */}
+          {milestone ? (
+            <SvgText
+              x={CARD_W / 2}
+              y={L.visualCy + L.milestoneSize * 0.35}
+              textAnchor="middle"
+              fontFamily={FONT_DISPLAY}
+              fontSize={L.milestoneSize}
+              fill={P.num}
+            >
+              {milestone}
+            </SvgText>
+          ) : null}
         </G>
       )}
 
