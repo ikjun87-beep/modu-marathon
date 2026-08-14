@@ -30,6 +30,21 @@ export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 
+/**
+ * 현재 크루의 id — **지금은 크루가 하나뿐이다.**
+ *
+ * 이 앱은 "우리 크루 하나"를 암묵적 전제로 동작해 왔고(`crews` 컬렉션도 멤버십도 없다),
+ * 그 전제를 **문서에 명시적으로 적어두기만** 한다. 크루 UI·권한·격리·초대는 만들지 않는다.
+ *
+ * 왜 지금 적나: 두 번째 크루가 생기는 시점에 이 필드가 없으면 **그동안 쌓인 전 문서를 백필**해야
+ * 한다. 지금 상수 하나를 적어두는 비용은 0이고, 나중에 치를 비용은 전수 마이그레이션이다.
+ * (2026-08-14 STEP 1 결정 — 단일 크루로 시작하되 다중 크루로 갈 문을 열어둔다)
+ *
+ * ⚠️ **값을 바꾸지 말 것.** 바꾸는 순간 그 이전 문서들이 "다른 크루의 것"이 된다.
+ * ⚠️ `web/index.html`에도 같은 값이 복제돼 있다(정적 HTML이라 TS를 import 못 한다). 함께 고칠 것.
+ */
+export const CREW_ID = "modu";
+
 /** 웹과 공유하는 Firestore 컬렉션 이름 (스키마 단일 소스) */
 export const COLLECTIONS = {
   guestbook: "guestbook", // { name, msg, createdAt }

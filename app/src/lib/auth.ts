@@ -98,6 +98,77 @@ export async function signInGuest(name?: string): Promise<Account> {
   return toAccount(cred.user)!;
 }
 
+/** 저장된 세션 복원을 기다리는 상한(ms). 이 안에 첫 통지가 안 오면 uid 없이 진행한다 — 쓰기를 막지 않는다. */
+const AUTH_WAIT_MS = 5000;
+
+/** ensureSignedIn은 앱 수명 동안 **한 번만** 실행된다(결과를 재사용). */
+let signInOnce: Promise<Account | null> | null = null;
+
+/**
+ * 로그인 상태를 확정하고, 아무 계정도 없으면 **게스트(익명)로 만든다.**
+ *
+ * ## 왜 필요한가
+ * 문서에 소유자를 남기려면(`crew.ts` withOwner) 먼저 uid가 있어야 한다. 그런데 지금까지 앱은
+ * 사용자가 마이 탭 계정 시트에서 직접 누른 경우에만 로그인했고, 로그인은 완전 선택이었다.
+ * → **실데이터의 문서 대부분에 주인이 없다**(2026-08-14 확인: `runs` 3건 전부 uid 없음).
+ * 웹(`web/index.html`)은 이미 자동 익명 로그인을 하고 있었다 — **앱만 빠져 있었다.**
+ *
+ * ## ⚠️ 저장된 세션을 기다린 뒤에 판단한다
+ * `auth.currentUser`를 즉시 읽으면 **영속 세션이 복원되기 전이라 null일 수 있다.** 그 상태로
+ * `signInAnonymously`를 부르면 **새 uid가 발급되어 기존 계정과 갈리고**, 그 사람이 지금까지
+ * 남긴 글·러닝의 소유권을 잃는다(게스트→가입에서 `linkWithCredential`로 막았던 것과 같은 함정).
+ * 그래서 `onAuthStateChanged`의 **첫 통지**를 기다린 뒤에만 게스트를 만든다.
+ *
+ * ## 실패는 삼킨다
+ * 콘솔에서 익명 로그인이 꺼져 있거나 네트워크가 죽어도 앱은 이름 기반으로 그대로 동작해야 한다.
+ * 이 함수는 어떤 경우에도 throw하지 않고 null을 돌려준다.
+ */
+export function ensureSignedIn(): Promise<Account | null> {
+  if (signInOnce) return signInOnce;
+
+  const a = auth;
+  if (!a) {
+    signInOnce = Promise.resolve(null);
+    return signInOnce;
+  }
+
+  signInOnce = new Promise<Account | null>((resolve) => {
+    let settled = false;
+    let unsub: (() => void) | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const finish = (account: Account | null) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      unsub?.();
+      resolve(account);
+    };
+
+    timer = setTimeout(() => finish(null), AUTH_WAIT_MS);
+
+    unsub = onAuthStateChanged(a, (user) => {
+      if (settled) return;
+      if (user) {
+        finish(toAccount(user)); // 이미 로그인돼 있다(영속 세션 복원 포함) → 그대로 쓴다
+        return;
+      }
+      signInAnonymously(a)
+        .then((cred) => finish(toAccount(cred.user)))
+        .catch((e) => {
+          // 콘솔에서 '익명'이 꺼져 있으면 auth/admin-restricted-operation 등이 온다.
+          console.warn(
+            "[auth] 게스트 로그인 보류 — 이름 기반으로 계속합니다.",
+            (e as { code?: string })?.code ?? e
+          );
+          finish(null);
+        });
+    });
+  });
+
+  return signInOnce;
+}
+
 /** 이메일 가입 — 가입과 동시에 표시이름(=크루에서 보이는 내 이름)을 심는다.
  *
  *  ⚠️ **게스트가 가입하면 uid를 유지해야 한다.** 계정 카드는 "이메일로 가입하면 기기를 바꿔도

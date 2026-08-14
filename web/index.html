@@ -705,8 +705,14 @@ let db = null;
 /* 익명 로그인으로 이 브라우저에 부여받는 uid. '내 글만 삭제'(소유 기반 규칙)의 발판.
    콘솔에서 '익명'을 켜야 채워지며, 미설정·실패여도 null로 남고 사이트는 이름 기반으로 그대로 동작한다. */
 let _uid = null;
-/* 새 문서에 uid를 곁들인다(있을 때만). 규칙이 아직 소유검증을 강제하지 않으므로 100% 뒤로 호환. */
-function withUid(o){ return _uid ? { ...o, uid: _uid } : o; }
+/* 현재 크루 id — 지금은 크루가 하나뿐이라 상수를 적어둘 뿐이다(읽기·필터·권한에 쓰지 않는다).
+   두 번째 크루가 생길 때의 전수 백필을 피하려는 목적. (2026-08-14 STEP 1 / S1)
+   ⚠️ app/src/lib/firebase.ts 의 CREW_ID 와 **같은 값이어야 한다** — 정적 HTML이라 TS를 import 못 해
+      값을 손으로 복제한다. 한쪽만 바꾸면 웹 글과 앱 글이 다른 크루로 갈린다. */
+const CREW_ID = 'modu';
+/* 새 문서에 주인(uid)과 소속(crewId)을 곁들인다. uid는 있을 때만 — 규칙이 아직 소유검증을
+   강제하지 않으므로 100% 뒤로 호환. */
+function withUid(o){ return { ...o, ...(_uid ? { uid: _uid } : {}), crewId: CREW_ID }; }
 if (HAS_FB) {
   const app = initializeApp(firebaseConfig);
   if (APPCHECK_SITE_KEY) {

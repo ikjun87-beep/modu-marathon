@@ -16,9 +16,9 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { uid } from "./auth";
+import { ensureSignedIn, uid } from "./auth";
 import { demoRows } from "./demo";
-import { COLLECTIONS, db, HAS_FIREBASE } from "./firebase";
+import { COLLECTIONS, CREW_ID, db, HAS_FIREBASE } from "./firebase";
 
 export type Row = Record<string, any> & { id: string; createdAt?: any };
 
@@ -45,21 +45,30 @@ export function isDemo(id: string): boolean {
 }
 
 // ── Firestore ──
-/** 로그인돼 있으면 문서에 소유자 uid를 곁들인다(웹 index.html의 withUid와 같은 패턴).
- *  왜 지금: 앱이야말로 게스트 승격으로 uid 연속성을 지키는데, 그 uid를 문서에 안 남기면
- *  나중에 소유 기반 규칙으로 갈 때 **핵심 크루원의 전 기록이 유령**이 된다(웹 방문자 글엔 주인이 있는데).
- *  규칙 무변경·100% 뒤로호환 — 지금부터 쌓이는 데이터에 미리 주인을 새겨 백필 부담을 줄인다. */
-function withUid(item: Record<string, any>): Record<string, any> {
+/** 새 문서에 **주인(uid)과 소속(crewId)**을 곁들인다(웹 index.html의 withUid와 같은 패턴).
+ *
+ *  - `uid`: 소유 기반 규칙(삭제·수정 제한)의 발판. 없으면 **핵심 크루원의 전 기록이 유령**이 된다.
+ *    로그인이 아직 안 잡혔으면 붙이지 않는다 — `undefined`를 쓰면 Firestore가 거부한다.
+ *    (호출부 fbAdd/fbPut이 `ensureSignedIn()`을 먼저 기다리므로 정상 경로에선 항상 채워진다.)
+ *  - `crewId`: 지금은 크루가 하나뿐이라 **상수 하나를 적어둘 뿐**이다(`firebase.ts` CREW_ID 주석).
+ *    읽기·필터·권한 어디에도 쓰지 않는다. 두 번째 크루가 생길 때의 전수 백필을 피하려는 목적.
+ *
+ *  규칙 무변경·100% 뒤로호환 — 기존 규칙은 create/update에 `hasOnly`를 걸지 않아 추가 필드를 허용한다. */
+function withOwner(item: Record<string, any>): Record<string, any> {
   const u = uid();
-  return u ? { ...item, uid: u } : item;
+  return { ...item, ...(u ? { uid: u } : {}), crewId: CREW_ID };
 }
 function fbSubscribe(col: string, cb: (rows: Row[]) => void) {
   return onSnapshot(query(collection(db, col), orderBy("createdAt", "desc")), (s) =>
     cb(s.docs.map((d) => ({ id: d.id, ...d.data() })))
   );
 }
-function fbAdd(col: string, item: Record<string, any>) {
-  return addDoc(collection(db, col), { ...withUid(item), createdAt: serverTimestamp() });
+/** ⚠️ 쓰기 전에 `ensureSignedIn()`을 기다린다 — 앱을 켜자마자 저장하는 경로에서 로그인이
+ *  아직 안 끝나 **uid 없는 문서가 새로 생기는 것**을 막는다. 두 번째 호출부터는 즉시 반환된다
+ *  (auth.ts가 결과를 재사용). 로그인이 실패해도 null로 끝나므로 저장 자체는 막지 않는다. */
+async function fbAdd(col: string, item: Record<string, any>) {
+  await ensureSignedIn();
+  return addDoc(collection(db, col), { ...withOwner(item), createdAt: serverTimestamp() });
 }
 function fbRemove(col: string, id: string) {
   return deleteDoc(doc(db, col, id));
@@ -68,10 +77,11 @@ function fbUpdate(col: string, id: string, patch: Record<string, any>) {
   return updateDoc(doc(db, col, id), patch);
 }
 /** 결정적 문서 id로 upsert(멱등) — 워치/외부 소스 중복 방지. createdAtMs 있으면 그 시각으로 고정. */
-function fbPut(col: string, id: string, item: Record<string, any>, createdAtMs?: number) {
+async function fbPut(col: string, id: string, item: Record<string, any>, createdAtMs?: number) {
+  await ensureSignedIn(); // fbAdd와 같은 이유(위 주석)
   return setDoc(
     doc(db, col, id),
-    { ...withUid(item), createdAt: createdAtMs ? new Date(createdAtMs) : serverTimestamp() },
+    { ...withOwner(item), createdAt: createdAtMs ? new Date(createdAtMs) : serverTimestamp() },
     { merge: true }
   );
 }
