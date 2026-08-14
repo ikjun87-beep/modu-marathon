@@ -455,7 +455,9 @@ export default function MyScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.switchLabel}>워치 자동 불러오기</Text>
-                <Text style={styles.switchSub}>앱을 열면{"\n"}오늘 기록을 가져와요</Text>
+                {/* "기록"이 아니라 **달리기**라고 적는다 — 자동은 걷기를 가져오지 않는다
+                    (healthconnect.ts silent 분기). 동의 화면과 한 글자도 어긋나면 안 된다. */}
+                <Text style={styles.switchSub}>앱을 열면{"\n"}오늘 달리기를 가져와요</Text>
               </View>
               <Switch
                 value={autoSync}

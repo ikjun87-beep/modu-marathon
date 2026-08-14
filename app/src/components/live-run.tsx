@@ -1,11 +1,14 @@
 /**
  * LiveRunModal — expo-location 기반 실시간 러닝 트래킹.
  * 시작 → 실시간 거리·페이스·시간 누적 → 종료 시 통합 Run(source:'gps')으로 저장.
- * 포그라운드 추적은 Expo Go/웹에서도 동작. 화면잠금 백그라운드는 EAS dev build 필요.
+ *
+ * 거리·경로·상승고도 계산은 `lib/live-tracking.ts`로 옮겼다(S5, 2026-08-15) — 화면이 꺼진 동안은
+ * `expo-task-manager`가 모듈 스코프 콜백으로 위치를 받는데, 그 콜백은 이 컴포넌트의 state에
+ * 직접 못 닿는다. 이 화면은 이제 **그 모듈을 구독해 값을 받아 그리는 쪽**이다.
  */
 import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
@@ -13,8 +16,20 @@ import { RunMap, type RunMapHandle } from "@/components/run-map";
 import { ShareSheet } from "@/components/share-sheet";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import type { Row } from "@/lib/crew";
+import {
+  getSnapshot,
+  pauseTracking,
+  resetTracking,
+  resumeTracking,
+  settleGain,
+  startBackgroundTask,
+  startForegroundWatch,
+  stopBackgroundTask,
+  stopTracking,
+  subscribe,
+} from "@/lib/live-tracking";
 import { saveRunPath } from "@/lib/run-path";
-import { fmtDuration, haversine, paceLabel, saveRun, type LatLng } from "@/lib/run";
+import { fmtDuration, paceLabel, saveRun, type LatLng } from "@/lib/run";
 
 type Props = { visible: boolean; name: string; onClose: (saved: boolean) => void };
 /** `done` = 저장까지 끝나고 **결과 요약**을 보여주는 단계.
@@ -28,26 +43,6 @@ type Phase = "idle" | "running" | "paused" | "saving" | "done";
 /** 요약 화면이 쓰는 확정 결과. `reset()`이 지워버리면 지도가 사라지므로 따로 들고 있는다. */
 type RunResult = { id: string; km: number; sec: number; gain: number; startedAt: number; path: LatLng[] };
 
-// 사람 러닝 속도 상한(m/s). 9m/s≈32km/h — 스프린트도 포함, 이 이상은 GPS 튐으로 간주해 거리 미가산.
-const MAX_SPEED_MS = 9;
-
-// ── 누적 상승고도 ──────────────────────────────────────────────────
-// GPS 고도는 수평보다 2~3배 부정확해서 **가만히 서 있어도 ±6m씩 흔들린다.**
-// 들어오는 값을 그냥 더하면 앉아만 있어도 수천 m가 쌓인다(시뮬레이션: ±6m 잔떨림 30분 → 3003m).
-//
-// 그래서 두 단계로 거른다.
-//  ① **EMA 저역통과**로 값을 매끈하게 — 문턱만으로는 못 막는다(잔떨림이 문턱보다 크면 그대로 샌다).
-//  ② **골짜기→봉우리**로 센다: 방향이 ALT_REVERSAL_M만큼 뒤집혀야 전환을 확정하고, 그때
-//     골짜기부터 봉우리까지 **상승분 전체**를 더한다. 내리막은 안 뺀다(러닝계 표준 "gain").
-//     ※ 단순 문턱 방식은 봉우리 직전 구간을 통째로 놓쳐 60m 언덕을 33m로 세더라(그래서 폐기).
-//
-// 파라미터는 시뮬레이션으로 고름(scratchpad alt-final.mjs). EMA 0.12 + 반전 4m 기준:
-//   평지 1m · 정지(현실) 8m · 정지(최악 30분) 16m · 언덕60m→61 · 오르내림60m→55 · 짧은언덕60m→38
-// 짧고 가파른 언덕은 적게 세지만 **부풀리는 것보다 낫다** — 평지에서 큰 숫자가 뜨면 신뢰를 잃는다.
-const ALT_ACC_MAX_M = 8; // altitudeAccuracy가 이보다 나쁘면 그 고도값은 안 믿는다
-const ALT_EMA_ALPHA = 0.12; // 저역통과 계수(작을수록 매끈하지만 짧은 언덕에 둔감)
-const ALT_REVERSAL_M = 4; // 이만큼 반대로 움직여야 오르막↔내리막 전환 확정(잔떨림이 봉우리를 만드는 것 방지)
-
 export function LiveRunModal({ visible, name, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [distanceM, setDistanceM] = useState(0);
@@ -58,23 +53,63 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
   const [sharing, setSharing] = useState(false);
   const [mapShot, setMapShot] = useState<string | null>(null); // 공유 카드에 넣을 지도 스냅샷
   const [here, setHere] = useState<LatLng | null>(null); // 시작 전 지도를 놓을 현재 위치
+  // 지금 백그라운드 태스크로 도는지 — 안내 문구를 사실과 다르게 띄우지 않기 위해 화면에서 안다.
+  const [bgActive, setBgActive] = useState(false);
   const mapRef = useRef<RunMapHandle>(null);
 
+  // foreground 폴백 구독(백그라운드 태스크 시작에 실패했을 때만 쓴다 — armTracking 참조).
   const sub = useRef<Location.LocationSubscription | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const last = useRef<LatLng | null>(null);
-  const lastAt = useRef<number>(0); // 직전 채택 좌표의 시각(ms) — 속도 게이트용
-  // 상승고도 상태(위 설명 참조) — 매끈해진 고도(ema)와 직전 골짜기·봉우리, 현재 방향
-  const alt = useRef<{ ema: number; valley: number; peak: number; rising: boolean } | null>(null);
-  const gainM = useRef<number>(0); // 확정된 누적 상승고도(m)
-  const startedAt = useRef<number>(0);
+  const startedAt = useRef<number>(0); // 이 러닝의 최초 시작 시각(ms) — 저장 sourceId·startedAt에 씀
+  // ⏱ 경과시간은 setInterval로 "누적"하지 않고 시각 차로 "파생 계산"한다(runStartedAt·accumulatedSec).
+  // 화면이 꺼지면 JS 타이머(setInterval)가 함께 멈출 수 있어서다 — TaskManager 콜백은 네이티브가
+  // 깨워 실행해 주지만 setInterval은 그 보장이 없다. 파생 계산이면 화면을 다시 켰을 때
+  // Date.now() 기준으로 정확한 값이 즉시 나온다(2026-08-15 S5).
+  const runStartedAt = useRef<number>(0); // 현재 러닝 구간(resume 이후) 시작 시각
+  const accumulatedSec = useRef<number>(0); // 이전 구간까지 확정된 경과초(pause마다 갱신)
   const phaseRef = useRef<Phase>("idle");
   phaseRef.current = phase;
 
+  function calcElapsed(): number {
+    if (phaseRef.current !== "running" || !runStartedAt.current) return accumulatedSec.current;
+    return accumulatedSec.current + Math.floor((Date.now() - runStartedAt.current) / 1000);
+  }
+
+  // live-tracking 모듈 구독 — 화면이 켜져 있는 동안 위치가 들어올 때마다(foreground 구독이든
+  // TaskManager 콜백이든 소스 무관) 최신 거리·경로를 받아 그린다.
+  useEffect(() => {
+    const unsub = subscribe(() => {
+      const snap = getSnapshot();
+      setDistanceM(snap.distanceM);
+      setPath(snap.path);
+    });
+    return unsub;
+  }, []);
+
+  // 화면이 꺼졌다 켜지면(잠금 해제 등) 그 사이 쌓인 값을 즉시 반영 — 다음 위치 업데이트를
+  // 기다리지 않고 복귀 순간 바로 맞는 숫자가 보이게 한다.
+  useEffect(() => {
+    const s = AppState.addEventListener("change", (next) => {
+      if (next !== "active") return;
+      const snap = getSnapshot();
+      setDistanceM(snap.distanceM);
+      setPath(snap.path);
+      setElapsed(calcElapsed());
+    });
+    return () => s.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 모달이 닫히면 항상 정리
   useEffect(() => {
-    if (!visible) stopAll();
-    return stopAll;
+    if (!visible) {
+      stopAll();
+      void stopBackgroundTask();
+    }
+    return () => {
+      stopAll();
+      void stopBackgroundTask();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
@@ -105,6 +140,8 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     };
   }, [visible, phase]);
 
+  // foreground 구독만 끊는다(백그라운드 태스크는 별도 stopBackgroundTask() — 저장 실패 재개
+  // 경로에서 태스크는 살려두고 이 구독만 정리해야 할 때가 있어 분리했다).
   function stopAll() {
     sub.current?.remove();
     sub.current = null;
@@ -112,24 +149,15 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     timer.current = null;
   }
 
-  /** 아직 확정 안 된 오르막(봉우리에서 멈춘 경우)까지 합친 최종 상승고도.
-   *  이걸 안 하면 언덕 꼭대기에서 종료했을 때 마지막 오르막이 통째로 사라진다. */
-  function settleGain(): number {
-    const a = alt.current;
-    if (a?.rising) return gainM.current + Math.max(0, a.peak - a.valley);
-    return gainM.current;
-  }
-
   function reset() {
     setDistanceM(0);
     setElapsed(0);
     setErr(null);
     setPath([]);
-    last.current = null;
-    lastAt.current = 0;
-    alt.current = null;
-    gainM.current = 0;
+    resetTracking();
     startedAt.current = 0;
+    runStartedAt.current = 0;
+    accumulatedSec.current = 0;
   }
 
   async function start() {
@@ -141,6 +169,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     }
     reset();
     startedAt.current = Date.now();
+    runStartedAt.current = startedAt.current;
     setPhase("running");
     if (!(await armTracking())) {
       setErr("위치 추적을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -148,84 +177,45 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     }
   }
 
-  // 타이머 + 위치 구독을 건다. 성공 시 true. start()와 저장 실패 후 재개 양쪽에서 재사용.
+  /**
+   * 위치 추적을 건다. **백그라운드 태스크를 우선**하고, 실패할 때만 foreground 구독으로
+   * 폴백한다 — 둘을 동시에 걸면 같은 GPS를 이중 구독하게 돼 배터리를 두 배로 쓰고, 두
+   * 소스가 살짝 다른 타이밍으로 같은 좌표를 두 번 넘겨 거리가 미세하게 어긋날 수 있다.
+   *
+   * 백그라운드 태스크가 성공하면 화면이 켜져 있을 때도 위치는 **TaskManager 콜백 하나**로만
+   * 들어온다(`live-tracking.ts`) — 화면 상태가 바뀌어도 계산 경로가 안 갈린다.
+   * start()·저장 실패 후 재개 양쪽에서 재사용.
+   */
   async function armTracking(): Promise<boolean> {
     stopAll(); // 중복 구독 방지
     timer.current = setInterval(() => {
-      if (phaseRef.current === "running") setElapsed((e) => e + 1);
+      if (phaseRef.current === "running") setElapsed(calcElapsed());
     }, 1000);
-    try {
-      sub.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.BestForNavigation,
-          timeInterval: 1000,
-          distanceInterval: 4,
-        },
-        (loc) => {
-          if (phaseRef.current !== "running") return;
-          const cur: LatLng = { lat: loc.coords.latitude, lng: loc.coords.longitude };
-          const acc = loc.coords.accuracy ?? 999;
-          const t = loc.timestamp || Date.now();
-          if (last.current && lastAt.current && acc <= 30) {
-            const d = haversine(last.current, cur);
-            const dt = (t - lastAt.current) / 1000; // 초
-            // dt>0일 때만 속도로 판정 — 타임스탬프가 안 흐르거나(0) 역행(<0)하면 이 구간은 건너뛴다(유령거리 방지).
-            // 상한은 고정 60m가 아니라 속도(≤9m/s)로 — 신호가 끊겨 넓게 벌어진 정상 구간을 버리지 않는다.
-            if (dt > 0 && d >= 1.5 && d / dt <= MAX_SPEED_MS) {
-              setDistanceM((m) => m + d);
-              setPath((p) => [...p, cur]); // 채택된 이동만 경로에 추가 → 깨끗한 라인
-            }
-          }
-          if (acc <= 30) {
-            if (!last.current) setPath((p) => (p.length ? p : [cur])); // 첫 좋은 픽스 = 시작점
-            last.current = cur;
-            lastAt.current = t;
-          }
 
-          // 누적 상승고도 — 수평 정확도와 별개로 **고도 정확도(altitudeAccuracy)**로 판정한다.
-          const rawAlt = loc.coords.altitude;
-          const altAcc = loc.coords.altitudeAccuracy ?? Infinity;
-          if (rawAlt != null && altAcc <= ALT_ACC_MAX_M) {
-            const a = alt.current;
-            if (!a) {
-              alt.current = { ema: rawAlt, valley: rawAlt, peak: rawAlt, rising: true };
-            } else {
-              a.ema += ALT_EMA_ALPHA * (rawAlt - a.ema); // ① 저역통과
-              if (a.rising) {
-                if (a.ema > a.peak) a.peak = a.ema; // 계속 오르는 중 — 봉우리 갱신
-                else if (a.ema < a.peak - ALT_REVERSAL_M) {
-                  gainM.current += a.peak - a.valley; // ② 내려가기 시작 → 이번 오르막 확정
-                  a.rising = false;
-                  a.valley = a.ema;
-                }
-              } else {
-                if (a.ema < a.valley) a.valley = a.ema; // 계속 내려가는 중 — 골짜기 갱신
-                else if (a.ema > a.valley + ALT_REVERSAL_M) {
-                  a.rising = true; // 다시 오르기 시작 — 여기가 새 오르막의 출발점
-                  a.peak = a.ema;
-                }
-              }
-            }
-          }
-        }
-      );
+    const bgOk = await startBackgroundTask();
+    setBgActive(bgOk);
+    if (bgOk) return true;
+
+    // 백그라운드 실패(권한·기기 미지원 등) — 화면을 켜둔 채로는 계속 러닝할 수 있게 폴백.
+    // ⚠️ 이 경로면 화면 OFF에서 추적이 끊긴다 — S5 조사에 남긴 알려진 한계.
+    const foreSub = await startForegroundWatch();
+    if (foreSub) {
+      sub.current = foreSub;
       return true;
-    } catch {
-      stopAll();
-      return false;
     }
+    stopAll();
+    return false;
   }
 
   function pause() {
     setPhase("paused");
-    last.current = null; // 재개 시 튐 방지
-    lastAt.current = 0;
-    // 고도 추적도 확정하고 버린다 — 쉬는 동안 이동(차·엘리베이터)했다면
-    // 낡은 기준점이 가짜 상승을 만든다. 지금까지 오른 건 잃지 않게 먼저 확정.
-    gainM.current = settleGain();
-    alt.current = null;
+    accumulatedSec.current = calcElapsed(); // 지금까지 구간을 확정 — resume 전까지 이 값 유지
+    setElapsed(accumulatedSec.current); // 화면·저장값을 이 확정치와 정확히 맞춘다(다음 tick까지 최대 1초 기다리지 않음)
+    pauseTracking(); // 재앵커 + 상승고도 확정(모듈 쪽 상태)
   }
   function resume() {
+    runStartedAt.current = Date.now(); // 새 구간 시작 — calcElapsed가 여기부터 다시 잰다
+    resumeTracking();
     setPhase("running");
   }
 
@@ -234,6 +224,7 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
     const km = distanceM / 1000;
     if (km < 0.01 || elapsed < 3) {
       // 기록할 게 없음
+      void stopBackgroundTask();
       reset();
       setPhase("idle");
       onClose(false);
@@ -258,13 +249,13 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
       // 여기서 닫지 않는다 — 결과 요약을 보여준 뒤 [확인]에서 닫는다(Phase 주석 참조).
       // 경로는 `reset()`이 지우므로 요약이 쓸 사본을 먼저 떠둔다.
       setResult({ id: `gps_${sid}`, km, sec: elapsed, gain, startedAt: startMs, path });
+      stopTracking();
+      void stopBackgroundTask();
       setPhase("done");
     } catch {
       setErr("저장에 실패했어요. '계속'으로 이어 달리거나, 다시 [종료·저장]으로 재시도할 수 있어요.");
-      last.current = null; // 중단된 사이 위치가 크게 변했을 수 있으니 재개 시 재앵커(튐 방지)
-      lastAt.current = 0;
-      gainM.current = settleGain(); // 고도도 같은 이유로 확정 후 재시작(가짜 상승 방지)
-      alt.current = null;
+      accumulatedSec.current = elapsed; // 지금까지 잰 시간은 확정(재개 시 이어서)
+      pauseTracking(); // 재앵커 + 상승고도 확정(중단된 사이 위치가 크게 변했을 수 있으니)
       await armTracking(); // 트래킹을 되살려 '계속'이 실제로 이어 달리게 한다(거리·시간 유실 방지)
       setPhase("paused");
     }
@@ -272,6 +263,8 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
 
   function cancel() {
     stopAll();
+    stopTracking();
+    void stopBackgroundTask();
     reset();
     setPhase("idle");
     onClose(false);
@@ -427,9 +420,11 @@ export function LiveRunModal({ visible, name, onClose }: Props) {
         </View>
 
         {err && <Text style={styles.err}>{err}</Text>}
-        {phase === "running" && (
+        {(phase === "running" || phase === "paused") && (
           <Text style={styles.hint}>
-            화면을 켜 둔 채로 달려주세요. 백그라운드 자동기록은 추후 dev build에서 열려요.
+            {bgActive
+              ? "화면을 꺼도 계속 기록돼요. 기기 배터리 절약 설정에 따라 중간에 멈출 수 있어요."
+              : "화면을 켜 둔 채로 달려주세요."}
           </Text>
         )}
 

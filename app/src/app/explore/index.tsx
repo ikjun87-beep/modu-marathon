@@ -19,7 +19,16 @@ import { fmtDate, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 import { hasHealthConsent, setHealthConsent, setWatchAutoSync } from "@/lib/health-consent";
 import { HC_SUPPORTED, syncTodayRuns } from "@/lib/healthconnect";
-import { fmtDuration, isWalk, paceLabel, saveRun, todayKm, toMs, type LatLng } from "@/lib/run";
+import {
+  fmtDuration,
+  isWalk,
+  paceLabel,
+  runSourceLabel,
+  saveRun,
+  todayKm,
+  toMs,
+  type LatLng,
+} from "@/lib/run";
 import { loadRunPaths } from "@/lib/run-path";
 import { personalStats } from "@/lib/stats";
 
@@ -30,15 +39,10 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 지난 러닝 목록은 최근 1주�
 function runSeconds(r: Row): number {
   return Number(r.durationSec) || (Number(r.durationMin) || 0) * 60;
 }
-/** 기록 출처 — 목록 행의 날짜 줄에 텍스트로 붙는다.
- *  (출처 **아이콘**은 R13에서 없앴다: 행마다 같은 아이콘이 반복되는 게 문제였고,
- *   이제 그 자리는 경로 썸네일 또는 거리 링이 차지한다.) */
-function sourceLabel(src?: string): string {
-  if (src === "gps") return "GPS 러닝";
-  if (src === "healthconnect") return "갤럭시워치";
-  if (src === "garmin") return "가민";
-  return "직접 입력";
-}
+/* 기록 출처 라벨은 `lib/run.ts`의 runSourceLabel 하나로 모았다 — 목록·상세·검색이 서로 다른
+   문자열을 쓰면 같은 기록이 화면마다 다른 앱에서 온 것처럼 보인다.
+   (출처 **아이콘**은 R13에서 없앴다: 행마다 같은 아이콘이 반복되는 게 문제였고,
+    이제 그 자리는 경로 썸네일 또는 거리 링이 차지한다.) */
 
 /** 페이스 = 숫자(본문색) + 단위(브랜드 블루) — 전역 규칙.
  *  paceLabel이 "7'33\"/km" 통짜라 목록에서만 단위가 본문색으로 남아 상세·리포트와 갈렸다.
@@ -145,13 +149,17 @@ export default function RunScreen() {
       await runWatchSync(true);
       return;
     }
-    // 고지 범위 = ①심박(민감정보) 수집 ②앱을 열 때 자동으로 불러옴 ③끄는 방법.
-    // ②를 빼놓고 자동 수집을 켜면 고지 없는 수집이 된다 — 그래서 동의 키도 v2로 올렸다.
+    // 고지 범위 = ①수동/자동의 수집 범위가 다름 ②심박(민감정보) 수집 ③앱을 열 때 자동으로 불러옴 ④끄는 방법.
+    // ③을 빼놓고 자동 수집을 켜면 고지 없는 수집이 된다 — 그래서 동의 키도 v2로 올렸다.
+    // ①은 그다음 문제였다: 삼성헬스가 **누르지도 않은 산책을 자동 감지**해 Health Connect에 쓰므로,
+    // 자동까지 걷기를 받으면 고지 없는 수집이 된다. 그래서 자동은 달리기만 받고(healthconnect.ts),
+    // 이 문구도 **실제 동작 그대로** 수동=달리기+걷기 / 자동=달리기만이라고 적는다.
     Alert.alert(
       "워치 기록 불러오기 동의",
       "갤럭시워치 기록을 불러옵니다.\n\n" +
+        "• 지금 누른 이 버튼은 오늘의 달리기와 걷기를 함께 불러옵니다.\n" +
         "• 심박 등 건강정보(민감정보)를 함께 저장하려면 별도 동의가 필요해요. 동의하지 않아도 거리·시간·페이스는 불러올 수 있어요.\n" +
-        "• 앞으로는 앱을 열 때 오늘 기록을 자동으로 불러옵니다(최소 30분 간격).\n" +
+        "• 앞으로 앱을 열 때는 오늘의 달리기만 자동으로 불러옵니다(최소 30분 간격). 걷기는 자동으로 불러오지 않아요.\n" +
         "• 자동 불러오기는 마이 탭에서 언제든 끌 수 있어요.",
       [
         { text: "취소", style: "cancel", onPress: () => setSyncing(false) },
@@ -391,7 +399,8 @@ export default function RunScreen() {
                     ) : null}
                   </View>
                   <Text style={styles.date}>
-                    {sourceLabel(item.source)} · {fmtDate(item.startedAt ?? item.createdAt)}
+                    {runSourceLabel(item.source, item.sourceApp)} ·{" "}
+                    {fmtDate(item.startedAt ?? item.createdAt)}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={18} color={Brand.faint} />

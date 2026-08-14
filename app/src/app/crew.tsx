@@ -10,7 +10,7 @@ import { NameField } from "@/components/name-field";
 import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
-import { add, fmtDate, isDemo, remove, subscribe, update, type Row } from "@/lib/crew";
+import { add, fmtDate, isMine, remove, subscribe, update, type Row } from "@/lib/crew";
 import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 
@@ -150,7 +150,7 @@ export default function CrewScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const mine = !!name && item.name === name && !isDemo(item.id);
+          const mine = isMine(item, name);
           const editing = editingId === item.id;
           return (
             <View style={styles.item}>
@@ -189,9 +189,11 @@ export default function CrewScreen() {
                       <Text style={styles.editBtnText}>수정</Text>
                     </PressableScale>
                   )}
-                  <PressableScale style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
-                    <Icon name="close" size={16} color={Brand.faint} />
-                  </PressableScale>
+                  {mine && (
+                    <PressableScale style={styles.del} onPress={() => onDelete(item.id)} hitSlop={8}>
+                      <Icon name="close" size={16} color={Brand.faint} />
+                    </PressableScale>
+                  )}
                 </>
               )}
             </View>

@@ -34,7 +34,9 @@ export type FeedItem = {
 /** 며칠 치를 볼 것인가 — 너무 길면 홈이 아니라 아카이브가 된다. */
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** "5.2km 뛰었어요" — 걷기까지 섞이면 문장이 거짓이 되니 kind로 갈라 쓴다. */
+/** "5.2km 뛰었어요" — 걷기까지 섞이면 문장이 거짓이 되니 kind로 갈라 쓴다.
+ *  📌 지금은 `buildFeed`가 걷기를 걸러내므로 walk 분기에 닿지 않는다. **지우지 말 것** —
+ *     걷기를 다시 노출하기로 하면(예: 걷기 전용 피드) 그 순간 문장이 거짓이 되는 자리다. */
 function runText(r: Row): string {
   const km = Number(r.distanceKm) || 0;
   const walk = r.kind === "walk";
@@ -60,6 +62,12 @@ export function buildFeed(
   const out: FeedItem[] = [];
 
   for (const r of runs) {
+    // ⚠️ **걷기는 타임라인에 올리지 않는다.**
+    // 삼성헬스가 자동 감지한 산책이 Health Connect를 거쳐 들어오는데(2026-08-14 확인),
+    // 그것까지 크루 피드에 뜨면 출석부가 "누가 나와서 뛰었나" 대신 잡음으로 덮인다.
+    // **기록을 지우는 게 아니다** — 러닝 탭의 걷기 세그먼트와 개인 집계에는 그대로 남는다.
+    // 여기 걸리는 건 kind가 'walk'로 찍힌 문서뿐이라, kind 없는 옛 러닝 문서는 영향받지 않는다.
+    if (r.kind === "walk") continue;
     const at = toMs(r.startedAt ?? r.createdAt);
     if (!at || at < since) continue;
     out.push({

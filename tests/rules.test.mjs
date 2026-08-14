@@ -44,6 +44,11 @@ function db() {
   return env.unauthenticatedContext().firestore();
 }
 
+/** 인증된 클라이언트(S1의 익명 로그인과 같은 조건 — uid만 있고 그 외 특권 없음). */
+function authDb(uid) {
+  return env.authenticatedContext(uid).firestore();
+}
+
 before(async () => {
   env = await initializeTestEnvironment({
     projectId: "modu-marathon-rules-test",
@@ -151,6 +156,41 @@ describe("러닝 기록 조작 차단 (runs.update — 리더보드·통계 오�
     await seed("runs/r1", BASE);
     await assertSucceeds(updateDoc(doc(db(), "runs/r1"), { name: "홍길동2" }));
   });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ③ 소유권 delete (S4 · 2026-08-14) — "격리보다 소유가 먼저다"의 delete 축.
+//    대상은 UI에 삭제 버튼이 있는 세 컬렉션(runs·guestbook·gallery)뿐 — 나머지
+//    (attendance·claps·comments·events·profiles)는 이번 라운드 범위 밖이라 그대로 `if true`.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("소유권 delete (S4 · uid 있으면 소유자만, 없으면 유예)", () => {
+  const OWNED = ["runs", "guestbook", "gallery"];
+
+  for (const col of OWNED) {
+    it(`${col} — uid 있는 남의 문서는 delete 거부`, async () => {
+      await env.clearFirestore();
+      await seed(`${col}/x`, { name: "홍길동", msg: "안녕", distanceKm: 5, uid: "owner-uid" });
+      await assertFails(deleteDoc(doc(authDb("stranger-uid"), `${col}/x`)));
+    });
+
+    it(`${col} — uid 있는 내 문서는 delete 허용`, async () => {
+      await env.clearFirestore();
+      await seed(`${col}/x`, { name: "홍길동", msg: "안녕", distanceKm: 5, uid: "owner-uid" });
+      await assertSucceeds(deleteDoc(doc(authDb("owner-uid"), `${col}/x`)));
+    });
+
+    it(`${col} — 미인증 사용자는 uid 있는 문서를 delete 못한다`, async () => {
+      await env.clearFirestore();
+      await seed(`${col}/x`, { name: "홍길동", msg: "안녕", distanceKm: 5, uid: "owner-uid" });
+      await assertFails(deleteDoc(doc(db(), `${col}/x`)));
+    });
+
+    it(`${col} — uid 없는 레거시 문서는 유예로 계속 삭제된다`, async () => {
+      await env.clearFirestore();
+      await seed(`${col}/legacy`, { name: "홍길동", msg: "안녕", distanceKm: 5 }); // uid 필드 자체가 없음
+      await assertSucceeds(deleteDoc(doc(authDb("anyone-uid"), `${col}/legacy`)));
+    });
+  }
 });
 
 describe("⚠️ run.ts:141~ 우회 경로가 실재한다 (BRIEF R2)", () => {

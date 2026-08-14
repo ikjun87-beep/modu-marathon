@@ -15,28 +15,25 @@ import { ShareSheet } from "@/components/share-sheet";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Brand, FONT, FONT_DISPLAY, Weight, Radius, leading } from "@/lib/brand";
-import { fmtDate, remove, subscribe, type Row } from "@/lib/crew";
+import { fmtDate, isMine, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
-import { fmtDuration, isWalk, paceLabel, type LatLng } from "@/lib/run";
+import { fmtDuration, isWalk, paceLabel, runSourceLabel, type LatLng } from "@/lib/run";
 import { loadRunPath, removeRunPath } from "@/lib/run-path";
+import { useMyName } from "@/lib/session";
 
 function sourceIcon(src?: string): IconName {
   if (src === "gps") return "run";
   if (src === "healthconnect" || src === "garmin") return "watch";
   return "plus";
 }
-function sourceLabel(src?: string): string {
-  if (src === "gps") return "GPS 러닝";
-  if (src === "healthconnect") return "갤럭시워치";
-  if (src === "garmin") return "가민";
-  return "직접 입력";
-}
+/* 출처 라벨은 lib/run.ts의 runSourceLabel 하나로 모았다(목록·검색과 같은 문자열을 쓰기 위해). */
 function runSeconds(r: Row): number {
   return Number(r.durationSec) || (Number(r.durationMin) || 0) * 60;
 }
 
 export default function RunDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [myName] = useMyName();
   const [runs, setRuns] = useState<Row[] | null>(null);
   const [path, setPath] = useState<LatLng[] | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -49,8 +46,10 @@ export default function RunDetailScreen() {
   }, [id]);
 
   const run = useMemo(() => (runs ?? []).find((r) => r.id === id), [runs, id]);
+  const mine = useMemo(() => (run ? isMine(run, myName) : false), [run, myName]);
 
   function onDelete() {
+    if (!mine) return; // 버튼이 이미 숨겨져 있지만, 방어적으로 한 번 더 막는다
     Alert.alert("이 기록을 삭제할까요?", "삭제하면 되돌릴 수 없어요.", [
       { text: "취소", style: "cancel" },
       {
@@ -152,9 +151,13 @@ export default function RunDetailScreen() {
             }}>
             <Icon name="share" size={18} color={Brand.brandDeep} />
           </PressableScale>
-          <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
-            <Icon name="trash" size={19} color={Brand.faint} />
-          </PressableScale>
+          {mine ? (
+            <PressableScale style={styles.iconBtn} onPress={onDelete} hitSlop={10}>
+              <Icon name="trash" size={19} color={Brand.faint} />
+            </PressableScale>
+          ) : (
+            <View style={styles.iconBtn} /> // 자리 유지 — 없으면 공유 버튼이 오른쪽 끝으로 쏠린다
+          )}
         </View>
       </View>
 
@@ -165,7 +168,8 @@ export default function RunDetailScreen() {
             <Icon name={sourceIcon(run.source)} size={15} color={Brand.brandDeep} />
           </View>
           <Text style={styles.metaText} numberOfLines={1}>
-            {run.name} · {sourceLabel(run.source)} · {fmtDate(run.startedAt ?? run.createdAt)}
+            {run.name} · {runSourceLabel(run.source, run.sourceApp)} ·{" "}
+            {fmtDate(run.startedAt ?? run.createdAt)}
           </Text>
         </View>
 

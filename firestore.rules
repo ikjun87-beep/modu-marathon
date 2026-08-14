@@ -12,6 +12,16 @@ service cloud.firestore {
              && request.resource.data.name.size() <= 40;
     }
 
+    // 소유권 delete — S4(2026-08-14). **uid 있으면 소유자만, 없으면 유예.**
+    // `!('uid' in resource.data)`가 레거시 조항이다: uid 필드 자체가 생기기 전(S1 이전) 문서는
+    // 주인을 증명할 방법이 없으므로 이전 정책(전면 허용)을 그대로 물려받는다. 백필은 하지 않는다
+    // (`CLAUDE.md` — 자연 소멸시킨다). uid가 있는 문서만 소유자 본인으로 좁힌다.
+    // request.auth가 없으면(미인증) `request.auth.uid` 평가 자체가 실패해 우변이 거부로 떨어지므로
+    // 별도 null 체크가 필요 없다 — 미인증 클라이언트는 uid 있는 문서를 지울 수 없다.
+    function isOwnerOrLegacy() {
+      return !('uid' in resource.data) || resource.data.uid == request.auth.uid;
+    }
+
     // 친목용: 누구나 읽기. 생성은 타입·크기 검증으로 도배/오염 방지.
     // ⚠ 인증(Firebase Auth) 도입 전까지 delete는 소유 검증이 불가능하다.
     //    delete 버튼(방명록·갤러리·참석취소·러닝)을 살리려면 전면 허용이 유일한 방법이므로,
@@ -29,7 +39,7 @@ service cloud.firestore {
                     || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['msg'])
                         && request.resource.data.msg is string
                         && request.resource.data.msg.size() <= 200);
-      allow delete: if true;
+      allow delete: if isOwnerOrLegacy();   // S4 — 삭제 버튼(crew.tsx)이 mine 가드와 짝을 이룬다
     }
     match /gallery/{id} {
       allow read: if true;
@@ -37,7 +47,7 @@ service cloud.firestore {
                     && request.resource.data.image.size() < 1000000
                     && request.resource.data.image.matches('data:image/.*'); // 실제 이미지 data URI만 — src="" XSS 주입 차단
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
-      allow delete: if true;
+      allow delete: if isOwnerOrLegacy();   // S4 — long-press 삭제(gallery-section.tsx)가 mine 가드와 짝을 이룬다
     }
     match /attendance/{id} {
       allow read: if true;
@@ -103,7 +113,11 @@ service cloud.firestore {
                     && request.resource.data.distanceKm == resource.data.distanceKm
                     && request.resource.data.get('durationSec', 0) == resource.data.get('durationSec', 0)
                     && request.resource.data.get('kind', 'run') == resource.data.get('kind', 'run');
-      allow delete: if true;   // 러닝 기록 삭제 버튼(explore.tsx) + 재동기화 우회(run.ts)
+      // S4 — 삭제 버튼(explore/run/[id].tsx)이 mine 가드와 짝을 이룬다.
+      // ⚠️ run.ts의 delete→재생성 우회(위 update 주석)도 이 규칙을 통과해야 한다 — 우회는
+      // "내가 만든 워치 기록을 다시 저장"하는 경로라 소유자 본인이면 항상 통과하고,
+      // uid 없는 레거시 기록(자연 소멸 대상)도 유예 조항으로 그대로 열려 있다.
+      allow delete: if isOwnerOrLegacy();
     }
     // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. parentId로 묶임.
     match /comments/{id} {

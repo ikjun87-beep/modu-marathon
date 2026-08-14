@@ -146,7 +146,34 @@ export async function syncTodayRuns(
       lib && typeof lib.RUNNING === "number" ? lib : FALLBACK_TYPES;
     for (const s of sessions) {
       const kind = kindOf(Number(s.exerciseType), T);
+
+      // 세션을 기록한 앱의 패키지명. 네이티브가 `meta.dataOrigin.packageName`을 **문자열로** 넘긴다
+      // (라이브러리 3.5.3의 convertMetadataToJSMap 확인). 구버전·타 구현이 객체로 줄 가능성에 대비해
+      // 두 모양을 모두 받는다. 이 값이 "갤럭시워치"라는 거짓 라벨을 대체할 진짜 출처다.
+      const meta: any = s?.metadata ?? {};
+      const originRaw = meta?.dataOrigin?.packageName ?? meta?.dataOrigin;
+      const sourceApp = typeof originRaw === "string" && originRaw ? originRaw : undefined;
+
       if (!kind) continue; // 자전거·수영 등 러닝 앱 범위 밖
+      // ⚠️ **자동(silent) 경로는 걷기를 받지 않는다.**
+      // 삼성헬스는 사용자가 버튼을 누르지 않아도 걷기를 **자동 감지**해 Health Connect에 쓴다
+      // (2026-08-14 실기기 확인 — 시속 3.6~3.8km 산책 2건이 그렇게 들어왔다). 자동 동기화까지
+      // 그걸 받으면 **사용자가 기록하겠다고 한 적 없는 이동이 조용히 수집·게시**된다.
+      // 수동 [워치 불러오기]는 사용자가 직접 누른 경로이므로 걷기도 그대로 받는다(고지 문구와 일치).
+      //
+      // 📌 **이 거친 기준을 왜 정교하게 못 만드는가 — 2026-08-14 S3 실기기 조사 결과.**
+      // 7.32km·58:55(8'03"/km)짜리가 WALKING(79)으로 들어와서, 이게 빠른 걷기인지 **오분류된 러닝**인지
+      // 가려내려고 원본 메타데이터를 전수 확인했다. 결론은 **가릴 근거가 없다**:
+      //   · `metadata.recordingMethod` = **0(UNKNOWN)** — 자동감지(2)/사용자시작(1)을 갈라주는 바로 그
+      //     필드인데 삼성헬스(`com.sec.android.app.shealth`)가 채우지 않는다. 타입·네이티브 브릿지는
+      //     멀쩡하다(라이브러리 3.5.3이 int로 넘긴다) — **주는 쪽이 비워 보낸다.**
+      //   · `metadata.device` = type 0 / manufacturer·model 없음 → **워치인지 폰인지도 모른다.**
+      //   · `title` 없음 → 이름으로도 구분 불가.
+      // 남은 건 거리·페이스뿐인데 **임계값은 만들지 않는다.** 어디에 선을 긋든 누군가의 파워워킹이
+      // 러닝이 되고 누군가의 조깅이 산책이 된다 — 출석부에 거짓을 적는 쪽이 누락보다 나쁘다.
+      // 그리고 이건 **손실이 아니라 지연**이다: 사용자가 [워치 불러오기]를 누르면 그대로 들어온다.
+      // (삼성헬스가 recordingMethod를 채우기 시작하면 그때 이 줄을 `recordingMethod === 2`로 바꾼다.)
+      if (silent && kind === "walk") continue;
       const sS = new Date(s.startTime).getTime();
       const sE = new Date(s.endTime).getTime();
       if (!(sE > sS)) continue;
@@ -194,6 +221,7 @@ export async function syncTodayRuns(
           durationSec: (sE - sS) / 1000,
           startedAt: sS,
           avgHr,
+          sourceApp, // 진짜 출처 — 없으면 화면이 예전처럼 "갤럭시워치"로 폴백한다
         });
         synced++;
         totalKm += km;

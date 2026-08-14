@@ -44,6 +44,21 @@ export function isDemo(id: string): boolean {
   return id.startsWith("demo_");
 }
 
+/** 이 문서가 "내 것"인가 — 삭제 버튼을 보여줄지 판단하는 UI 가드.
+ *
+ *  `firestore.rules`의 `isOwnerOrLegacy()`(S4)와 **같은 축으로 맞춘다**: uid가 있는 문서는
+ *  uid로만 판단하고, uid가 없는 레거시 문서만 이름으로 판단한다. 이름만으로 판단하면 uid 있는
+ *  동명이인의 글에 삭제 버튼이 뜨는데 실제로 누르면 서버가 거부해 "삭제했는데 안 지워지는"
+ *  버그처럼 보인다 — 서버 판단과 화면 판단이 어긋나지 않게 하는 게 이 함수의 목적. */
+export function isMine(row: Row, myName: string): boolean {
+  if (isDemo(row.id)) return false;
+  if ("uid" in row) {
+    const u = uid();
+    return !!u && row.uid === u;
+  }
+  return !!myName.trim() && row.name === myName;
+}
+
 // ── Firestore ──
 /** 새 문서에 **주인(uid)과 소속(crewId)**을 곁들인다(웹 index.html의 withUid와 같은 패턴).
  *

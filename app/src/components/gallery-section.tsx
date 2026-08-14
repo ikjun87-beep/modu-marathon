@@ -8,7 +8,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { ClapButton } from "@/components/clap-button";
 import { Icon } from "@/components/icon";
 import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
-import { add, remove, subscribe, type Row } from "@/lib/crew";
+import { add, isMine, remove, subscribe, type Row } from "@/lib/crew";
 import { COLLECTIONS } from "@/lib/firebase";
 
 export function GallerySection({ myName }: { myName: string }) {
@@ -58,7 +58,9 @@ export function GallerySection({ myName }: { myName: string }) {
     }
   }
 
-  function del(id: string) {
+  function del(row: Row) {
+    if (!isMine(row, myName)) return; // 남의 사진 — long-press해도 조용히 무시(서버도 어차피 거부)
+    const id = row.id;
     Alert.alert("사진을 삭제할까요?", "", [
       { text: "취소", style: "cancel" },
       {
@@ -90,7 +92,7 @@ export function GallerySection({ myName }: { myName: string }) {
         // 친목 크루 앱의 자산은 사진이므로 크게 보여주고 이름·박수를 얹는다(R12 기획).
         <View style={styles.grid}>
           {rows.map((g) => (
-            <Pressable key={g.id} style={styles.cell} onLongPress={() => del(g.id)}>
+            <Pressable key={g.id} style={styles.cell} onLongPress={() => del(g)}>
               <Image source={{ uri: g.image }} style={styles.img} contentFit="cover" />
               {/* 사진 위 어두운 띠 — 밝은 사진에서도 이름이 읽히게 */}
               <View style={styles.overlay}>

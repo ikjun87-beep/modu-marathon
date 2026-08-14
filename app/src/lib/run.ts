@@ -11,9 +11,52 @@ export type RunSource = "manual" | "gps" | "healthconnect" | "garmin";
  *  **없으면 'run'** — 이 필드가 생기기 전 기록(웹·기존 문서)은 전부 러닝이었다(뒤로호환). */
 export type RunKind = "run" | "walk";
 
+/** Health Connect에 기록을 쓰는 앱들의 패키지명 → 사람이 읽는 이름.
+ *
+ *  ⚠️ **모르는 패키지를 추측해서 이름 붙이지 않는다.** 여기 없는 앱은 `null`을 돌려주고,
+ *  화면은 "연결된 앱"이라는 중립 라벨을 쓴다 — 지금 고치는 문제가 바로 **모르면서 단정한 라벨**
+ *  ("전부 갤럭시워치")이었으니, 같은 실수를 새 이름으로 반복하면 안 된다.
+ *  실기기에서 새 패키지를 확인할 때마다 여기에 한 줄씩 늘린다. */
+const SOURCE_APPS: Record<string, string> = {
+  "com.sec.android.app.shealth": "삼성 헬스",
+  "com.google.android.apps.fitness": "Google 피트니스",
+  "com.strava": "스트라바",
+  "com.nike.plusone": "나이키 런 클럽",
+  "com.garmin.android.apps.connectmobile": "가민 커넥트",
+};
+
+/** 패키지명 → 표시용 앱 이름. 모르는 패키지면 null(호출부가 중립 라벨로 폴백). */
+export function sourceAppName(pkg?: string): string | null {
+  if (!pkg) return null;
+  return SOURCE_APPS[pkg] ?? null;
+}
+
+/**
+ * 기록 출처 라벨 — **화면 세 곳(목록·상세·검색)이 같은 문자열을 쓰게 하는 단일 소스.**
+ *
+ * 우선순위: ①아는 앱 이름 → ②출처는 있는데 모르는 앱이면 "연결된 앱" → ③출처 자체가 없으면 옛 폴백.
+ * ③은 **sourceApp이 생기기 전(2026-08-14 이전) 문서 전용**이다. 그 시절 기록은 실제로 갤럭시워치로
+ * 들어왔을 가능성이 높지만 확인할 방법이 없어 값을 지어내지 않고 표시만 유지한다(백필 안 함).
+ */
+export function runSourceLabel(source?: string, sourceApp?: string): string {
+  if (source === "gps") return "GPS 러닝";
+  if (source === "garmin") return "가민";
+  if (source === "healthconnect") {
+    return sourceAppName(sourceApp) ?? (sourceApp ? "연결된 앱" : "갤럭시워치");
+  }
+  return "직접 입력";
+}
+
 export type Run = {
   source: RunSource;
   sourceId?: string; // 멱등 upsert 키(워치/외부 소스 레코드 id)
+  /** 이 기록을 실제로 만든 앱의 패키지명(Health Connect `dataOrigin`). 예: `com.sec.android.app.shealth`.
+   *
+   *  ⚠️ **없으면 화면이 "갤럭시워치"로 폴백한다** — 그 폴백이 거짓말이 될 수 있어서 이 필드를 만들었다.
+   *  Health Connect로 들어오는 기록은 삼성헬스뿐 아니라 스트라바·나이키런 등 무엇이든 될 수 있는데,
+   *  지금까지 전부 "갤럭시워치"로 표시돼 왔다. **새 기록은 진짜 출처를 적는다.**
+   *  기존 문서는 백필하지 않는다(값을 모르는 것을 지어낼 수 없다) → 폴백을 그대로 쓴다. */
+  sourceApp?: string;
   kind?: RunKind; // 생략 = 'run'
   name: string;
   distanceKm: number;
@@ -137,6 +180,7 @@ export async function saveRun(run: Run): Promise<void> {
   if (run.avgHr) item.avgHr = Math.round(run.avgHr);
   if (run.cadence) item.cadence = Math.round(run.cadence);
   if (run.elevationGainM) item.elevationGainM = Math.round(run.elevationGainM);
+  if (run.sourceApp) item.sourceApp = run.sourceApp; // 없으면 아예 안 적는다(기존 문서와 같은 모양 유지)
 
   if (run.sourceId) {
     item.sourceId = run.sourceId;
@@ -148,7 +192,12 @@ export async function saveRun(run: Run): Promise<void> {
       //  ① 워치 거리가 달라짐(출처 레코드가 뒤늦게 도착) ② 걷기→달리기 종목 정정
       //  ③ GPS 저장이 서버엔 됐는데 클라만 타임아웃 → 더 긴 거리로 재시도.
       // rules는 distanceKm·kind 불변을 강제(남의 기록 조작 차단)라 위 경우 update가 영구 거부된다.
-      // → **내 것을 지우고 다시 만든다.** delete는 개방돼 있어 우회 가능하고, 최신 값이 정답이다.
+      // → **내 것을 지우고 다시 만든다.** 최신 값이 정답이다.
+      // ⚠️ S4(소유권 delete) 이후 이 delete도 무조건 통과하진 않는다 — uid 있는 문서는 소유자만
+      //    지울 수 있다. 정상 경로(같은 게스트 세션이 자기 워치 기록을 재동기화)는 uid가 그대로라
+      //    항상 통과한다. uid가 바뀌는 유일한 경우는 앱 재설치로 새 익명 계정이 발급될 때뿐이고,
+      //    그때는 delete가 거부돼 이 함수가 throw한다 — 호출부(healthconnect.ts)가 세션 단위로
+      //    감싸 조용히 실패 처리하므로 동기화 전체가 죽지는 않는다(2026-08-14 S4 조사).
       // (거부가 아닌 네트워크 오류면 delete도 실패할 테니 그대로 던져 상위에서 재시도된다.)
       if (isPermissionDenied(e)) {
         await remove(COLLECTIONS.runs, id);
