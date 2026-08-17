@@ -1,4 +1,5 @@
 /** 크루 — 방명록 피드 + 모임 참석 + 갤러리 (웹과 동일한 guestbook/attendance/gallery 컬렉션 공유). */
+import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +12,8 @@ import { ScheduleSection } from "@/components/schedule-section";
 import { PressableScale } from "@/components/ui/pressable-scale";
 import { Brand, FONT, Weight, Radius, Shadow, leading } from "@/lib/brand";
 import { add, fmtDate, isMine, remove, subscribe, update, type Row } from "@/lib/crew";
+import { isCrewOwner, subscribeCrew, updateCrewNotice, type CrewDoc } from "@/lib/crew-notice";
+import { myRole, subscribeMembers, type Member } from "@/lib/crew-roster";
 import { nextEvent, subscribeEvents, type EventDef } from "@/lib/events";
 import { COLLECTIONS, HAS_FIREBASE } from "@/lib/firebase";
 
@@ -22,13 +25,37 @@ export default function CrewScreen() {
   const [editText, setEditText] = useState("");
 
   const [events, setEvents] = useState<EventDef[]>([]);
+  const [crew, setCrew] = useState<CrewDoc | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [editingNotice, setEditingNotice] = useState(false);
+  const [noticeDraft, setNoticeDraft] = useState("");
+  const [savingNotice, setSavingNotice] = useState(false);
   const listRef = useRef<FlatList<Row>>(null);
   const scheduleY = useRef(0);
 
   useEffect(() => subscribe(COLLECTIONS.guestbook, setGuests), []);
   useEffect(() => subscribeEvents(setEvents), []);
+  useEffect(() => subscribeCrew(setCrew), []);
+  useEffect(() => subscribeMembers(setMembers), []);
 
   const nextEv = useMemo(() => nextEvent(events), [events]);
+  const canEditNotice = isCrewOwner(crew) || myRole(members) === "admin";
+
+  function startEditNotice() {
+    setNoticeDraft(crew?.notice ?? "");
+    setEditingNotice(true);
+  }
+  async function saveNotice() {
+    setSavingNotice(true);
+    try {
+      await updateCrewNotice(noticeDraft);
+      setEditingNotice(false);
+    } catch (e: any) {
+      Alert.alert("공지를 저장하지 못했어요", String(e?.message ?? e));
+    } finally {
+      setSavingNotice(false);
+    }
+  }
 
   /** 요약 칩 → 모임 섹션으로 스크롤. 칩이 "가짜 버튼"이면 안 되니 실제로 데려다 놓는다. */
   function scrollToSchedule() {
@@ -87,6 +114,84 @@ export default function CrewScreen() {
           </View>
         )}
 
+        {/* 크루 공지 — 크루장·관리자만 쓸 수 있고 전원이 본다(firestore.rules PHASE 2-C).
+            일반 크루원에겐 공지가 실제로 있을 때만 카드를 띄운다(빈 카드로 첫 뷰포트를 안 먹는다). */}
+        {crew && (crew.notice || canEditNotice) && (
+          <View style={styles.noticeCard}>
+            <View style={styles.noticeHead}>
+              <Icon name="bell" size={14} color={Brand.brandDeep} />
+              <Text style={styles.noticeLabel}>크루 공지</Text>
+            </View>
+            {editingNotice ? (
+              <View style={styles.editWrap}>
+                <TextInput
+                  style={styles.editInput}
+                  value={noticeDraft}
+                  onChangeText={setNoticeDraft}
+                  multiline
+                  maxLength={200}
+                  autoFocus
+                  placeholder="크루원에게 알릴 소식을 남겨보세요"
+                  placeholderTextColor={Brand.placeholder}
+                />
+                <View style={styles.editBtns}>
+                  <PressableScale
+                    style={styles.editCancel}
+                    onPress={() => setEditingNotice(false)}
+                    disabled={savingNotice}>
+                    <Text style={styles.editCancelText}>취소</Text>
+                  </PressableScale>
+                  <PressableScale style={styles.editSave} onPress={() => void saveNotice()} disabled={savingNotice}>
+                    <Text style={styles.editSaveText}>{savingNotice ? "저장 중…" : "저장"}</Text>
+                  </PressableScale>
+                </View>
+              </View>
+            ) : crew.notice ? (
+              <>
+                <Text style={styles.noticeText}>{crew.notice}</Text>
+                {canEditNotice && (
+                  <PressableScale onPress={startEditNotice} dim={false} hitSlop={6}>
+                    <Text style={styles.noticeEdit}>수정</Text>
+                  </PressableScale>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={styles.noticeEmptyText}>아직 크루 공지가 없어요.</Text>
+                <PressableScale onPress={startEditNotice} dim={false} hitSlop={6}>
+                  <Text style={styles.noticeEdit}>공지 남기기</Text>
+                </PressableScale>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* 크루 운영 MVP 진입점(PHASE 2-C) — 방명록·모임과 같은 무게로 두면 주 액션이
+            흐려져서(전역 규칙: 한 화면 솔리드 블루는 하나) 톤온톤 칩으로만 둔다. */}
+        <View style={styles.opsRow}>
+          <PressableScale
+            style={styles.opsChip}
+            onPress={() => router.push("/crew/attendance")}
+            dim={false}>
+            <Icon name="calendar" size={15} color={Brand.brandDeep} />
+            <Text style={styles.opsChipText}>출석 이력</Text>
+          </PressableScale>
+          <PressableScale
+            style={styles.opsChip}
+            onPress={() => router.push("/crew/invite")}
+            dim={false}>
+            <Icon name="share" size={15} color={Brand.brandDeep} />
+            <Text style={styles.opsChipText}>크루 초대</Text>
+          </PressableScale>
+          <PressableScale
+            style={styles.opsChip}
+            onPress={() => router.push("/crew/roles")}
+            dim={false}>
+            <Icon name="users" size={15} color={Brand.brandDeep} />
+            <Text style={styles.opsChipText}>크루 역할</Text>
+          </PressableScale>
+        </View>
+
         <NameField onName={setName} />
 
         {/* 사진을 맨 위로 올렸더니 크루 탭의 **실질 목적(참석 체크·모임 만들기)**이 스크롤
@@ -131,7 +236,7 @@ export default function CrewScreen() {
         <Text style={styles.listHint}>방명록 {guests.length}개</Text>
       </View>
     ),
-    [msg, name, guests.length, nextEv]
+    [msg, name, guests.length, nextEv, crew, canEditNotice, editingNotice, noticeDraft, savingNotice]
   );
 
   return (
@@ -212,6 +317,32 @@ const styles = StyleSheet.create({
     fontSize: 28, lineHeight: leading(28), fontWeight: Weight.bold, color: Brand.ink, letterSpacing: -0.4 },
   sub: { fontFamily: FONT,
     fontSize: 14, lineHeight: leading(14), color: Brand.soft },
+  // 크루 운영 진입점 — 톤온톤 칩(전역 규칙: 솔리드 블루는 주 액션 1개만).
+  // 크루 공지 — 정보 카드. 골드·솔리드 블루 대신 톤온톤(브랜드 라인 규칙: 공지는 성과가 아니다).
+  noticeCard: {
+    backgroundColor: Brand.brandSoft,
+    borderWidth: 1,
+    borderColor: Brand.brandLine,
+    borderRadius: Radius.card,
+    padding: 14,
+    gap: 6,
+  },
+  noticeHead: { flexDirection: "row", alignItems: "center", gap: 5 },
+  noticeLabel: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep },
+  noticeText: { fontFamily: FONT, fontSize: 14, lineHeight: leading(14), color: Brand.ink },
+  noticeEmptyText: { fontFamily: FONT, fontSize: 13, lineHeight: leading(13), color: Brand.soft },
+  noticeEdit: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep, marginTop: 2 },
+  opsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  opsChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Brand.brandSoft,
+    borderRadius: Radius.chip,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  opsChipText: { fontFamily: FONT, fontSize: 12.5, fontWeight: Weight.bold, color: Brand.brandDeep },
   // 모임 요약 칩 — 사진 아래로 밀린 참석 CTA를 첫 뷰포트로 끌어올린다.
   evChip: {
     flexDirection: "row",

@@ -20,6 +20,7 @@ import {
 import { ensureSignedIn, uid } from "./auth";
 import { demoRows } from "./demo";
 import { COLLECTIONS, CREW_ID, db, HAS_FIREBASE } from "./firebase";
+import { getMyName } from "./session";
 
 /**
  * 크루 멤버십 자동 부여 — PHASE 2(세션21). `ensureSignedIn()` 직후 앱 시작 시 한 번 호출한다.
@@ -45,12 +46,32 @@ export function ensureCrewMembership(): Promise<void> {
     try {
       const ref = doc(db, "crews", CREW_ID, "members", u);
       const snap = await getDoc(ref);
-      if (!snap.exists()) await setDoc(ref, { role: "member" });
+      if (!snap.exists()) {
+        // name은 이 시점(온보딩 전)엔 대개 비어 있다 — 있으면 심고, 없으면 아래 syncMyMembershipName이
+        // 러너 네임을 처음 정할 때 채운다(PHASE 2-C 세션23, 역할 화면의 이름 표시용).
+        const name = await getMyName();
+        await setDoc(ref, { role: "member", ...(name ? { name } : {}) });
+      }
     } catch (e) {
       console.warn("[crew] 멤버십 확인 실패 — 다음 실행에서 재시도", e);
     }
   })();
   return joinOnce;
+}
+
+/** 러너 네임이 바뀔 때 내 멤버십 문서(crews/{CREW_ID}/members/{uid})의 name도 맞춘다
+ *  (PHASE 2-C 세션23, `lib/identity.ts`의 `saveRunnerName`에서 호출) — 크루 역할 화면이
+ *  uid만으로는 사람을 못 보여주므로 이 필드로 이름을 표시한다. 실패해도 개명 자체는
+ *  막지 않는다(사진 이동 실패와 같은 원칙 — identity.ts 참고). */
+export async function syncMyMembershipName(name: string): Promise<void> {
+  if (!HAS_FIREBASE) return;
+  const u = uid();
+  if (!u) return;
+  try {
+    await setDoc(doc(db, "crews", CREW_ID, "members", u), { name: name.trim() }, { merge: true });
+  } catch (e) {
+    console.warn("[crew] 멤버십 이름 동기화 실패", e);
+  }
 }
 
 export type Row = Record<string, any> & { id: string; createdAt?: any };

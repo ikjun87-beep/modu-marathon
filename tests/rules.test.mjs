@@ -343,11 +343,71 @@ describe("크루 생성 (crews/{crewId} — PHASE 2 · CREW-GATE §3)", () => {
   });
 });
 
+describe("크루 공지 수정 (crews/{crewId}.notice — PHASE 2-C 세션23)", () => {
+  it("크루장의 공지 수정 — 통과", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/owner-uid", { role: "member" });
+    await assertSucceeds(
+      updateDoc(doc(authDb("owner-uid"), "crews/modu"), { notice: "이번 주 토요일 8시 한강" })
+    );
+  });
+
+  it("관리자(admin)의 공지 수정 — 통과", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/admin-uid", { role: "admin" });
+    await assertSucceeds(
+      updateDoc(doc(authDb("admin-uid"), "crews/modu"), { notice: "공지" })
+    );
+  });
+
+  it("일반 크루원의 공지 수정 — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertFails(
+      updateDoc(doc(authDb("member-uid"), "crews/modu"), { notice: "제가 마음대로" })
+    );
+  });
+
+  it("비회원의 공지 수정 — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await assertFails(
+      updateDoc(doc(authDb("stranger-uid"), "crews/modu"), { notice: "침입" })
+    );
+  });
+
+  it("공지 수정을 빙자한 ownerUid 재기입 — 거부 (소유권 이전은 이 경로로 불가)", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/owner-uid", { role: "member" });
+    await assertFails(
+      updateDoc(doc(authDb("owner-uid"), "crews/modu"), { notice: "합법적", ownerUid: "someone-else" })
+    );
+  });
+});
+
 describe("크루 멤버십 (crews/{crewId}/members — PHASE 2)", () => {
   it("본인 uid로 멤버 문서 생성 — 통과", async () => {
     await env.clearFirestore();
     await assertSucceeds(
       setDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid"), { role: "member" })
+    );
+  });
+
+  it("본인 uid로 이름 포함 생성 — 통과 (PHASE 2-C: 역할 화면 표시용)", async () => {
+    await env.clearFirestore();
+    await assertSucceeds(
+      setDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid"), { role: "member", name: "쫀쫀샷" })
+    );
+  });
+
+  it("자기 자신을 owner로 선언 — 거부 (PHASE 2-C: 진짜 크루장은 crews.ownerUid로만 판정)", async () => {
+    await env.clearFirestore();
+    await assertFails(
+      setDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid"), { role: "owner" })
     );
   });
 
@@ -392,6 +452,71 @@ describe("크루 멤버십 (crews/{crewId}/members — PHASE 2)", () => {
     await env.clearFirestore();
     await seed("crews/modu/members/victim-uid", { role: "member" });
     await assertFails(deleteDoc(doc(authDb("attacker-uid"), "crews/modu/members/victim-uid")));
+  });
+
+  it("본인 이름만 바꾸는 수정 — 통과 (러너 네임 변경 전파, PHASE 2-C)", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/my-uid", { role: "member", name: "옛이름" });
+    await assertSucceeds(
+      updateDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid"), { name: "새이름" })
+    );
+  });
+
+  it("본인이 스스로 role을 바꾸려는 수정 — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/my-uid", { role: "member" });
+    await assertFails(
+      updateDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid"), { role: "admin" })
+    );
+  });
+
+  it("크루장이 다른 멤버를 관리자로 승격 — 통과", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/owner-uid", { role: "member" });
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertSucceeds(
+      updateDoc(doc(authDb("owner-uid"), "crews/modu/members/member-uid"), { role: "admin" })
+    );
+  });
+
+  it("크루장이 관리자를 다시 일반 멤버로 강등 — 통과", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/owner-uid", { role: "member" });
+    await seed("crews/modu/members/admin-uid", { role: "admin" });
+    await assertSucceeds(
+      updateDoc(doc(authDb("owner-uid"), "crews/modu/members/admin-uid"), { role: "member" })
+    );
+  });
+
+  it("크루장이 아닌 사람의 역할 승격 시도 — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/attacker-uid", { role: "member" });
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertFails(
+      updateDoc(doc(authDb("attacker-uid"), "crews/modu/members/member-uid"), { role: "admin" })
+    );
+  });
+
+  it("크루장 자신의 role은 이 경로로 못 바꾼다 — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/owner-uid", { role: "member" });
+    await assertFails(
+      updateDoc(doc(authDb("owner-uid"), "crews/modu/members/owner-uid"), { role: "admin" })
+    );
+  });
+
+  it("role:owner인 레거시 문서는 크루장도 못 건드린다 — 거부 (마이그레이션 유령 문서 보호)", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await seed("crews/modu/members/owner-uid", { role: "member" });
+    await seed("crews/modu/members/ghost-uid", { role: "owner" });
+    await assertFails(
+      updateDoc(doc(authDb("owner-uid"), "crews/modu/members/ghost-uid"), { role: "member" })
+    );
   });
 });
 
@@ -518,10 +643,18 @@ describe("초대 코드 (invites/{code} — PHASE 2 · CREW-GATE.md §1)", () =>
     await assertFails(setDoc(doc(db(), "invites/NEWCODE1"), { crewId: "modu", revoked: false }));
   });
 
-  it("인증된 사용자의 정상 생성 — 통과", async () => {
+  it("크루 멤버의 정상 생성 — 통과 (PHASE 2-C: 발급은 크루원 누구나)", async () => {
     await env.clearFirestore();
+    await seed("crews/modu/members/owner-uid", { role: "member" });
     await assertSucceeds(
       setDoc(doc(authDb("owner-uid"), "invites/NEWCODE1"), { crewId: "modu", revoked: false })
+    );
+  });
+
+  it("크루 멤버가 아니면 초대 코드 생성 거부 (PHASE 2-C: 남의 크루 코드를 못 판다)", async () => {
+    await env.clearFirestore();
+    await assertFails(
+      setDoc(doc(authDb("outsider-uid"), "invites/NEWCODE1"), { crewId: "modu", revoked: false })
     );
   });
 

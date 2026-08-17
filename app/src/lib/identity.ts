@@ -10,7 +10,7 @@
  *  전파하지 않으면 이름을 바꾼 순간 과거 기록이 "남의 것"이 되어 통계·배지에서도 빠진다.
  */
 import { updateAccountName } from "./auth";
-import { renameAuthor } from "./crew";
+import { renameAuthor, syncMyMembershipName } from "./crew";
 import { movePhotoOnRename } from "./profile-photo";
 import { setMyName } from "./session";
 
@@ -27,6 +27,7 @@ export async function saveRunnerName(prevName: string, nextName: string): Promis
   const changed = await renameAuthor(prevName, next); // 실패하면 여기서 던짐 → 아래 안 실행
   await setMyName(next);
   await updateAccountName(next);
+  void syncMyMembershipName(next); // 크루 역할 화면 표시용 — 실패해도 개명을 막지 않는다(아래와 같은 원칙)
   // 프로필 사진 문서는 id가 러너 네임이라 **따로 옮겨야** 한다(2026-07-31 공유 저장 전환).
   // 실패해도 개명 자체는 이미 성공했으므로 되돌리지 않는다 — 사진만 마스코트로 보일 뿐이고,
   // 사용자가 다시 넣으면 새 이름으로 저장된다. 여기서 던지면 개명이 실패한 것처럼 보인다.
