@@ -137,7 +137,7 @@ export default function RunScreen() {
     }
     if (!HC_SUPPORTED) {
       Alert.alert(
-        "갤럭시워치 연동",
+        "워치 연동",
         "워치 자동 연동은 안드로이드 실기기(dev build)에서 열려요. 폰에 Health Connect 설치 + 삼성헬스 동기화가 필요합니다."
       );
       return;
@@ -156,7 +156,7 @@ export default function RunScreen() {
     // 이 문구도 **실제 동작 그대로** 수동=달리기+걷기 / 자동=달리기만이라고 적는다.
     Alert.alert(
       "워치 기록 불러오기 동의",
-      "갤럭시워치 기록을 불러옵니다.\n\n" +
+      "워치 기록을 불러옵니다.\n\n" +
         "• 지금 누른 이 버튼은 오늘의 달리기와 걷기를 함께 불러옵니다.\n" +
         "• 심박 등 건강정보(민감정보)를 함께 저장하려면 별도 동의가 필요해요. 동의하지 않아도 거리·시간·페이스는 불러올 수 있어요.\n" +
         "• 앞으로 앱을 열 때는 오늘의 달리기만 자동으로 불러옵니다(최소 30분 간격). 걷기는 자동으로 불러오지 않아요.\n" +
@@ -255,7 +255,7 @@ export default function RunScreen() {
         </View>
         {!HC_SUPPORTED && (
           <Text style={styles.watchHint}>
-            갤럭시워치 자동 연동은 안드로이드 dev build에서 열려요.
+            워치 자동 연동은 안드로이드 dev build에서 열려요.
           </Text>
         )}
 

@@ -6,6 +6,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -19,6 +20,38 @@ import {
 import { ensureSignedIn, uid } from "./auth";
 import { demoRows } from "./demo";
 import { COLLECTIONS, CREW_ID, db, HAS_FIREBASE } from "./firebase";
+
+/**
+ * 크루 멤버십 자동 부여 — PHASE 2(세션21). `ensureSignedIn()` 직후 앱 시작 시 한 번 호출한다.
+ *
+ * 왜 필요한가: `crews/{CREW_ID}/{runs,comments,claps,profiles}`는 `isMember(crewId)` 규칙으로
+ * 가려져 있다. 기존 사용자는 초대 코드를 입력한 적이 없어 멤버십 문서가 없다 — 이대로면 이번
+ * 업데이트 이후 전원이 자기 러닝 기록을 못 읽는 회귀가 생긴다. `CREW_ID`가 정적 상수인 동안은
+ * (1인 1크루 MVP) 로그인 직후 자동으로 자기 멤버십을 만들어 이 회귀를 막는다. 진짜 초대 코드
+ * 검증이 필요한 두 번째 크루(PHASE 4)가 생기면 이 자동가입은 유일한 크루로의 이행 편의로만
+ * 남는다 — 그때 가입 UI는 별도 검증을 거치게 된다.
+ *
+ * 실패는 삼킨다(로그인과 같은 원칙) — 멤버십 생성이 막혀도 앱이 죽으면 안 된다. 이미 멤버면
+ * 아무 것도 안 한다.
+ */
+let joinOnce: Promise<void> | null = null;
+export function ensureCrewMembership(): Promise<void> {
+  if (joinOnce) return joinOnce;
+  joinOnce = (async () => {
+    if (!HAS_FIREBASE) return;
+    await ensureSignedIn();
+    const u = uid();
+    if (!u) return;
+    try {
+      const ref = doc(db, "crews", CREW_ID, "members", u);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) await setDoc(ref, { role: "member" });
+    } catch (e) {
+      console.warn("[crew] 멤버십 확인 실패 — 다음 실행에서 재시도", e);
+    }
+  })();
+  return joinOnce;
+}
 
 export type Row = Record<string, any> & { id: string; createdAt?: any };
 

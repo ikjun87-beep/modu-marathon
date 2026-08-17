@@ -22,7 +22,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 
 const PORT = Number(process.env.FIRESTORE_EMULATOR_PORT ?? 8085);
 
@@ -159,12 +159,13 @@ describe("러닝 기록 조작 차단 (runs.update — 리더보드·통계 오�
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ③ 소유권 delete (S4 · 2026-08-14) — "격리보다 소유가 먼저다"의 delete 축.
-//    대상은 UI에 삭제 버튼이 있는 세 컬렉션(runs·guestbook·gallery)뿐 — 나머지
-//    (attendance·claps·comments·events·profiles)는 이번 라운드 범위 밖이라 그대로 `if true`.
+// ③ 소유권 delete (S4 2026-08-14 · runs/guestbook/gallery + 세션16 2026-08-15 확장 ·
+//    attendance/claps/comments/profiles/events) — "격리보다 소유가 먼저다"의 delete 축.
+//    8개 컬렉션 전부 uid 있으면 소유자만, 없으면(레거시) 유예. comments·events는 앱에
+//    삭제 UI 자체가 없어 이 rules 변경의 UI 회귀 위험이 0이다(세션16 조사로 확인).
 // ─────────────────────────────────────────────────────────────────────────────
-describe("소유권 delete (S4 · uid 있으면 소유자만, 없으면 유예)", () => {
-  const OWNED = ["runs", "guestbook", "gallery"];
+describe("소유권 delete (uid 있으면 소유자만, 없으면 유예)", () => {
+  const OWNED = ["runs", "guestbook", "gallery", "attendance", "claps", "comments", "events", "profiles"];
 
   for (const col of OWNED) {
     it(`${col} — uid 있는 남의 문서는 delete 거부`, async () => {
@@ -284,6 +285,266 @@ describe("모임 일정 (events)", () => {
     await assertSucceeds(
       setDoc(doc(db(), "events/e1"), { title: "한강 이지런", desc: "5km", startAt: 1_800_000_000_000 })
     );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ④ PHASE 2 — 크루 서브컬렉션 격리 (docs/TIERS.md B안). 세션19 조사로 A안 대신 확정.
+//    crews/{crewId}, crews/{crewId}/members/{uid}, crews/{crewId}/{col}/{id}, invites/{code}.
+//    아직 firestore.rules에 이 구조가 없다 — 이 블록은 RED로 시작해야 정상이다.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("크루 생성 (crews/{crewId} — PHASE 2 · CREW-GATE §3)", () => {
+  it("미인증 사용자는 크루를 못 만든다", async () => {
+    await env.clearFirestore();
+    await assertFails(setDoc(doc(db(), "crews/newcrew"), { ownerUid: "x", name: "새크루" }));
+  });
+
+  it("남의 uid를 ownerUid로 사칭 — 거부", async () => {
+    await env.clearFirestore();
+    await assertFails(
+      setDoc(doc(authDb("owner-uid"), "crews/newcrew"), { ownerUid: "other-uid", name: "새크루" })
+    );
+  });
+
+  it("crewOwners.count가 3 이상이면 생성 거부 (상한)", async () => {
+    await env.clearFirestore();
+    await seed("crewOwners/owner-uid", { count: 3 });
+    await assertFails(
+      setDoc(doc(authDb("owner-uid"), "crews/fourthcrew"), { ownerUid: "owner-uid", name: "네번째" })
+    );
+  });
+
+  it("정상 생성 — 통과 (crewOwners count 1)", async () => {
+    await env.clearFirestore();
+    await seed("crewOwners/owner-uid", { count: 1 });
+    await assertSucceeds(
+      setDoc(doc(authDb("owner-uid"), "crews/newcrew"), { ownerUid: "owner-uid", name: "새크루" })
+    );
+  });
+
+  it("20자 초과 크루 이름 — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crewOwners/owner-uid", { count: 1 });
+    await assertFails(
+      setDoc(doc(authDb("owner-uid"), "crews/newcrew"), { ownerUid: "owner-uid", name: "가".repeat(21) })
+    );
+  });
+
+  it("비회원은 크루 문서를 get 못한다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await assertFails(getDoc(doc(authDb("stranger-uid"), "crews/modu")));
+  });
+
+  it("크루 목록 list는 항상 거부 (열거 금지)", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu", { ownerUid: "owner-uid", name: "모두" });
+    await assertFails(getDocs(collection(authDb("owner-uid"), "crews")));
+  });
+});
+
+describe("크루 멤버십 (crews/{crewId}/members — PHASE 2)", () => {
+  it("본인 uid로 멤버 문서 생성 — 통과", async () => {
+    await env.clearFirestore();
+    await assertSucceeds(
+      setDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid"), { role: "member" })
+    );
+  });
+
+  it("남의 uid로 멤버 문서 생성 — 거부 (초대코드 검증은 앱이 선행, rules는 uid 일치만 봄)", async () => {
+    await env.clearFirestore();
+    await assertFails(
+      setDoc(doc(authDb("my-uid"), "crews/modu/members/other-uid"), { role: "member" })
+    );
+  });
+
+  it("비회원은 멤버 목록을 read 못한다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/owner-uid", { role: "owner" });
+    await assertFails(getDoc(doc(authDb("stranger-uid"), "crews/modu/members/owner-uid")));
+  });
+
+  it("회원은 멤버 문서를 read할 수 있다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/owner-uid", { role: "owner" });
+    await seed("crews/modu/members/my-uid", { role: "member" });
+    await assertSucceeds(getDoc(doc(authDb("my-uid"), "crews/modu/members/owner-uid")));
+  });
+
+  it("아직 멤버가 아니어도 자기 자신의 멤버십 문서는 get할 수 있다 (세션22 부트스트랩 버그 수정)", async () => {
+    await env.clearFirestore();
+    // 문서가 아직 없는 상태 — ensureCrewMembership()이 "내가 멤버인지" 확인하는 바로 그 시나리오.
+    await assertSucceeds(getDoc(doc(authDb("new-uid"), "crews/modu/members/new-uid")));
+  });
+
+  it("남의(존재하지 않는) 멤버십 문서는 여전히 못 읽는다", async () => {
+    await env.clearFirestore();
+    await assertFails(getDoc(doc(authDb("stranger-uid"), "crews/modu/members/someone-else-uid")));
+  });
+
+  it("본인 탈퇴(delete) — 통과", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/my-uid", { role: "member" });
+    await assertSucceeds(deleteDoc(doc(authDb("my-uid"), "crews/modu/members/my-uid")));
+  });
+
+  it("남의 멤버십 삭제(강퇴 흉내) — 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/victim-uid", { role: "member" });
+    await assertFails(deleteDoc(doc(authDb("attacker-uid"), "crews/modu/members/victim-uid")));
+  });
+});
+
+// 세션21 — 격리 대상은 앱 전용 4개(runs·comments·claps·profiles)뿐이다. guestbook·gallery·
+// attendance·events는 웹이 직접 구독·작성해서(grep 전수 확인) root에 남겨뒀고, crews/{crewId}
+// 아래엔 이 4개의 서브컬렉션 자체가 없다 — 그래서 이 describe는 runs·comments·claps·profiles로
+// 대표 검증한다.
+describe("크루 서브컬렉션 격리 (crews/{crewId}/{runs,comments,claps,profiles} — PHASE 2)", () => {
+  it("비회원은 크루의 runs를 read 못한다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/runs/r1", { name: "홍길동", distanceKm: 5, uid: "member-uid" });
+    await assertFails(getDoc(doc(authDb("stranger-uid"), "crews/modu/runs/r1")));
+  });
+
+  it("크루 회원은 크루의 runs를 read할 수 있다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await seed("crews/modu/runs/r1", { name: "홍길동", distanceKm: 5, uid: "member-uid" });
+    await assertSucceeds(getDoc(doc(authDb("member-uid"), "crews/modu/runs/r1")));
+  });
+
+  it("다른 크루 회원은 이 크루의 runs를 못 읽는다 (크루 간 격리)", async () => {
+    await env.clearFirestore();
+    await seed("crews/other/members/other-member-uid", { role: "member" });
+    await seed("crews/modu/runs/r1", { name: "홍길동", distanceKm: 5, uid: "member-uid" });
+    await assertFails(getDoc(doc(authDb("other-member-uid"), "crews/modu/runs/r1")));
+  });
+
+  it("비회원은 크루 runs에 쓰기 못한다", async () => {
+    await env.clearFirestore();
+    await assertFails(
+      setDoc(doc(authDb("stranger-uid"), "crews/modu/runs/r2"), { name: "낯선이", distanceKm: 3 })
+    );
+  });
+
+  it("회원 create — 기존 runs 검증 규칙(거리 범위)이 그대로 재사용된다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertFails(
+      setDoc(doc(authDb("member-uid"), "crews/modu/runs/huge"), { name: "홍길동", distanceKm: 501 })
+    );
+    await assertSucceeds(
+      setDoc(doc(authDb("member-uid"), "crews/modu/runs/ok"), { name: "홍길동", distanceKm: 5 })
+    );
+  });
+
+  it("crews 서브컬렉션에서도 소유권 delete(isOwnerOrLegacy)가 유지된다 (profiles)", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await seed("crews/modu/members/owner-of-doc", { role: "member" });
+    await seed("crews/modu/profiles/홍길동", { name: "홍길동", photo: PNG, uid: "owner-of-doc" });
+    await assertFails(deleteDoc(doc(authDb("member-uid"), "crews/modu/profiles/홍길동")));
+    await assertSucceeds(deleteDoc(doc(authDb("owner-of-doc"), "crews/modu/profiles/홍길동")));
+  });
+
+  it("profiles 저장형 XSS 게이트도 크루 서브컬렉션에서 그대로 적용된다", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertFails(
+      setDoc(doc(authDb("member-uid"), "crews/modu/profiles/공격자"), {
+        name: "공격자",
+        photo: "data:text/html,<script>x</script>",
+      })
+    );
+  });
+
+  it("claps — 회원 create 통과, 비회원 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertSucceeds(
+      setDoc(doc(authDb("member-uid"), "crews/modu/claps/c1"), { name: "홍길동", targetId: "r1" })
+    );
+    await assertFails(
+      setDoc(doc(authDb("stranger-uid"), "crews/modu/claps/c2"), { name: "낯선이", targetId: "r1" })
+    );
+  });
+
+  it("comments — parentId 없는 생성은 크루 서브컬렉션에서도 거부", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertFails(
+      setDoc(doc(authDb("member-uid"), "crews/modu/comments/cm1"), { name: "홍길동", msg: "축하해요" })
+    );
+    await assertSucceeds(
+      setDoc(doc(authDb("member-uid"), "crews/modu/comments/cm2"), {
+        parentId: "r1",
+        name: "홍길동",
+        msg: "축하해요",
+      })
+    );
+  });
+
+  it("guestbook·gallery·attendance·events는 crews/{crewId} 아래에 서브컬렉션이 없다 (root 전용 유지)", async () => {
+    await env.clearFirestore();
+    await seed("crews/modu/members/member-uid", { role: "member" });
+    await assertFails(
+      setDoc(doc(authDb("member-uid"), "crews/modu/guestbook/g1"), { name: "홍길동", msg: "안녕" })
+    );
+    await assertFails(
+      setDoc(doc(authDb("member-uid"), "crews/modu/events/e1"), {
+        title: "모임",
+        desc: "설명",
+        startAt: 1_800_000_000_000,
+      })
+    );
+  });
+});
+
+describe("초대 코드 (invites/{code} — PHASE 2 · CREW-GATE.md §1)", () => {
+  it("코드를 아는 사람의 get — 통과", async () => {
+    await env.clearFirestore();
+    await seed("invites/ABCD1234", { crewId: "modu", revoked: false });
+    await assertSucceeds(getDoc(doc(db(), "invites/ABCD1234")));
+  });
+
+  it("코드 목록 list — 항상 거부 (열거 자체 차단)", async () => {
+    await env.clearFirestore();
+    await seed("invites/ABCD1234", { crewId: "modu", revoked: false });
+    await assertFails(getDocs(collection(db(), "invites")));
+  });
+
+  it("미인증 사용자는 초대 코드를 못 만든다", async () => {
+    await env.clearFirestore();
+    await assertFails(setDoc(doc(db(), "invites/NEWCODE1"), { crewId: "modu", revoked: false }));
+  });
+
+  it("인증된 사용자의 정상 생성 — 통과", async () => {
+    await env.clearFirestore();
+    await assertSucceeds(
+      setDoc(doc(authDb("owner-uid"), "invites/NEWCODE1"), { crewId: "modu", revoked: false })
+    );
+  });
+
+  it("revoked만 바꾸는 회수 — 통과", async () => {
+    await env.clearFirestore();
+    await seed("invites/ABCD1234", { crewId: "modu", revoked: false });
+    await assertSucceeds(
+      updateDoc(doc(authDb("owner-uid"), "invites/ABCD1234"), { revoked: true })
+    );
+  });
+
+  it("crewId를 바꿔치기하는 수정 — 거부 (코드 탈취 방지)", async () => {
+    await env.clearFirestore();
+    await seed("invites/ABCD1234", { crewId: "modu", revoked: false });
+    await assertFails(
+      updateDoc(doc(authDb("attacker-uid"), "invites/ABCD1234"), { crewId: "other-crew" })
+    );
+  });
+
+  it("삭제는 항상 거부 (회수는 revoked 플래그로만)", async () => {
+    await env.clearFirestore();
+    await seed("invites/ABCD1234", { crewId: "modu", revoked: false });
+    await assertFails(deleteDoc(doc(authDb("owner-uid"), "invites/ABCD1234")));
   });
 });
 

@@ -22,39 +22,170 @@ service cloud.firestore {
       return !('uid' in resource.data) || resource.data.uid == request.auth.uid;
     }
 
+    // ── PHASE 2 크루 격리(세션19~20) — docs/TIERS.md B안(서브컬렉션) 확정 ─────
+    // 각 컬렉션의 create/update 검증을 함수로 뽑아 루트 블록과 crews/{crewId}/{col} 블록이
+    // **같은 함수를 공유**한다 — 두 곳에 같은 규칙을 복붙하면 언젠가 한쪽만 고치고 갈린다.
+    function isMember(crewId) {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/crews/$(crewId)/members/$(request.auth.uid));
+    }
+    function guestbookCreateOk() {
+      return request.resource.data.name is string && request.resource.data.name.size() <= 20
+          && request.resource.data.msg is string && request.resource.data.msg.size() <= 200;
+    }
+    function guestbookUpdateOk() {
+      return isRenameOnly()
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['msg'])
+              && request.resource.data.msg is string && request.resource.data.msg.size() <= 200);
+    }
+    function galleryCreateOk() {
+      return request.resource.data.image is string
+          && request.resource.data.image.size() < 1000000
+          && request.resource.data.image.matches('data:image/.*');
+    }
+    function attendanceCreateOk() {
+      return request.resource.data.name is string && request.resource.data.name.size() <= 40;
+    }
+    function clapsCreateOk() {
+      return request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.targetId is string && request.resource.data.targetId.size() <= 200;
+    }
+    function profilesWriteOk() {
+      return request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.photo is string && request.resource.data.photo.size() <= 200000
+          && request.resource.data.photo.matches('data:image/.*');
+    }
+    function runsCreateOk() {
+      return request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.distanceKm is number
+          && request.resource.data.distanceKm >= 0 && request.resource.data.distanceKm <= 500;
+    }
+    function runsUpdateOk() {
+      return request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.distanceKm is number
+          && request.resource.data.distanceKm == resource.data.distanceKm
+          && request.resource.data.get('durationSec', 0) == resource.data.get('durationSec', 0)
+          && request.resource.data.get('kind', 'run') == resource.data.get('kind', 'run');
+    }
+    function commentsCreateOk() {
+      return request.resource.data.parentId is string
+          && request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.msg is string && request.resource.data.msg.size() <= 200;
+    }
+    function eventsCreateOk() {
+      return request.resource.data.title is string && request.resource.data.title.size() <= 40
+          && request.resource.data.desc is string && request.resource.data.desc.size() <= 200
+          && request.resource.data.startAt is number && request.resource.data.startAt > 0;
+    }
+
+    // 크루 생성 상한(CREW-GATE.md §3) — get()은 이 경로 1회만 쓴다(10회 상한에 여유를 남긴다).
+    match /crewOwners/{uid} {
+      allow get: if true;
+      allow create: if request.auth != null && request.auth.uid == uid && request.resource.data.count == 1;
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.count == resource.data.count + 1
+                    && request.resource.data.count <= 3;
+      allow delete: if false;
+    }
+
+    // 초대 코드(CREW-GATE.md §1) — read를 get/list로 쪼갠 게 핵심. list를 막아야 8자 코드가
+    // "열거 불가능한 모양"이 된다. 크루 문서 안에 코드를 넣지 않는 이유도 같다(크루 목록을
+    // 읽을 수 있는 순간 코드가 딸려 나온다 — 그래서 crews도 list: if false).
+    match /invites/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null
+                    && request.resource.data.crewId is string
+                    && request.resource.data.revoked == false;
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['revoked'])
+                    && request.resource.data.revoked == true;   // 회수만 허용, crewId 재기입 차단
+      allow delete: if false;   // 지우지 않고 revoked로 표시 — 누가 언제 발급했는지 남긴다
+    }
+
+    match /crews/{crewId} {
+      allow get: if isMember(crewId);
+      allow list: if false;   // 크루 열거 금지 — 초대 코드와 같은 원리
+      allow create: if request.auth != null
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() <= 20
+                    && get(/databases/$(database)/documents/crewOwners/$(request.auth.uid)).data.count < 3;
+      // 공지(notice) 수정만 — 소유자 본인. 그 외 필드(ownerUid·name)는 불변.
+      allow update: if isMember(crewId) && resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notice'])
+                    && request.resource.data.notice is string
+                    && request.resource.data.notice.size() <= 200;
+
+      match /members/{uid} {
+        // 세션22 실기기 실증 — 자기 자신의 멤버십 문서는 **아직 멤버가 아니어도** get할 수 있어야
+        // 한다. isMember(crewId)만으로 가뒀더니 "내가 멤버인지 확인하는 것 자체"가 막히는
+        // 닭-달걀 버그였다(crew.ts의 ensureCrewMembership()이 실기기에서 permission-denied로
+        // 매번 실패 — logcat으로 확인). 남의 문서를 훑어보는 건 여전히 isMember 게이트 그대로다.
+        allow read: if isMember(crewId) || (request.auth != null && request.auth.uid == uid);
+        allow create: if request.auth != null && request.auth.uid == uid
+                      && request.resource.data.role in ['owner', 'member'];
+        allow update: if false;   // 역할 변경은 PHASE 2 범위 밖(승격 UI 없음) — 재가입(delete+create)으로 대체
+        allow delete: if request.auth != null && request.auth.uid == uid;   // 탈퇴만, 강퇴는 없음
+      }
+
+      // 세션21 — guestbook·gallery·attendance·events는 여기 없다. 웹(web/index.html)이
+      // 이 4개를 직접 구독·작성하는데(grep으로 전수 확인, 웹은 runs·comments·claps·profiles를
+      // 한 번도 안 건드림) 크루로 격리하면 웹·앱 동기화가 끊긴다. 그래서 이 4개는 **root에
+      // 그대로 두고 크루별로 쪼개지 않는다** — "웹 커뮤니티 쇼케이스"가 본질이라 격리 대상이
+      // 아니다. 다중 크루(PHASE 4)가 실제로 붙어 "웹이 크루를 골라서 본다" UX가 생기기 전까진
+      // 이 경계를 유지한다. 크루 격리 대상은 앱 전용 4개(runs·comments·claps·profiles)뿐이다.
+      match /claps/{id} {
+        allow read: if isMember(crewId);
+        allow create: if isMember(crewId) && clapsCreateOk();
+        allow update: if isMember(crewId) && isRenameOnly();
+        allow delete: if isMember(crewId) && isOwnerOrLegacy();
+      }
+      match /profiles/{id} {
+        allow read: if isMember(crewId);
+        allow create, update: if isMember(crewId) && profilesWriteOk();
+        allow delete: if isMember(crewId) && isOwnerOrLegacy();
+      }
+      match /runs/{id} {
+        allow read: if isMember(crewId);
+        allow create: if isMember(crewId) && runsCreateOk();
+        allow update: if isMember(crewId) && runsUpdateOk();
+        allow delete: if isMember(crewId) && isOwnerOrLegacy();
+      }
+      match /comments/{id} {
+        allow read: if isMember(crewId);
+        allow create: if isMember(crewId) && commentsCreateOk();
+        allow update: if isMember(crewId) && isRenameOnly();
+        allow delete: if isMember(crewId) && isOwnerOrLegacy();
+      }
+    }
+
     // 친목용: 누구나 읽기. 생성은 타입·크기 검증으로 도배/오염 방지.
-    // ⚠ 인증(Firebase Auth) 도입 전까지 delete는 소유 검증이 불가능하다.
-    //    delete 버튼(방명록·갤러리·참석취소·러닝)을 살리려면 전면 허용이 유일한 방법이므로,
-    //    비정상 클라이언트(REST 스크립트 등)의 대량삭제·도배는 App Check(Play Integrity/reCAPTCHA)로 차단하는 것을 전제로 한다.
-    //    (P5 자문 게이트: 곽재원·천도윤 공통 권고 — Auth 도입 시 소유 기반 delete로 교체)
+    // ⚠ S1(2026-08-14)로 익명 인증이 붙었고 S4·세션16으로 delete는 uid 있는 문서에 한해
+    //    isOwnerOrLegacy()로 소유자 본인만 가능하다(위 주석 참조). uid 없는 레거시 문서만
+    //    예외로 계속 전면 허용이다(자연 소멸 대상, 백필하지 않음).
+    //    비정상 클라이언트(REST 스크립트 등)의 대량삭제·도배는 App Check(Play Integrity/reCAPTCHA)로도 막는 것을 전제로 한다.
+    //    (P5 자문 게이트: 곽재원·천도윤 공통 권고)
     match /guestbook/{id} {
       allow read: if true;
-      allow create: if request.resource.data.name is string
-                    && request.resource.data.name.size() <= 20
-                    && request.resource.data.msg is string
-                    && request.resource.data.msg.size() <= 200;
       // 본인 글 수정(msg만) 또는 러너 네임 전파(name만)로 한정.
-      // → 임의 필드 주입·용량 부풀리기(생성 제한 우회)를 차단(diff().hasOnly).
-      allow update: if isRenameOnly()
-                    || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['msg'])
-                        && request.resource.data.msg is string
-                        && request.resource.data.msg.size() <= 200);
+      // → 임의 필드 주입·용량 부풀리기(생성 제한 우회)를 차단(diff().hasOnly). 검증 함수는 위(PHASE 2)에서
+      // crews/{crewId}/guestbook과 공유한다.
+      allow create: if guestbookCreateOk();
+      allow update: if guestbookUpdateOk();
       allow delete: if isOwnerOrLegacy();   // S4 — 삭제 버튼(crew.tsx)이 mine 가드와 짝을 이룬다
     }
     match /gallery/{id} {
       allow read: if true;
-      allow create: if request.resource.data.image is string
-                    && request.resource.data.image.size() < 1000000
-                    && request.resource.data.image.matches('data:image/.*'); // 실제 이미지 data URI만 — src="" XSS 주입 차단
+      allow create: if galleryCreateOk(); // 실제 이미지 data URI만 — src="" XSS 주입 차단
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
       allow delete: if isOwnerOrLegacy();   // S4 — long-press 삭제(gallery-section.tsx)가 mine 가드와 짝을 이룬다
     }
     match /attendance/{id} {
       allow read: if true;
-      allow create: if request.resource.data.name is string
-                    && request.resource.data.name.size() <= 40;
+      allow create: if attendanceCreateOk();
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
-      allow delete: if true;   // 참석 취소 토글(remove)
+      allow delete: if isOwnerOrLegacy();   // 세션16 — S4 범위 확장. UI(schedule-section.tsx)가 이미 본인 참석만 remove하므로 UI 변경 없음.
     }
     // 👏 박수 — Strava kudos의 따뜻한 대안(docs/DESIGN.md 기획분, 2026-07-28 구현).
     // 참석(attendance)과 완전히 같은 토글 구조라 규칙도 같은 모양으로 둔다:
@@ -62,12 +193,9 @@ service cloud.firestore {
     // targetId는 러닝·갤러리 등 대상 문서의 id — 어디에나 붙을 수 있게 컬렉션을 하나로 둔다.
     match /claps/{id} {
       allow read: if true;
-      allow create: if request.resource.data.name is string
-                    && request.resource.data.name.size() <= 40
-                    && request.resource.data.targetId is string
-                    && request.resource.data.targetId.size() <= 200;
+      allow create: if clapsCreateOk();
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
-      allow delete: if true;   // 박수 취소 토글
+      allow delete: if isOwnerOrLegacy();   // 세션16 — S4 범위 확장. UI(clap-button.tsx)가 이미 본인 박수만 remove하므로 UI 변경 없음.
     }
     // 프로필 사진 — 크루원끼리 서로 얼굴을 보기 위한 컬렉션(2026-07-31 회장 결정 · L3).
     //
@@ -80,22 +208,14 @@ service cloud.firestore {
     // 갤러리와 같은 data:image 게이트로 스크립트 URI 주입도 막는다(2026-07-15 저장형 XSS 대응).
     match /profiles/{id} {
       allow read: if true;
-      allow create, update: if request.resource.data.name is string
-                    && request.resource.data.name.size() <= 40
-                    && request.resource.data.photo is string
-                    && request.resource.data.photo.size() <= 200000
-                    && request.resource.data.photo.matches('data:image/.*');
-      allow delete: if true;   // 언제든 사진 빼기
+      allow create, update: if profilesWriteOk();
+      allow delete: if isOwnerOrLegacy();   // 세션16 — S4 범위 확장. UI(profile-photo.ts)가 이미 본인 사진만 remove하므로 UI 변경 없음.
     }
     // 러닝 기록(웹·앱·워치 공용). 결정적 id로 멱등 upsert(create+update=merge).
     // distanceKm 범위 검증으로 today 합산·리더보드 통계 오염 방지(천도윤 #4).
     match /runs/{id} {
       allow read: if true;
-      allow create: if request.resource.data.name is string
-                    && request.resource.data.name.size() <= 40
-                    && request.resource.data.distanceKm is number
-                    && request.resource.data.distanceKm >= 0
-                    && request.resource.data.distanceKm <= 500;
+      allow create: if runsCreateOk();
       // 기존 기록 update는 **distanceKm·kind 변경 금지** → 남의 기록을 0으로 지우거나 부풀려
       // today 합산·리더보드를 오염시키는 공격 차단. kind를 막는 이유: 남의 러닝에 'walk'를 심으면
       // 랭킹·배지 집계(lib/stats는 걷기를 뺀다)에서 그 사람을 통째로 지워버릴 수 있다.
@@ -107,12 +227,7 @@ service cloud.firestore {
       // 기반이라, 남의 러닝 durationSec을 1로 바꾸면 그 사람 평균 페이스가 괴물이 되고 크루 통계가
       // 오염된다(distanceKm만 막아 절반만 방어했던 셈). 정상 경로(멱등 재저장·개명 전파)는 duration을
       // 안 바꾸므로 통과. **거리·시간·종목이 실제로 달라지는 재동기화는 delete→재생성으로 우회**(run.ts).
-      allow update: if request.resource.data.name is string
-                    && request.resource.data.name.size() <= 40
-                    && request.resource.data.distanceKm is number
-                    && request.resource.data.distanceKm == resource.data.distanceKm
-                    && request.resource.data.get('durationSec', 0) == resource.data.get('durationSec', 0)
-                    && request.resource.data.get('kind', 'run') == resource.data.get('kind', 'run');
+      allow update: if runsUpdateOk();
       // S4 — 삭제 버튼(explore/run/[id].tsx)이 mine 가드와 짝을 이룬다.
       // ⚠️ run.ts의 delete→재생성 우회(위 update 주석)도 이 규칙을 통과해야 한다 — 우회는
       // "내가 만든 워치 기록을 다시 저장"하는 경로라 소유자 본인이면 항상 통과하고,
@@ -122,26 +237,17 @@ service cloud.firestore {
     // 댓글 — 러닝 기록·방명록 등에 달리는 코멘트. parentId로 묶임.
     match /comments/{id} {
       allow read: if true;
-      allow create: if request.resource.data.parentId is string
-                    && request.resource.data.name is string
-                    && request.resource.data.name.size() <= 40
-                    && request.resource.data.msg is string
-                    && request.resource.data.msg.size() <= 200;
+      allow create: if commentsCreateOk();
       allow update: if isRenameOnly();   // 러너 네임 변경 전파만
-      allow delete: if true;
+      allow delete: if isOwnerOrLegacy();   // 세션16 — S4 범위 확장. 앱에 comments 삭제 UI 자체가 없어(전수 확인) 회귀 0건.
     }
     // 크루 모임 일정. 아무나 생성(친목 수준 — pre-Auth. delete 개방과 같은 등급).
     // startAt(모임 시각) 필수·타입검증으로 오염 방지. update는 러너 네임 전파만(제목·날짜 변조 차단).
     match /events/{id} {
       allow read: if true;
-      allow create: if request.resource.data.title is string
-                    && request.resource.data.title.size() <= 40
-                    && request.resource.data.desc is string
-                    && request.resource.data.desc.size() <= 200
-                    && request.resource.data.startAt is number
-                    && request.resource.data.startAt > 0;
+      allow create: if eventsCreateOk();
       allow update: if isRenameOnly();
-      allow delete: if true;   // 모임 취소·정리
+      allow delete: if isOwnerOrLegacy();   // 세션16 — S4 범위 확장. 앱에 events 삭제 UI 자체가 없어(전수 확인) 회귀 0건.
     }
     // 앱 출시 알림 대기자(이메일). 열람 차단 — 관리자만 Firebase 콘솔에서 조회.
     // (곽재원 Blocker #1·천도윤 #2 공통: 이메일 하베스팅 차단)
